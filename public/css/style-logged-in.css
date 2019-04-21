@@ -1,10 +1,14 @@
 body {
-    background-image: linear-gradient(to bottom right, #9cd6c3, #30b58a);
     background-repeat: no-repeat;
     background-size: cover;
     font-family: 'Poppins', sans-serif;
     min-height: 100vh;
-    padding-top: 80px;
+}
+nav {
+    background-image: linear-gradient(to bottom right, #9cd6c3, #30b58a);
+}
+.navbar-brand img {
+    max-height: 32px;
 }
 .smalljumbo {
     width: 400px;

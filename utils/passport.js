@@ -43,8 +43,8 @@ module.exports = function(passport) {
                     newUser.utuAccount = req.body.utuAccount;
                     newUser.email = email;
                     newUser.hometown = req.body.hometown;
-                    newUser.tyyMember = req.body.tyyMember ? true : false;
-                    newUser.tiviaMember = req.body.tiviaMember ? true : false;
+                    newUser.tyyMember = !!req.body.tyyMember;
+                    newUser.tiviaMember = !!req.body.tiviaMember;
                     newUser.accountCreated = new Date();
                     newUser.password = newUser.generateHash(password);
 
@@ -57,4 +57,32 @@ module.exports = function(passport) {
             });
         });
     }));
+
+    // Login
+
+    passport.use('local-login', new LocalStrategy({
+        usernameField: 'email',
+        passwordField: 'password',
+        passReqToCallback: true
+    },
+    function(req, email, password, done) {
+
+        User.findOne({ email: email }, function(err, user) {
+            if (err) {
+                return done(err);
+            }
+
+            if (!user) {
+                return done(null, false, req.flash('loginMessage', 'Tuntematon sähköposti'));
+            }
+
+            if (!user.validPassword(password)) {
+                return done(null, false, req.flash('loginMessage', 'Väärä salasana'));
+            }
+
+            return done(null, user);
+        });
+
+    }));
+
 };
