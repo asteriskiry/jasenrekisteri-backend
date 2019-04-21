@@ -7,6 +7,9 @@ body {
 nav {
     background-image: linear-gradient(to bottom right, #9cd6c3, #30b58a);
 }
+.control {
+    color: #86202ad9 !important;
+}
 .navbar-brand img {
     max-height: 32px;
 }

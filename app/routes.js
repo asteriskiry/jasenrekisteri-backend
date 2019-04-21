@@ -1,5 +1,7 @@
 // All the routes
 
+var User = require('../models/user');
+
 module.exports = function(app, passport) {
 
     // Home page / Login
@@ -38,6 +40,29 @@ module.exports = function(app, passport) {
         });
     });
 
+    // Edit profile
+
+    app.get('/edit-profile', isLoggedIn, function(req, res) {
+        res.render('edit-profile.ejs', {
+            user: req.user,
+        });
+    });
+
+    // Admin
+
+    app.get('/admin', isAdmin, function(req, res) {
+        User.find({}, function(err, users) {
+            if (err) {
+                console.log(err.stack);
+                res.send('Virhe');
+            }
+            res.render('admin.ejs', {
+                user: req.user,
+                users: users
+            });
+        });
+    });
+
     // Logout
 
     app.get('/logout', function(req, res) {
@@ -50,6 +75,17 @@ function isLoggedIn(req, res, next) {
 
     if (req.isAuthenticated())
         return next();
+
+    res.redirect('/');
+}
+
+function isAdmin(req, res, next) {
+
+    if (req.isAuthenticated()) {
+        if (req.user.admin) {
+            return next();
+        }
+    }
 
     res.redirect('/');
 }

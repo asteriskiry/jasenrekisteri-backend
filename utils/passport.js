@@ -45,6 +45,8 @@ module.exports = function(passport) {
                     newUser.hometown = req.body.hometown;
                     newUser.tyyMember = !!req.body.tyyMember;
                     newUser.tiviaMember = !!req.body.tiviaMember;
+                    newUser.board = false;
+                    newUser.admin = false;
                     newUser.accountCreated = new Date();
                     newUser.password = newUser.generateHash(password);
 

@@ -30,7 +30,7 @@ app.use(express.static(__dirname + '/public'));
 app.use(express.static('build'));
 app.use(middleware.logger);
 
-app.use(session({ secret: 'ilovescotchscotchyscotchscotch' }));
+app.use(session({ secret: config.secret }));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
@@ -42,7 +42,7 @@ app.use(middleware.error);
 const server = http.createServer(app);
 
 server.listen(config.port, () => {
-    console.log(`Jäsenrekisteri backend server running on http://localhost:${config.port}`);
+    console.log(`Jäsenrekisteri running on http://localhost:${config.port}`);
 });
 
 server.on('close', () => {
