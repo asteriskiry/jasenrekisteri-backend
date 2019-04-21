@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
     <head>
-        <title>Asteriski ry jäsenrekisteri - Jäsentiedot</title>
+        <title>Asteriski ry jäsenrekisteri - Hallinta</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -27,12 +27,10 @@
 
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav ml-auto">
-                    <% if (user.admin) { %>
-                        <li class="nav-item">
-                            <a class="nav-link control" href="/admin">Hallinta</a>
-                        </li>
-                    <% } %>
-                    <li class="nav-item active">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/admin">Hallinta</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="/profile">Tiedot</a>
                     </li>
                     <li class="nav-item">
@@ -49,18 +47,35 @@
         </nav>
         <div class="container">
             <div class="row">
-                <div class="col-sm-6">
+                <div class="col-sm-12">
                     <div class="well">
-                        <h3><span class="fa fa-user"></span> <%= user.firstName%> <%= user.lastName %></h3>
-                        <p>
-                            <strong>ID</strong>: <%= user._id %><br>
-                            <strong>UTU-tunnus</strong>: <%= user.utuAccount %><br>
-                            <strong>Sähköpostiosoite</strong>: <%= user.email %><br>
-                            <strong>Kotikunta</strong>: <%= user.hometown %><br>
-                            <strong>TYY-jäsenyys</strong>: <%= user.tyyMember %><br>
-                            <strong>TIVIA-jäsenyys</strong>: <%= user.tiviaMember %><br>
-                            <strong>Hash</strong>: <%= user.password %>
-                        </p>
+                        <h3>Jäsenrekisterin hallinta</h3>
+                        <table>
+                            <tr>
+                                <th>Etunimi</th>
+                                <th>Sukunimi</th>
+                                <th>UTU-tunnus</th>
+                                <th>Sähköposti</th>
+                                <th>Kotikunta</th>
+                                <th>TYY-jäsenyys</th>
+                                <th>TIVIA-jäsenyys</th>
+                                <th>Hallitus</th>
+                                <th>Admin</th>
+                            </tr>
+                            <% for (var i = 0; i < users.length; i++) { %>
+                                <tr>
+                                    <td><%= users[i].firstName %></td>
+                                    <td><%= users[i].lastName %></td>
+                                    <td><%= users[i].utuAccount %></td>
+                                    <td><%= users[i].email %></td>
+                                    <td><%= users[i].hometown %></td>
+                                    <td><%= users[i].tyyMember %></td>
+                                    <td><%= users[i].tiviaMember %></td>
+                                    <td><%= users[i].board %></td>
+                                    <td><%= users[i].admin %></td>
+                                </tr>
+                            <% } %>
+                        </table>
                     </div>
                 </div>
             </div>

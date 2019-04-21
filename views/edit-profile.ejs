@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
     <head>
-        <title>Asteriski ry jäsenrekisteri - Jäsentiedot</title>
+        <title>Asteriski ry jäsenrekisteri - Hallinta</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -32,10 +32,10 @@
                             <a class="nav-link control" href="/admin">Hallinta</a>
                         </li>
                     <% } %>
-                    <li class="nav-item active">
+                    <li class="nav-item">
                         <a class="nav-link" href="/profile">Tiedot</a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item active">
                         <a class="nav-link" href="/edit-profile">Muokkaa tietoja</a>
                     </li>
                     <li class="nav-item">
@@ -51,16 +51,7 @@
             <div class="row">
                 <div class="col-sm-6">
                     <div class="well">
-                        <h3><span class="fa fa-user"></span> <%= user.firstName%> <%= user.lastName %></h3>
-                        <p>
-                            <strong>ID</strong>: <%= user._id %><br>
-                            <strong>UTU-tunnus</strong>: <%= user.utuAccount %><br>
-                            <strong>Sähköpostiosoite</strong>: <%= user.email %><br>
-                            <strong>Kotikunta</strong>: <%= user.hometown %><br>
-                            <strong>TYY-jäsenyys</strong>: <%= user.tyyMember %><br>
-                            <strong>TIVIA-jäsenyys</strong>: <%= user.tiviaMember %><br>
-                            <strong>Hash</strong>: <%= user.password %>
-                        </p>
+                        <h3>Muokkaa tietoja</h3>
                     </div>
                 </div>
             </div>
