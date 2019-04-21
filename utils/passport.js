@@ -37,7 +37,6 @@ module.exports = function(passport) {
 
                     var newUser = new User();
 
-                    console.log(req);
                     newUser.firstName = req.body.firstName;
                     newUser.lastName = req.body.lastName;
                     newUser.utuAccount = req.body.utuAccount;
