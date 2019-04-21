@@ -1,0 +1,68 @@
+<!-- views/signup.ejs -->
+<!doctype html>
+<html>
+    <head>
+        <title>Asteriski ry jäsenrekisteri - Liity jäseneksi</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+        <link rel='stylesheet' id='asteriski-font-css'  href='https://fonts.googleapis.com/css?family=Montserrat:300,400,500|Poppins:400,500,600,700,80' type='text/css' media='all' />
+        <link href="/css/style.css" rel="stylesheet" type="text/css">
+    </head>
+    <body>
+        <div class="container">
+            <div class="d-flex justify-content-center">
+                <div class="jumbotron login">
+                    <img class="mx-auto d-block" src="/img/asteriski-logo.png"></img>
+                    <h3 class="text-center">Liity jäseneksi</h3>
+                    <% if (message.length > 0) { %>
+                        <div class="alert alert-danger"><%= message %></div>
+                    <% } else { %>
+                    <% } %>
+                    <form action="/signup" method="post">
+                        <div class="form-group">
+                            <label>Etunimi</label>
+                            <input type="text" class="form-control" name="firstName">
+                        </div>
+                        <div class="form-group">
+                            <label>Sukunimi</label>
+                            <input type="text" class="form-control" name="lastName">
+                        </div>
+                        <div class="form-group">
+                            <label>UTU-tunnus (ilman @utu.fi)</label>
+                            <input type="text" class="form-control" name="utuAccount">
+                        </div>
+                        <div class="form-group">
+                            <label>Sähköposti</label>
+                            <input type="text" class="form-control" name="email">
+                        </div>
+                        <div class="form-group">
+                            <label>Kotikunta</label>
+                            <input type="text" class="form-control" name="hometown">
+                        </div>
+                        <div class="form-group">
+                            <label>TYYn jäsen</label>
+                            <input type="checkbox" class="form-control" name="tyyMember">
+                        </div>
+                        <div class="form-group">
+                            <label>TIVIAn jäsen</label>
+                            <input type="checkbox" class="form-control" name="tiviaMember">
+                        </div>
+                        <div class="form-group">
+                            <label>Salasana</label>
+                            <input type="password" class="form-control" name="password">
+                        </div>
+                        <div class="form-group">
+                            <label>Salasana uudelleen</label>
+                            <input type="password" class="form-control" name="passwordAgain">
+                        </div>
+
+                        <button type="submit" class="btn btn-success"><span class="fa fa-sign-in-alt"></span> Liity jäseneksi</button>
+                    </form>
+                    <hr>
+                    <div class="btm-links">
+                        <p><a href="/">Takaisin</a></p>
+                    </div>
+                </div>
+            </div>
+    </body>
+</html>
