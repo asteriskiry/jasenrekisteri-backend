@@ -1,31 +1,13 @@
 // Membership database schema
 
-const mongoose = require('mongoose');
+var mongoose = require('mongoose');
+var bcrypt = require('bcrypt-nodejs');
 
-const userSchema = new mongoose.Schema({
-  idx: Number,
-  firstName: String,
-  lastName: String,
-  utuAccount: String,
-  email: String,
-  membershipApproved: Date,
-  membershipEnds: Date,
-  hometown: String,
-  tyyMember: Boolean,
-  tiviaMember: Boolean,
-  board: Boolean,
-  admin: Boolean,
-  accountCreated: Date,
-  passwordHash: String,
-});
-
-userSchema.statics.format = (user) => {
-  return {
-    idx: user.idx,
-    firstName: user.firstName,
-    lastName: user.lastName,
+var userSchema = new mongoose.Schema({
+    firstName: String,
+    lastName: String,
     utuAccount: String,
-    email: user.email,
+    email: String,
     membershipApproved: Date,
     membershipEnds: Date,
     hometown: String,
@@ -34,9 +16,15 @@ userSchema.statics.format = (user) => {
     board: Boolean,
     admin: Boolean,
     accountCreated: Date,
-  };
+    password: String,
+});
+
+userSchema.methods.generateHash = function(password) {
+    return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
 };
 
-const User = mongoose.model('User', userSchema);
+userSchema.methods.validPassword = function(password) {
+    return bcrypt.compareSync(password, this.password);
+};
 
-module.exports = User;
+module.exports = mongoose.model('User', userSchema);

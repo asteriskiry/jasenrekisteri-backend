@@ -16,7 +16,7 @@ var app = express();
 mongoose.connect(config.mongoUrl, { useNewUrlParser: true });
 mongoose.Promise = global.Promise;
 
-// require('./utils/passport')(passport);
+require('./utils/passport')(passport);
 
 app.use(cors());
 

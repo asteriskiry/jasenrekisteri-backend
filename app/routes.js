@@ -1,3 +1,5 @@
+// All the routes
+
 module.exports = function(app, passport) {
 
     // Home page / Login
@@ -15,8 +17,11 @@ module.exports = function(app, passport) {
         res.render('signup.ejs', { message: req.flash('signupMessage') });
     });
 
-    // process the signup form
-    // app.post('/signup', do all our passport stuff here);
+    app.post('/signup', passport.authenticate('local-signup', {
+        successRedirect: '/profile',
+        failureRedirect: '/signup',
+        failureFlash: true
+    }));
 
     // Profile
 

@@ -6,8 +6,8 @@ let secret = process.env.SECRET;
 let adminSecret = process.env.ADMINSECRET;
 
 module.exports = {
-  mongoUrl,
-  port,
-  secret,
-  adminSecret,
+    mongoUrl,
+    port,
+    secret,
+    adminSecret,
 };
