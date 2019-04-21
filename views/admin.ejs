@@ -1,68 +1,38 @@
-<!doctype html>
-<html>
-    <%- include('header') -%>
-    <%- include('header-logged-in') -%>
-    <body>
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <a class="navbar-brand" href="/profile"><img src="/img/asteriski-logo.png"> Jäsenrekisteri</a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav ml-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/admin">Hallinta</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/profile">Tiedot</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/edit-profile">Muokkaa tietoja</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/pay-membership">Jäsenmaksu</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/logout">Kirjaudu ulos</a>
-                    </li>
-                </ul>
-            </div>
-        </nav>
-        <div class="container">
-            <div class="row">
-                <div class="col-sm-12">
-                    <div class="well">
-                        <h3>Jäsenrekisterin hallinta</h3>
-                        <table>
-                            <tr>
-                                <th>Etunimi</th>
-                                <th>Sukunimi</th>
-                                <th>UTU-tunnus</th>
-                                <th>Sähköposti</th>
-                                <th>Kotikunta</th>
-                                <th>TYY-jäsenyys</th>
-                                <th>TIVIA-jäsenyys</th>
-                                <th>Hallitus</th>
-                                <th>Admin</th>
-                            </tr>
-                            <% for (var i = 0; i < users.length; i++) { %>
-                                <tr>
-                                    <td><%= users[i].firstName %></td>
-                                    <td><%= users[i].lastName %></td>
-                                    <td><%= users[i].utuAccount %></td>
-                                    <td><%= users[i].email %></td>
-                                    <td><%= users[i].hometown %></td>
-                                    <td><%= users[i].tyyMember %></td>
-                                    <td><%= users[i].tiviaMember %></td>
-                                    <td><%= users[i].board %></td>
-                                    <td><%= users[i].admin %></td>
-                                </tr>
-                            <% } %>
-                        </table>
-                    </div>
-                </div>
+<%- include('common/header-logged-in',{active:'admin'}) -%>
+<div class="container">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="well">
+                <h3>Jäsenrekisterin hallinta</h3>
+                <table>
+                    <tr>
+                        <th>Etunimi</th>
+                        <th>Sukunimi</th>
+                        <th>UTU-tunnus</th>
+                        <th>Sähköposti</th>
+                        <th>Kotikunta</th>
+                        <th>TYY-jäsenyys</th>
+                        <th>TIVIA-jäsenyys</th>
+                        <th>Hallitus</th>
+                        <th>Admin</th>
+                    </tr>
+                    <% for (var i = 0; i < users.length; i++) { %>
+                        <tr>
+                            <td><%= users[i].firstName %></td>
+                            <td><%= users[i].lastName %></td>
+                            <td><%= users[i].utuAccount %></td>
+                            <td><%= users[i].email %></td>
+                            <td><%= users[i].hometown %></td>
+                            <td><%= users[i].tyyMember %></td>
+                            <td><%= users[i].tiviaMember %></td>
+                            <td><%= users[i].board %></td>
+                            <td><%= users[i].admin %></td>
+                        </tr>
+                    <% } %>
+                </table>
             </div>
         </div>
-    </body>
+    </div>
+</div>
+</body>
 </html>
