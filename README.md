@@ -20,5 +20,10 @@ npm start
 ```
 Configure `.env`-file if needed. You can use `npm run-script watch` instead of `npm start` to watch file changes with nodemon.
 
+You can make admin account with:
+```bash
+npm run-script create-user
+```
+
 ---
 © Asteriski ry
