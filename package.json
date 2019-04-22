@@ -7,7 +7,8 @@
     "scripts": {
         "start": "node index.js",
         "watch": "node_modules/.bin/nodemon index.js",
-        "populate": "node scripts/populate.js"
+        "populate": "node scripts/populate.js",
+        "create-user": "node scripts/create-user.js"
     },
     "author": "Asteriski ry, Maks Turtiainen, Vili Ahava",
     "license": "MIT",
@@ -27,6 +28,7 @@
         "mongoose": "^5.5.2",
         "passport": "^0.4.0",
         "passport-local": "^1.0.0",
+        "prompt": "^1.0.0",
         "react": "^16.8.6",
         "react-dom": "^16.8.6"
     },
