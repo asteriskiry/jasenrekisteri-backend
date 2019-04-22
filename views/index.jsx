@@ -15,19 +15,19 @@ class LoginPage extends React.Component {
                     <h3 className="text-center">Jäsenrekisteri</h3>
                     { alertMessage }
                     <form action="/" method="post">
-                        <div class="form-group">
+                        <div className="form-group">
                             <label>Sähköposti</label>
-                            <input type="text" class="form-control" name="email"></input>
+                            <input type="text" className="form-control" name="email"></input>
                         </div>
-                        <div class="form-group">
+                        <div className="form-group">
                             <label>Salasana</label>
-                            <input type="password" class="form-control" name="password"></input>
+                            <input type="password" className="form-control" name="password"></input>
                         </div>
 
-                        <button type="submit" class="btn btn-success"><span class="fa fa-sign-in-alt"></span> Kirjaudu sisään</button>
+                        <button type="submit" className="btn btn-success"><span className="fa fa-sign-in-alt"></span> Kirjaudu sisään</button>
                     </form>
                     <hr></hr>
-                    <div class="btm-links">
+                    <div className="btm-links">
                         <p><a href="/signup">Liity jäseneksi</a></p>
                         <p><a href="/">Salasana unohtunut?</a></p>
                     </div>

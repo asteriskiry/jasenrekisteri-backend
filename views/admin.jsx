@@ -5,10 +5,10 @@ class AdminPage extends React.Component {
     render() {
         return (
             <LoggedInLayout title={this.props.title} user={this.props.user} active="admin">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <div class="well">
+                <div className="container">
+                    <div className="row">
+                        <div className="col-sm-12">
+                            <div className="well">
                                 <h3>Jäsenrekisterin hallinta</h3>
                             </div>
                         </div>

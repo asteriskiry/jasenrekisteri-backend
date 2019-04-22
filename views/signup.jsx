@@ -15,47 +15,47 @@ class SignUpPage extends React.Component {
                     <h3 className="text-center">Liity jäseneksi</h3>
                     { alertMessage }
                     <form action="/signup" method="post">
-                        <div class="form-group">
+                        <div className="form-group">
                             <label>Etunimi</label>
-                            <input type="text" class="form-control" name="firstName"></input>
+                            <input type="text" className="form-control" name="firstName"></input>
                         </div>
-                        <div class="form-group">
+                        <div className="form-group">
                             <label>Sukunimi</label>
-                            <input type="text" class="form-control" name="lastName"></input>
+                            <input type="text" className="form-control" name="lastName"></input>
                         </div>
-                        <div class="form-group">
+                        <div className="form-group">
                             <label>UTU-tunnus (ilman @utu.fi)</label>
-                            <input type="text" class="form-control" name="utuAccount"></input>
+                            <input type="text" className="form-control" name="utuAccount"></input>
                         </div>
-                        <div class="form-group">
+                        <div className="form-group">
                             <label>Sähköposti</label>
-                            <input type="text" class="form-control" name="email"></input>
+                            <input type="text" className="form-control" name="email"></input>
                         </div>
-                        <div class="form-group">
+                        <div className="form-group">
                             <label>Kotikunta</label>
-                            <input type="text" class="form-control" name="hometown"></input>
+                            <input type="text" className="form-control" name="hometown"></input>
                         </div>
-                        <div class="form-group">
+                        <div className="form-group">
                             <label>TYYn jäsen</label>
-                            <input type="checkbox" class="form-control" name="tyyMember"></input>
+                            <input type="checkbox" className="form-control" name="tyyMember"></input>
                         </div>
-                        <div class="form-group">
+                        <div className="form-group">
                             <label>TIVIAn jäsen</label>
-                            <input type="checkbox" class="form-control" name="tiviaMember"></input>
+                            <input type="checkbox" className="form-control" name="tiviaMember"></input>
                         </div>
-                        <div class="form-group">
+                        <div className="form-group">
                             <label>Salasana</label>
-                            <input type="password" class="form-control" name="password"></input>
+                            <input type="password" className="form-control" name="password"></input>
                         </div>
-                        <div class="form-group">
+                        <div className="form-group">
                             <label>Salasana uudelleen</label>
-                            <input type="password" class="form-control" name="passwordAgain"></input>
+                            <input type="password" className="form-control" name="passwordAgain"></input>
                         </div>
 
-                        <button type="submit" class="btn btn-success"><span class="fa fa-sign-in-alt"></span> Liity jäseneksi</button>
+                        <button type="submit" className="btn btn-success"><span className="fa fa-sign-in-alt"></span> Liity jäseneksi</button>
                     </form>
                     <hr></hr>
-                    <div class="btm-links">
+                    <div className="btm-links">
                         <p><a href="/">Takaisin</a></p>
                     </div>
                 </div>

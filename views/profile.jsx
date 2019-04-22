@@ -5,11 +5,11 @@ class ProfilePage extends React.Component {
     render() {
         return (
             <LoggedInLayout title={this.props.title} user={this.props.user} active="profile">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <div class="well">
-                                <h3><span class="fa fa-user"></span> { this.props.user.firstName } { this.props.user.lastName }</h3>
+                <div className="container">
+                    <div className="row">
+                        <div className="col-sm-6">
+                            <div className="well">
+                                <h3><span className="fa fa-user"></span> { this.props.user.firstName } { this.props.user.lastName }</h3>
                                 <p><strong>ID</strong>: { this.props.user._id.toString() }</p>
                                 <p><strong>UTU-tunnus</strong>: { this.props.user.utuAccount }</p>
                                 <p><strong>Sähköpostiosoite</strong>: { this.props.user.email }</p>
