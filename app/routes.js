@@ -10,7 +10,10 @@ module.exports = function(app, passport) {
         if (req.user) {
             res.redirect('/profile');
         } else {
-            res.render('index.ejs', { message: req.flash('loginMessage') });
+            res.render('index', {
+                message: req.flash('loginMessage'),
+                title: 'Asteriski jäsenrekisteri'
+            });
         }
     });
 
@@ -23,7 +26,10 @@ module.exports = function(app, passport) {
     // Signup
 
     app.get('/signup', function(req, res) {
-        res.render('signup.ejs', { message: req.flash('signupMessage') });
+        res.render('signup', {
+            message: req.flash('signupMessage'),
+            title: 'Asteriski jäsenrekisteri - Liity jäseneksi'
+        });
     });
 
     app.post('/signup', passport.authenticate('local-signup', {
@@ -35,16 +41,18 @@ module.exports = function(app, passport) {
     // Profile
 
     app.get('/profile', isLoggedIn, function(req, res) {
-        res.render('profile.ejs', {
+        res.render('profile', {
             user: req.user,
+            title: 'Asteriski jäsenrekisteri - Jäsentiedot'
         });
     });
 
     // Edit profile
 
     app.get('/edit-profile', isLoggedIn, function(req, res) {
-        res.render('edit-profile.ejs', {
+        res.render('edit-profile', {
             user: req.user,
+            title: 'Asteriski jäsenrekisteri - Muokkaa tietoja'
         });
     });
 
@@ -56,9 +64,10 @@ module.exports = function(app, passport) {
                 console.log(err.stack);
                 res.send('Virhe');
             }
-            res.render('admin.ejs', {
+            res.render('admin', {
                 user: req.user,
-                users: users
+                users: users,
+                title: 'Asteriski jäsenrekisteri - Hallinta'
             });
         });
     });

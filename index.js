@@ -24,8 +24,10 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.set('view engine', 'ejs');
+app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + '/public'));
+app.set('view engine', 'jsx');
+app.engine('jsx', require('express-react-views').createEngine());
 
 app.use(express.static('build'));
 app.use(middleware.logger);
