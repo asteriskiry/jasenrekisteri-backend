@@ -1,9 +1,9 @@
 # Jäsenrekisteri
-Jäsenrekisteri Asteriski ry:n tarpeisiin / Member register for Asteriski ry
+Jäsenrekisteri Asteriski ry:n tarpeisiin / Membership register for Asteriski ry
 
 ### Tech
 - Node.js
-- EJS
+- React
 - Passport
 - Express.js
 - MongoDB
