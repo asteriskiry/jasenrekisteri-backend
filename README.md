@@ -1,4 +1,7 @@
 # Jäsenrekisteri
+
+### This branch contains old app with viewengine
+
 Jäsenrekisteri Asteriski ry:n tarpeisiin / Membership register for Asteriski ry
 
 ### Tech
