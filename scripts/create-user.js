@@ -2,8 +2,8 @@
 
 var prompt = require('prompt');
 var mongoose = require('mongoose');
-var User = require('../models/user');
-var config = require('../utils/config');
+var User = require('../server/models/User');
+var config = require('../config/config');
 
 var schema = {
     properties: {
@@ -37,13 +37,13 @@ var schema = {
             type: 'boolean',
             required: true
         },
-        board: {
-            description: 'Hallituksen jäsen (true/false)',
-            type: 'boolean',
+        role: {
+            description: 'Rooli (Admin/Board/Functionary/Member)',
+            type: 'String',
             required: true
         },
-        admin: {
-            description: 'Admin (true/false)',
+        accessRights: {
+            description: 'Kulkuoikeudet (true/false)',
             type: 'boolean',
             required: true
         },
@@ -70,8 +70,8 @@ prompt.get(schema, function(err, result) {
     console.log('  Kotikunta: ' + result.hometown);
     console.log('  TYYn jäsen: ' + result.tyyMember);
     console.log('  TIVIAn jäsen: ' + result.tiviaMember);
-    console.log('  Hallituksen jäsen: ' + result.board);
-    console.log('  Admin: ' + result.admin);
+    console.log('  Rooli: ' + result.role);
+    console.log('  Kulkuoikeudet: ' + result.accessRights);
 
     mongoose.connect(config.mongoUrl, { useNewUrlParser: true });
     var db = mongoose.connection;
@@ -87,10 +87,10 @@ prompt.get(schema, function(err, result) {
         newUser.hometown = result.hometown;
         newUser.tyyMember = result.tyyMember;
         newUser.tiviaMember = result.tiviaMember;
-        newUser.board = result.board;
-        newUser.admin = result.admin;
+        newUser.role = result.role;
+        newUser.accessRights = result.accessRights;
         newUser.accountCreated = new Date();
-        newUser.password = newUser.generateHash(result.password);
+        newUser.password = result.password;
 
         newUser.save(function(err) {
             if (err) return console.error(err);

@@ -5,7 +5,9 @@
         "es6": true,
         "node": true
     },
-    "extends": "strongloop",
+    "extends": [
+        "strongloop"
+    ],
     "globals": {
         "Atomics": "readonly",
         "SharedArrayBuffer": "readonly"
@@ -14,10 +16,10 @@
         "ecmaFeatures": {
             "jsx": true
         },
-        "ecmaVersion": 2018
+        "ecmaVersion": 2018,
+        "sourceType": "module"
     },
     "plugins": [
-        "react"
     ],
     "rules": {
         "no-console": "off",

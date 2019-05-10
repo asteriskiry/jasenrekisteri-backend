@@ -1,56 +1,7 @@
-var http = require('http');
-var express = require('express');
-var session = require('express-session');
-var bodyParser = require('body-parser');
-var cookieParser = require('cookie-parser');
-var cors = require('cors');
-var mongoose = require('mongoose');
-var flash = require('connect-flash');
-var passport = require('passport');
+'use strict';
 
-var middleware = require('./utils/middleware');
-var config = require('./utils/config');
+const server = require('./server')();
+const config = require('./config/config.js');
 
-var app = express();
-
-mongoose.connect(config.mongoUrl, { useNewUrlParser: true });
-mongoose.Promise = global.Promise;
-
-require('./utils/passport')(passport);
-
-app.use(cors());
-
-app.use(cookieParser());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-app.set('views', __dirname + '/views');
-app.use(express.static(__dirname + '/public'));
-app.set('view engine', 'jsx');
-app.engine('jsx', require('express-react-views').createEngine());
-
-app.use(express.static('build'));
-app.use(middleware.logger);
-
-app.use(session({ secret: config.secret }));
-app.use(passport.initialize());
-app.use(passport.session());
-app.use(flash());
-
-require('./app/routes.js')(app, passport);
-
-app.use(middleware.error);
-
-const server = http.createServer(app);
-
-server.listen(config.port, () => {
-    console.log(`Jäsenrekisteri running on http://localhost:${config.port}`);
-});
-
-server.on('close', () => {
-    mongoose.connection.close();
-});
-
-module.exports = {
-    app, server,
-};
+server.create(config);
+server.start();
