@@ -2,7 +2,7 @@
 
 var prompt = require('prompt');
 var mongoose = require('mongoose');
-var User = require('../server/models/User');
+var Member = require('../server/models/Member');
 var config = require('../config/config');
 
 var schema = {
@@ -78,7 +78,7 @@ prompt.get(schema, function(err, result) {
 
     db.once('open', function() {
 
-        var newUser = new User();
+        var newUser = new Member();
 
         newUser.firstName = result.firstName;
         newUser.lastName = result.lastName;
