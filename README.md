@@ -1,7 +1,7 @@
 # Jäsenrekisteri-backend
 Jäsenrekisteri backend API Asteriski ry:n tarpeisiin / Membership register backend API for Asteriski ry
 
-React frontend is here <https://github.com/asteriskiry/jasenrekisteri-frontend.git>.
+React frontend is here <https://github.com/asteriskiry/jasenrekisteri-frontend>.
 
 ### Tech
 - Node.js
