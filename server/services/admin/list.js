@@ -4,7 +4,7 @@ const utils = require('../../utils');
 const httpResponses = require('./');
 
 function list(request, response) {
-    if (request.body.admin.access.toLowerCase() !== 'admin') {
+    if (request.body.admin.access.toLowerCase() !== 'admin' | 'board') {
         return response.json(httpResponses.clientAdminFailed);
     }
 

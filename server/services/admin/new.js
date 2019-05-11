@@ -11,7 +11,7 @@ function save(request, response) {
     passwordCheck = password;
     passwordAgainCheck = passwordAgain;
 
-    if (request.body.admin.access.toLowerCase() !== 'admin') {
+    if (request.body.admin.access.toLowerCase() !== 'admin' | 'board') {
         return response.json(httpResponses.clientAdminFailed);
     }
 

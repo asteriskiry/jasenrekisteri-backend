@@ -6,7 +6,7 @@ const httpResponses = require('./');
 let usernameCheck, passwordCheck, passwordAgainCheck;
 
 function get(request, response) {
-    if (request.body.admin.access.toLowerCase() !== 'admin') {
+    if (request.body.admin.access.toLowerCase() !== 'admin' | 'board') {
         return response.json(httpResponses.clientAdminFailed);
     }
 
@@ -38,7 +38,7 @@ function update(request, response) {
     passwordCheck = request.body.password;
     passwordAgainCheck = request.body.passwordAgain;
 
-    if (request.body.access.toLowerCase() !== 'admin') {
+    if (request.body.access.toLowerCase() !== 'admin' | 'board') {
         return response.json(httpResponses.clientAdminFailed);
     }
 
