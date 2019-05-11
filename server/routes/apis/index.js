@@ -5,12 +5,14 @@ let router = express.Router();
 
 const registerController = require('../../controllers/apis/register');
 const loginController = require('../../controllers/apis/login');
+const forgotController = require('../../controllers/apis/forgot');
 
 const adminController = require('../../controllers/apis/admin');
 const memberController = require('../../controllers/apis/member');
 
 router.use('/register', registerController);
 router.use('/login', loginController);
+router.use('/forgot', forgotController);
 
 router.use('/admin', adminController);
 
