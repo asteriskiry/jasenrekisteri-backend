@@ -31,7 +31,7 @@ function registerUser(request, response) {
 
     if (!firstName || !lastName || !utuAccount || !email || !hometown || !password || !passwordAgain) {
         response.json(httpResponses.onValidationError);
-    } else if (password === passwordAgain) {
+    } else if (password !== passwordAgain) {
         response.json(httpResponses.onNotSamePasswordError);
     } else {
 
