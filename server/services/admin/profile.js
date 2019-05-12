@@ -6,13 +6,16 @@ const httpResponses = require('./');
 let usernameCheck, passwordCheck, passwordAgainCheck;
 
 function get(request, response) {
-    if (request.body.admin.access.toLowerCase() !== 'admin' | 'board') {
+    const memberID = request.query.memberID;
+    console.log(request.query);
+
+    if (request.query.access.toLowerCase() !== 'admin' | 'board') {
         return response.json(httpResponses.clientAdminFailed);
     }
 
     utils.checkUserControl(request.query.id)
         .then(admin => {
-            Member.findOne({ _id: request.query.id })
+            Member.findOne({ _id: memberID })
                 .lean()
                 .exec((error, doc) => {
                     if (error) return response.json(error);
