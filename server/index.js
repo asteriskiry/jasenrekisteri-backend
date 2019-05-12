@@ -29,7 +29,8 @@ module.exports = function() {
         server.use(passport.initialize());
         mongoose.connect(config.mongoUrl, {
             useNewUrlParser: true,
-            useCreateIndex: true
+            useCreateIndex: true,
+            useFindAndModify: false
         });
         require('../config/passport')(passport);
 
