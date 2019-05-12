@@ -3,6 +3,14 @@ module.exports = {
         success: true,
         message: 'Tiedot päivitetty onnistuneesti.'
     },
+    onFieldEmpty: {
+        success: false,
+        message: 'Kaikki kentät ovat pakollisia.'
+    },
+    onPasswordNotMatch: {
+        success: false,
+        message: 'Salasanat eivät täsmää.'
+    },
     onClientAdminFail: {
         success: false,
         message: 'Asiakas ei ole admin.'

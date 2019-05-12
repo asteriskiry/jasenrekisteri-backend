@@ -86,7 +86,7 @@ MemberSchema.pre('save', function(next) {
 
 MemberSchema.pre('findOneAndUpdate', function(next) {
     const update = this.getUpdate();
-    if (update.password !== '') {
+    if (update.password !== '' && update.password !== undefined) {
         bcrypt.genSalt(10, (err, salt) => {
             bcrypt.hash(update.password, salt, (err, hash) => {
                 this.getUpdate().password = hash;

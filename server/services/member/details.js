@@ -23,6 +23,14 @@ function updateDetails(request, response) {
                 _id: request.body._id
             };
 
+            if (!request.body.firstName || !request.body.lastName || !request.body.utuAccount || !request.body.email || !request.body.hometown) {
+                return response.json(httpResponses.onFieldEmpty);
+            }
+
+            if (request.body.password !== request.body.passwordAgain) {
+                return response.json(httpResponses.onPasswordNotMatch);
+            }
+
             let record = {
                 firstName: request.body.firstName,
                 lastName: request.body.lastName,
