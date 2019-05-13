@@ -38,6 +38,9 @@ module.exports = function() {
 
         server.set('views', server.get('viewDir'));
 
+        // Ugly fix
+        server.disable('etag');
+
         routes.init(server);
     };
 
