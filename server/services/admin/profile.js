@@ -29,33 +29,41 @@ function get(request, response) {
 }
 
 function update(request, response) {
+    console.log(request.body);
+    const memberID = request.body.memberID;
+
     const adminProfile = {
         firstName: request.body.firstName,
         lastName: request.body.lastName,
+        utuAccount: request.body.utuAccount,
         email: request.body.email,
+        hometown: request.body.hometown,
+        tyyMember: request.body.tyyMember,
+        tiviaMember: request.body.tiviaMember,
         role: request.body.role,
+        accessRights: request.body.accessRights,
         password: request.body.password
     };
 
-    usernameCheck = request.body.email;
-    passwordCheck = request.body.password;
-    passwordAgainCheck = request.body.passwordAgain;
+    if (!request.body.firstName || !request.body.lastName || !request.body.utuAccount || !request.body.email || !request.body.hometown) {
+        return response.json(httpResponses.onFieldEmpty);
+    }
+
+    if (request.body.password !== request.body.passwordAgain) {
+        return response.json(httpResponses.onNotSamePasswordError);
+    }
 
     if (request.body.access.toLowerCase() !== 'admin' | 'board') {
         return response.json(httpResponses.clientAdminFailed);
     }
 
-    if (performUpdateProfileChecks() !== true) {
-        return response.json(performUpdateProfileChecks());
-    }
-
-    if (request.body.password === '') {
+    if (request.body.password === '' || request.body.password === null) {
         delete adminProfile.password;
     }
 
     utils.checkUserControl(request.body.id)
         .then(admin => {
-            Member.findOneAndUpdate({ _id: request.body.id }, adminProfile)
+            Member.findOneAndUpdate({ _id: memberID }, adminProfile)
                 .lean()
                 .exec((error, doc) => {
                     if (error) return response.json(error);
@@ -65,26 +73,6 @@ function update(request, response) {
         .catch(error => {
             return response.json(httpResponses.onServerAdminFail);
         });
-}
-
-function performUpdateProfileChecks() {
-    if (passwordCheck === '' && usernameCheck === '') {
-        return httpResponses.onProfileUpdatePasswordCheckUserEmpty;
-    }
-
-    if (passwordCheck === '') {
-        return httpResponses.onProfileUpdatePasswordEmpty;
-    }
-
-    if (usernameCheck === '') {
-        return httpResponses.onProfileUpdateUsernameEmpty;
-    }
-
-    if (passwordCheck !== passwordAgainCheck) {
-        return httpResponses.notSamePasswordError;
-    }
-
-    return true;
 }
 
 module.exports = {

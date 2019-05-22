@@ -23,12 +23,16 @@ module.exports = {
         success: false,
         message: 'Syötä sähköpostiosoite.'
     },
+    onFieldEmpty: {
+        success: false,
+        message: 'Kaikki paitsi salasanakentät ovat pakollisia.'
+    },
     onProfileUpdatePasswordUserEmpty: {
         success: false,
         message: 'Syötä sähköpostiosoite ja salasana.'
     },
     onNotSamePasswordError: {
-        success: true,
+        success: false,
         message: 'Salasanat ei täsmää.'
     }
 };
