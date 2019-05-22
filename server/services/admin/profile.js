@@ -42,6 +42,8 @@ function update(request, response) {
         tiviaMember: request.body.tiviaMember,
         role: request.body.role,
         accessRights: request.body.accessRights,
+        membershipStarts: request.body.membershipStarts,
+        membershipEnds: request.body.membershipEnds,
         password: request.body.password
     };
 
