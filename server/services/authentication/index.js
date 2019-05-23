@@ -1,46 +1,50 @@
 module.exports = {
-    onUserPassEmpty: {
+    onEmailEmpty: {
         success: false,
-        message: 'Syötä sähköpostiosoite ja salasana.'
-    },
-    onPassEmpty: {
-        success: false,
-        message: 'Syötä salasana.'
-    },
-    onUsernameEmpty: {
-        success: true,
-        message: 'Syötä käyttäjätunnus.'
+        message: 'Syötä sähköpostiosoite.',
     },
     onPasswordUpdateSuccess: {
         success: true,
-        message: 'Salasana päivitetty onnistuneesti.'
+        message: 'Salasana päivitetty onnistuneesti.',
     },
     onUserNotFound: {
         success: false,
-        message: 'Käyttäjää ei löydy.'
+        message: 'Käyttäjää ei löydy.',
     },
     onAuthenticationFail: {
         success: false,
-        message: 'Väärä salasana.'
+        message: 'Väärä salasana.',
     },
     onValidationError: {
         success: false,
-        message: 'Kaikki kentät ovat pakollisia.'
+        message: 'Kaikki kentät ovat pakollisia.',
     },
     onPasswordError: {
         success: false,
-        message: 'Salasanat eivät ole samoja.'
+        message: 'Salasanat eivät ole samoja.',
     },
     onUserSaveError: {
         success: false,
-        message: 'Sähköpostiosoite on jo käytössä.'
+        message: 'Sähköpostiosoite on jo käytössä.',
     },
     onNotSamePasswordError: {
         success: false,
-        message: 'Salasanat eivät täsmää.'
+        message: 'Salasanat eivät täsmää.',
     },
     onUserSaveSuccess: {
         success: true,
-        message: 'Käyttäjätunnus luotu onnistuneesti.'
-    }
+        message: 'Käyttäjätunnus luotu onnistuneesti.',
+    },
+    onResetFail: {
+        success: false,
+        message: 'Ongelma palautuksessa..',
+    },
+    onMailSent: {
+        success: true,
+        message: 'Salasanan palautuslinkki lähetetty sähköpostiisi.',
+    },
+    onMailFail: {
+        success: false,
+        message: 'Sähköpostin lähetys epäonnistui.',
+    },
 };
