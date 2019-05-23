@@ -7,7 +7,7 @@ module.exports = {
         success: false,
         message: 'Tämä alue on vain hallituslaisille.',
     },
-    memberAddedSuccesfully: {
+    memberAddedSuccessfully: {
         success: true,
         message: 'Uusi jäsen lisätty onnistuneesti.',
     },

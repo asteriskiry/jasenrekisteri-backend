@@ -20,7 +20,7 @@ function save(request, response) {
         passwordAgain,
     } = request.body;
 
-    const accessTo = request.query.access.toLowerCase();
+    const accessTo = request.body.access.toLowerCase();
 
     if (accessTo === 'admin' || accessTo === 'board') {
         if (password !== passwordAgain) {
@@ -43,7 +43,7 @@ function save(request, response) {
         }
 
         utils
-            .checkUserControl(request.body.admin.id)
+            .checkUserControl(request.body.id)
             .then(user => {
                 let newMember = new Member();
                 newMember.firstName = firstName;
