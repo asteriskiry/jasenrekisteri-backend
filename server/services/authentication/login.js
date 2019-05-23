@@ -4,17 +4,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../../../config/config');
 
 const Member = require('../../models/Member');
-
-const httpResponse = {
-    onUserNotFound: {
-        success: false,
-        message: 'Käyttäjää ei löydy.'
-    },
-    onAuthenticationFail: {
-        success: false,
-        message: 'Väärä salasana.'
-    }
-};
+const httpResponses = require('./');
 
 let http, userPassword;
 
@@ -26,7 +16,7 @@ function loginUser(request, response) {
         email: email
     }, function(error, user) {
         if (error) return response.json(error);
-        if (!user) return response.json(httpResponse.onUserNotFound);
+        if (!user) return response.json(httpResponses.onUserNotFound);
         userPassword = password;
         http = response;
         comparePassword(user);
@@ -50,7 +40,7 @@ function comparePassword(user) {
             return http.json(responseToken);
         }
 
-        return http.json(httpResponse.onAuthenticationFail);
+        return http.json(httpResponses.onAuthenticationFail);
     });
 }
 
