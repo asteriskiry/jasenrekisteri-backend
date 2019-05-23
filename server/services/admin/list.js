@@ -4,26 +4,26 @@ const utils = require('../../utils');
 const httpResponses = require('./');
 
 function list(request, response) {
-    if (request.query.access.toLowerCase() !== 'admin' | 'board') {
+    if (request.query.access.toLowerCase() !== 'admin' || 'board') {
         return response.json(httpResponses.clientAdminFailed);
     }
 
-    utils.checkUserControl(request.query.id)
+    utils
+        .checkUserControl(request.query.id)
         .then(user => {
-            Member.find({}, null)
-                .exec((error, docs) => {
-                    if (error) return response.json(error);
+            Member.find({}, null).exec((error, docs) => {
+                if (error) return response.json(error);
 
-                    let updatedDocument = docs.map(doc => {
-                        let documentToObject = doc.toObject();
+                let updatedDocument = docs.map(doc => {
+                    let documentToObject = doc.toObject();
 
-                        delete documentToObject.password;
+                    delete documentToObject.password;
 
-                        return documentToObject;
-                    });
-
-                    return response.json(updatedDocument);
+                    return documentToObject;
                 });
+
+                return response.json(updatedDocument);
+            });
         })
         .catch(error => {
             return response.json(httpResponses.onServerAdminFail);
@@ -31,5 +31,5 @@ function list(request, response) {
 }
 
 module.exports = {
-    list: list
+    list: list,
 };

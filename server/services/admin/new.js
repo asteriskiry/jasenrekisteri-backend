@@ -3,29 +3,49 @@ const Member = require('../../models/Member');
 const utils = require('../../utils');
 const httpResponses = require('./');
 
-let usernameCheck, passwordCheck, passwordAgainCheck;
-
 function save(request, response) {
-    const { firstName, lastName, utuAccount, email, hometown, tyyMember, tiviaMember, role, accessRights, membershipStarts, membershipEnds, password, passwordAgain } = request.body;
-    usernameCheck = email;
-    passwordCheck = password;
-    passwordAgainCheck = passwordAgain;
+    const {
+        firstName,
+        lastName,
+        utuAccount,
+        email,
+        hometown,
+        tyyMember,
+        tiviaMember,
+        role,
+        accessRights,
+        membershipStarts,
+        membershipEnds,
+        password,
+        passwordAgain,
+    } = request.body;
 
-    if (request.body.admin.access.toLowerCase() !== 'admin' | 'board') {
+    if (request.body.admin.access.toLowerCase() !== 'admin' || 'board') {
         return response.json(httpResponses.clientAdminFailed);
     }
 
     if (password !== passwordAgain) {
-        return response.json(httpResponses.notSamePasswordError);
+        return response.json(httpResponses.onNotSamePasswordError);
     }
 
-    if (performUpdateProfileChecks() !== true) {
-        return response.json(performUpdateProfileChecks());
+    if (
+        !firstName ||
+        !lastName ||
+        !utuAccount ||
+        !email ||
+        !hometown ||
+        !role ||
+        !membershipStarts ||
+        !membershipEnds ||
+        !password ||
+        !passwordAgain
+    ) {
+        return response.json(httpResponses.onAllFieldEmpty);
     }
 
-    utils.checkUserControl(request.body.admin.id)
+    utils
+        .checkUserControl(request.body.admin.id)
         .then(user => {
-
             let newMember = new Member();
             newMember.firstName = firstName;
             newMember.lastName = lastName;
@@ -46,31 +66,12 @@ function save(request, response) {
 
                 return response.json(httpResponses.memberAddedSuccessfully);
             });
-        }).catch(error => {
+        })
+        .catch(error => {
             return response.json(error);
         });
 }
 
-function performUpdateProfileChecks() {
-    if (passwordCheck === '' && usernameCheck === '') {
-        return httpResponses.onProfileUpdatePasswordCheckUserEmpty;
-    }
-
-    if (passwordCheck === '') {
-        return httpResponses.onProfileUpdatePasswordEmpty;
-    }
-
-    if (usernameCheck === '') {
-        return httpResponses.onProfileUpdateUsernameEmpty;
-    }
-
-    if (passwordCheck !== passwordAgainCheck) {
-        return httpResponses.notSamePasswordError;
-    }
-
-    return true;
-}
-
 module.exports = {
-    save: save
+    save: save,
 };

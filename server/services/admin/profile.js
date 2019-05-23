@@ -3,17 +3,16 @@ const Member = require('../../models/Member');
 const utils = require('../../utils');
 const httpResponses = require('./');
 
-let usernameCheck, passwordCheck, passwordAgainCheck;
-
 function get(request, response) {
     const memberID = request.query.memberID;
     console.log(request.query);
 
-    if (request.query.access.toLowerCase() !== 'admin' | 'board') {
+    if (request.query.access.toLowerCase() !== 'admin' || 'board') {
         return response.json(httpResponses.clientAdminFailed);
     }
 
-    utils.checkUserControl(request.query.id)
+    utils
+        .checkUserControl(request.query.id)
         .then(admin => {
             Member.findOne({ _id: memberID })
                 .lean()
@@ -44,10 +43,16 @@ function update(request, response) {
         accessRights: request.body.accessRights,
         membershipStarts: request.body.membershipStarts,
         membershipEnds: request.body.membershipEnds,
-        password: request.body.password
+        password: request.body.password,
     };
 
-    if (!request.body.firstName || !request.body.lastName || !request.body.utuAccount || !request.body.email || !request.body.hometown) {
+    if (
+        !request.body.firstName ||
+        !request.body.lastName ||
+        !request.body.utuAccount ||
+        !request.body.email ||
+        !request.body.hometown
+    ) {
         return response.json(httpResponses.onFieldEmpty);
     }
 
@@ -55,7 +60,7 @@ function update(request, response) {
         return response.json(httpResponses.onNotSamePasswordError);
     }
 
-    if (request.body.access.toLowerCase() !== 'admin' | 'board') {
+    if (request.body.access.toLowerCase() !== 'admin' || 'board') {
         return response.json(httpResponses.clientAdminFailed);
     }
 
@@ -63,7 +68,8 @@ function update(request, response) {
         delete adminProfile.password;
     }
 
-    utils.checkUserControl(request.body.id)
+    utils
+        .checkUserControl(request.body.id)
         .then(admin => {
             Member.findOneAndUpdate({ _id: memberID }, adminProfile)
                 .lean()
@@ -79,5 +85,5 @@ function update(request, response) {
 
 module.exports = {
     get: get,
-    update: update
+    update: update,
 };

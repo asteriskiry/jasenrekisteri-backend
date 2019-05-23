@@ -1,38 +1,30 @@
 module.exports = {
     clientAdminFailed: {
         success: false,
-        message: 'Client ei ole admin.'
+        message: 'Client ei ole admin.',
     },
     onServerAdminFail: {
         success: false,
-        message: 'Tämä alue on vain hallituslaisille.'
+        message: 'Tämä alue on vain hallituslaisille.',
     },
     memberAddedSuccesfully: {
         success: true,
-        message: 'Uusi jäsen lisätty onnistuneesti.'
+        message: 'Uusi jäsen lisätty onnistuneesti.',
     },
     onProfileUpdateSuccess: {
         success: true,
-        message: 'Tiedot päivitetty onnistuneesti.'
-    },
-    onProfileUpdatePasswordEmpty: {
-        success: false,
-        message: 'Syötä salasana.'
-    },
-    onProfileUpdateUsernameEmpty: {
-        success: false,
-        message: 'Syötä sähköpostiosoite.'
+        message: 'Tiedot päivitetty onnistuneesti.',
     },
     onFieldEmpty: {
         success: false,
-        message: 'Kaikki paitsi salasanakentät ovat pakollisia.'
+        message: 'Kaikki paitsi salasanakentät ovat pakollisia.',
     },
-    onProfileUpdatePasswordUserEmpty: {
+    onAllFieldEmpty: {
         success: false,
-        message: 'Syötä sähköpostiosoite ja salasana.'
+        message: 'Kaikki kentät ovat pakollisia.',
     },
     onNotSamePasswordError: {
         success: false,
-        message: 'Salasanat ei täsmää.'
-    }
+        message: 'Salasanat ei täsmää.',
+    },
 };
