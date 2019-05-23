@@ -62,7 +62,7 @@ function update(request, response) {
         return response.json(httpResponses.onNotSamePasswordError);
     }
 
-    const accessTo = request.query.access.toLowerCase();
+    const accessTo = request.body.access.toLowerCase();
 
     if (accessTo === 'admin' || accessTo === 'board') {
         if (request.body.password === '' || request.body.password === null) {
