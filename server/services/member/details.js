@@ -17,10 +17,10 @@ function fetchDetails(request, response) {
 }
 
 function updateDetails(request, response) {
-    utils.getUser(request.body._id)
+    utils.getUser(request.body.id)
         .then(user => {
             let query = {
-                _id: request.body._id
+                _id: request.body.id
             };
 
             if (!request.body.firstName || !request.body.lastName || !request.body.utuAccount || !request.body.email || !request.body.hometown) {
@@ -42,7 +42,7 @@ function updateDetails(request, response) {
                 password: request.body.password
             };
 
-            if (request.body.password === '') {
+            if (request.body.password === '' || request.body.password === null) {
                 delete record.password;
             }
 
