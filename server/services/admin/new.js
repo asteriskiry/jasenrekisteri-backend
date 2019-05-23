@@ -20,56 +20,58 @@ function save(request, response) {
         passwordAgain,
     } = request.body;
 
-    if (request.body.admin.access.toLowerCase() !== 'admin' || 'board') {
+    const accessTo = request.query.access.toLowerCase();
+
+    if (accessTo === 'admin' || accessTo === 'board') {
+        if (password !== passwordAgain) {
+            return response.json(httpResponses.onNotSamePasswordError);
+        }
+
+        if (
+            !firstName ||
+            !lastName ||
+            !utuAccount ||
+            !email ||
+            !hometown ||
+            !role ||
+            !membershipStarts ||
+            !membershipEnds ||
+            !password ||
+            !passwordAgain
+        ) {
+            return response.json(httpResponses.onAllFieldEmpty);
+        }
+
+        utils
+            .checkUserControl(request.body.admin.id)
+            .then(user => {
+                let newMember = new Member();
+                newMember.firstName = firstName;
+                newMember.lastName = lastName;
+                newMember.utuAccount = utuAccount;
+                newMember.email = email;
+                newMember.hometown = hometown;
+                newMember.tyyMember = !!tyyMember;
+                newMember.tiviaMember = !!tiviaMember;
+                newMember.role = role;
+                newMember.accessRights = accessRights;
+                newMember.membershipStarts = membershipStarts;
+                newMember.membershipEnds = membershipEnds;
+                newMember.accountCreated = new Date();
+                newMember.password = password;
+
+                newMember.save(error => {
+                    if (error) return response.json(error);
+
+                    return response.json(httpResponses.memberAddedSuccessfully);
+                });
+            })
+            .catch(error => {
+                return response.json(error);
+            });
+    } else {
         return response.json(httpResponses.clientAdminFailed);
     }
-
-    if (password !== passwordAgain) {
-        return response.json(httpResponses.onNotSamePasswordError);
-    }
-
-    if (
-        !firstName ||
-        !lastName ||
-        !utuAccount ||
-        !email ||
-        !hometown ||
-        !role ||
-        !membershipStarts ||
-        !membershipEnds ||
-        !password ||
-        !passwordAgain
-    ) {
-        return response.json(httpResponses.onAllFieldEmpty);
-    }
-
-    utils
-        .checkUserControl(request.body.admin.id)
-        .then(user => {
-            let newMember = new Member();
-            newMember.firstName = firstName;
-            newMember.lastName = lastName;
-            newMember.utuAccount = utuAccount;
-            newMember.email = email;
-            newMember.hometown = hometown;
-            newMember.tyyMember = !!tyyMember;
-            newMember.tiviaMember = !!tiviaMember;
-            newMember.role = role;
-            newMember.accessRights = accessRights;
-            newMember.membershipStarts = membershipStarts;
-            newMember.membershipEnds = membershipEnds;
-            newMember.accountCreated = new Date();
-            newMember.password = password;
-
-            newMember.save(error => {
-                if (error) return response.json(error);
-
-                return response.json(httpResponses.memberAddedSuccessfully);
-            });
-        })
-        .catch(error => {
-            return response.json(error);
-        });
 }
 
 module.exports = {

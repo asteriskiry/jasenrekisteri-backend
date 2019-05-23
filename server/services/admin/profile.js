@@ -7,24 +7,26 @@ function get(request, response) {
     const memberID = request.query.memberID;
     console.log(request.query);
 
-    if (request.query.access.toLowerCase() !== 'admin' || 'board') {
+    const accessTo = request.query.access.toLowerCase();
+
+    if (accessTo === 'admin' || accessTo === 'board') {
+        utils
+            .checkUserControl(request.query.id)
+            .then(admin => {
+                Member.findOne({ _id: memberID })
+                    .lean()
+                    .exec((error, doc) => {
+                        if (error) return response.json(error);
+                        delete doc.password;
+                        return response.json(doc);
+                    });
+            })
+            .catch(error => {
+                return response.json(httpResponses.onServerAdminFail);
+            });
+    } else {
         return response.json(httpResponses.clientAdminFailed);
     }
-
-    utils
-        .checkUserControl(request.query.id)
-        .then(admin => {
-            Member.findOne({ _id: memberID })
-                .lean()
-                .exec((error, doc) => {
-                    if (error) return response.json(error);
-                    delete doc.password;
-                    return response.json(doc);
-                });
-        })
-        .catch(error => {
-            return response.json(httpResponses.onServerAdminFail);
-        });
 }
 
 function update(request, response) {
@@ -60,27 +62,31 @@ function update(request, response) {
         return response.json(httpResponses.onNotSamePasswordError);
     }
 
-    if (request.body.access.toLowerCase() !== 'admin' || 'board') {
+    const accessTo = request.query.access.toLowerCase();
+
+    if (accessTo === 'admin' || accessTo === 'board') {
+        if (request.body.password === '' || request.body.password === null) {
+            delete adminProfile.password;
+        }
+
+        utils
+            .checkUserControl(request.body.id)
+            .then(admin => {
+                Member.findOneAndUpdate({ _id: memberID }, adminProfile)
+                    .lean()
+                    .exec((error, doc) => {
+                        if (error) return response.json(error);
+                        return response.json(
+                            httpResponses.onProfileUpdateSuccess
+                        );
+                    });
+            })
+            .catch(error => {
+                return response.json(httpResponses.onServerAdminFail);
+            });
+    } else {
         return response.json(httpResponses.clientAdminFailed);
     }
-
-    if (request.body.password === '' || request.body.password === null) {
-        delete adminProfile.password;
-    }
-
-    utils
-        .checkUserControl(request.body.id)
-        .then(admin => {
-            Member.findOneAndUpdate({ _id: memberID }, adminProfile)
-                .lean()
-                .exec((error, doc) => {
-                    if (error) return response.json(error);
-                    return response.json(httpResponses.onProfileUpdateSuccess);
-                });
-        })
-        .catch(error => {
-            return response.json(httpResponses.onServerAdminFail);
-        });
 }
 
 module.exports = {
