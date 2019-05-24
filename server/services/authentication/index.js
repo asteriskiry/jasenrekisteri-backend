@@ -3,6 +3,10 @@ module.exports = {
         success: false,
         message: 'Syötä sähköpostiosoite.',
     },
+    onEmailOrPasswordEmpty: {
+        success: false,
+        message: 'Syötä sähköpostiosoite ja salasana.',
+    },
     onPasswordUpdateSuccess: {
         success: true,
         message: 'Salasana päivitetty onnistuneesti.',

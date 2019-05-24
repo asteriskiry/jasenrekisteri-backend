@@ -10,7 +10,10 @@ let http, userPassword;
 
 function loginUser(request, response) {
     let { email, password } = request.body;
-    console.log(email, password);
+
+    if (!email || !password) {
+        return response.json(httpResponses.onEmailOrPasswordEmpty);
+    }
 
     Member.findOne(
         {
