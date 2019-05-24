@@ -26,9 +26,7 @@ function forgotPassword(request, response) {
         .exec((error, user) => {
             if (error) return response.json({ success: false, message: error });
             if (!user) return response.json(httpResponses.onUserNotFound);
-            ResetPassword.findOneAndDelete({ userID: user._id }, function(
-                err
-            ) {
+            ResetPassword.findOneAndDelete({ userID: user._id }, function(err) {
                 if (err) console.log(err);
             });
             const token = crypto.randomBytes(32).toString('hex');

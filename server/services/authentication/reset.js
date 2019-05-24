@@ -30,7 +30,9 @@ function resetPassword(request, response) {
                 { _id: userID },
                 { password: password }
             ).then(() => {
-                ResetPassword.findOneAndDelete({ userID: userID }, function(err) {
+                ResetPassword.findOneAndDelete({ userID: userID }, function(
+                    err
+                ) {
                     if (err) console.log(err);
                     return response.json(httpResponses.onPasswordUpdateSuccess);
                 });

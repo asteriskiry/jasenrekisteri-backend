@@ -8,8 +8,7 @@ const jsondata = require('../jsondata/users.json');
 console.log(jsondata);
 
 const jotain = jsondata.map(n =>
-    axios.post('http://localhost:3001/signup', n
-    ).then((response) => {
+    axios.post('http://localhost:3001/signup', n).then(response => {
         console.log(response);
     })
 );

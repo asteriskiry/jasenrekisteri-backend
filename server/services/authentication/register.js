@@ -4,14 +4,31 @@ const Member = require('../../models/Member');
 const httpResponses = require('./');
 
 function registerUser(request, response) {
-    let { firstName, lastName, utuAccount, email, hometown, tyyMember, tiviaMember, password, passwordAgain } = request.body;
+    let {
+        firstName,
+        lastName,
+        utuAccount,
+        email,
+        hometown,
+        tyyMember,
+        tiviaMember,
+        password,
+        passwordAgain,
+    } = request.body;
 
-    if (!firstName || !lastName || !utuAccount || !email || !hometown || !password || !passwordAgain) {
+    if (
+        !firstName ||
+        !lastName ||
+        !utuAccount ||
+        !email ||
+        !hometown ||
+        !password ||
+        !passwordAgain
+    ) {
         response.json(httpResponses.onValidationError);
     } else if (password !== passwordAgain) {
         response.json(httpResponses.onNotSamePasswordError);
     } else {
-
         let newMember = new Member();
         newMember.firstName = firstName;
         newMember.lastName = lastName;
@@ -35,5 +52,5 @@ function registerUser(request, response) {
 }
 
 module.exports = {
-    registerUser: registerUser
+    registerUser: registerUser,
 };

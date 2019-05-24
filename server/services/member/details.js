@@ -17,13 +17,20 @@ function fetchDetails(request, response) {
 }
 
 function updateDetails(request, response) {
-    utils.getUser(request.body.id)
+    utils
+        .getUser(request.body.id)
         .then(user => {
             let query = {
-                _id: request.body.id
+                _id: request.body.id,
             };
 
-            if (!request.body.firstName || !request.body.lastName || !request.body.utuAccount || !request.body.email || !request.body.hometown) {
+            if (
+                !request.body.firstName ||
+                !request.body.lastName ||
+                !request.body.utuAccount ||
+                !request.body.email ||
+                !request.body.hometown
+            ) {
                 return response.json(httpResponses.onFieldEmpty);
             }
 
@@ -39,17 +46,25 @@ function updateDetails(request, response) {
                 hometown: request.body.hometown,
                 tyyMember: request.body.tyyMember,
                 tiviaMember: request.body.tiviaMember,
-                password: request.body.password
+                password: request.body.password,
             };
 
-            if (request.body.password === '' || request.body.password === null) {
+            if (
+                request.body.password === '' ||
+                request.body.password === null
+            ) {
                 delete record.password;
             }
 
-            Member.findOneAndUpdate(query, record, { new: true }, (error, doc) => {
-                if (error) return response.json(error);
-                return response.json(httpResponses.onUpdateSuccess);
-            });
+            Member.findOneAndUpdate(
+                query,
+                record,
+                { new: true },
+                (error, doc) => {
+                    if (error) return response.json(error);
+                    return response.json(httpResponses.onUpdateSuccess);
+                }
+            );
         })
         .catch(error => {
             return response.json(error);
@@ -58,5 +73,5 @@ function updateDetails(request, response) {
 
 module.exports = {
     fetchDetails: fetchDetails,
-    updateDetails: updateDetails
+    updateDetails: updateDetails,
 };

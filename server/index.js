@@ -30,7 +30,7 @@ module.exports = function() {
         mongoose.connect(config.mongoUrl, {
             useNewUrlParser: true,
             useCreateIndex: true,
-            useFindAndModify: false
+            useFindAndModify: false,
         });
         require('../config/passport')(passport);
 
@@ -49,12 +49,17 @@ module.exports = function() {
         let port = server.get('port');
 
         server.listen(port, function() {
-            console.log('Jäsenrekisteri backend listening on http://' + hostname + ':' + port);
+            console.log(
+                'Jäsenrekisteri backend listening on http://' +
+                    hostname +
+                    ':' +
+                    port
+            );
         });
     };
 
     return {
         create: create,
-        start: start
+        start: start,
     };
 };

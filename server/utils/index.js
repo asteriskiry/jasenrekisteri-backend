@@ -4,10 +4,16 @@ function checkUserControl(id) {
     return new Promise((resolve, reject) => {
         Member.findOne({ _id: id }, (error, doc) => {
             if (error) reject(error);
-            if (doc.role === 'Admin' || doc.role === 'admin' || doc.role === 'Board' || doc.role === 'board') resolve(true);
+            if (
+                doc.role === 'Admin' ||
+                doc.role === 'admin' ||
+                doc.role === 'Board' ||
+                doc.role === 'board'
+            )
+                resolve(true);
             reject({
                 success: false,
-                message: 'Tämä alue on vain hallituslaisille.'
+                message: 'Tämä alue on vain hallituslaisille.',
             });
         });
     });
@@ -24,5 +30,5 @@ function getUser(id) {
 
 module.exports = {
     checkUserControl: checkUserControl,
-    getUser: getUser
+    getUser: getUser,
 };

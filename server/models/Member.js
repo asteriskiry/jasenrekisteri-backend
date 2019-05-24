@@ -4,58 +4,62 @@ const bcrypt = require('bcrypt');
 const MemberSchema = new mongoose.Schema({
     firstName: {
         type: String,
-        required: true
+        required: true,
     },
     lastName: {
         type: String,
-        required: true
+        required: true,
     },
     utuAccount: {
         type: String,
         unique: true,
-        required: true
+        required: true,
     },
     email: {
         type: String,
         lowercase: true,
         unique: true,
-        required: true
+        required: true,
     },
     hometown: {
         type: String,
-        required: true
+        required: true,
     },
     tyyMember: {
         type: Boolean,
-        required: true
+        required: true,
     },
     tiviaMember: {
         type: Boolean,
-        required: true
+        required: true,
     },
     role: {
         type: String,
-        enum: ['Admin', 'Board', 'Functionary', 'Member' ],
+        enum: ['Admin', 'Board', 'Functionary', 'Member'],
         default: 'Member',
-        required: true
+        required: true,
     },
     accessRights: {
         type: Boolean,
-        required: true
+        required: true,
     },
     password: {
         type: String,
-        required: true
+        required: true,
     },
     membershipStarts: {
-        type: Date
+        type: Date,
     },
     membershipEnds: {
-        type: Date
+        type: Date,
     },
     accountCreated: {
         type: Date,
-        required: true
+        required: true,
+    },
+    accepted: {
+        type: Boolean,
+        required: true,
     },
 });
 

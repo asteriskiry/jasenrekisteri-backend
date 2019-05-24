@@ -9,56 +9,55 @@ var schema = {
     properties: {
         firstName: {
             description: 'Etunimi',
-            required: true
+            required: true,
         },
         lastName: {
             description: 'Sukunimi',
-            required: true
+            required: true,
         },
         utuAccount: {
             description: 'UTU-tunnus',
-            required: true
+            required: true,
         },
         email: {
             description: 'Sähköpostiosoite',
-            required: true
+            required: true,
         },
         hometown: {
             description: 'Kotikunta',
-            required: true
+            required: true,
         },
         tyyMember: {
             description: 'TYYn jäsen (true/false)',
             type: 'boolean',
-            required: true
+            required: true,
         },
         tiviaMember: {
             description: 'TIVIAn jäsen (true/false)',
             type: 'boolean',
-            required: true
+            required: true,
         },
         role: {
             description: 'Rooli (Admin/Board/Functionary/Member)',
             type: 'String',
-            required: true
+            required: true,
         },
         accessRights: {
             description: 'Kulkuoikeudet (true/false)',
             type: 'boolean',
-            required: true
+            required: true,
         },
         password: {
             description: 'Salasana',
             hidden: true,
-            required: true
-        }
-    }
+            required: true,
+        },
+    },
 };
 
 prompt.start();
 
 prompt.get(schema, function(err, result) {
-
     if (err) {
         throw err;
     }
@@ -77,7 +76,6 @@ prompt.get(schema, function(err, result) {
     var db = mongoose.connection;
 
     db.once('open', function() {
-
         var newUser = new Member();
 
         newUser.firstName = result.firstName;
@@ -94,7 +92,9 @@ prompt.get(schema, function(err, result) {
 
         newUser.save(function(err) {
             if (err) return console.error(err);
-            console.log('Tallennus tietokantaan onnistui. Voit sulkea yhteyden (Ctrl-c).');
+            console.log(
+                'Tallennus tietokantaan onnistui. Voit sulkea yhteyden (Ctrl-c).'
+            );
         });
     });
 });
