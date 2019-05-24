@@ -55,7 +55,7 @@ function save(request, response) {
                 newMember.tyyMember = !!tyyMember;
                 newMember.tiviaMember = !!tiviaMember;
                 newMember.role = role;
-                newMember.accessRights = accessRights;
+                newMember.accessRights = !!accessRights;
                 newMember.membershipStarts = membershipStarts;
                 newMember.membershipEnds = membershipEnds;
                 newMember.accountCreated = new Date();

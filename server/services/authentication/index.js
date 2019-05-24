@@ -9,7 +9,7 @@ module.exports = {
     },
     onUserNotFound: {
         success: false,
-        message: 'Käyttäjää ei löydy.',
+        message: 'Tällä sähköpostiosoitteella ei löytynyt jäsentietoja.',
     },
     onAuthenticationFail: {
         success: false,
