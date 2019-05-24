@@ -38,6 +38,10 @@ function registerUser(request, response) {
             membershipEnds = moment(new Date()).add(1, 'y');
         } else if (membershipDuration === 5) {
             membershipEnds = moment(new Date()).add(5, 'y');
+        } else if (membershipDuration === 1.5) {
+            membershipEnds = moment(new Date()).add(1, 'y');
+            membershipEnds = moment(membershipEnds).month(11);
+            membershipEnds = moment(membershipEnds).date(31);
         } else {
             response.json(httpResponses.onValidationError);
         }
