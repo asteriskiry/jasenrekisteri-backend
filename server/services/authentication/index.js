@@ -19,10 +19,6 @@ module.exports = {
         success: false,
         message: 'Kaikki kentät ovat pakollisia.',
     },
-    onPasswordError: {
-        success: false,
-        message: 'Salasanat eivät ole samoja.',
-    },
     onUserSaveError: {
         success: false,
         message: 'Sähköpostiosoite on jo käytössä.',
@@ -46,5 +42,9 @@ module.exports = {
     onMailFail: {
         success: false,
         message: 'Sähköpostin lähetys epäonnistui.',
+    },
+    onInvalidToken: {
+        success: false,
+        message: 'Linkki vanhentunut.',
     },
 };

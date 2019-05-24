@@ -5,7 +5,6 @@ const httpResponses = require('./');
 
 function get(request, response) {
     const memberID = request.query.memberID;
-    console.log(request.query);
 
     const accessTo = request.query.access.toLowerCase();
 
@@ -30,7 +29,6 @@ function get(request, response) {
 }
 
 function update(request, response) {
-    console.log(request.body);
     const memberID = request.body.memberID;
 
     const adminProfile = {

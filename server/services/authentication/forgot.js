@@ -26,13 +26,11 @@ function forgotPassword(request, response) {
         .exec((error, user) => {
             if (error) return response.json({ success: false, message: error });
             if (!user) return response.json(httpResponses.onUserNotFound);
-            ResetPassword.findOne({ userID: user._id, status: 0 }).then(
-                function(resetpassword) {
-                    if (resetpassword) {
-                        resetpassword.destroy({ id: resetpassword.id });
-                    }
-                }
-            );
+            ResetPassword.findOneAndDelete({ userID: user._id }, function(
+                err
+            ) {
+                if (err) console.log(err);
+            });
             const token = crypto.randomBytes(32).toString('hex');
             bcrypt.genSalt(5, function(err, salt) {
                 if (err) console.log(err);
@@ -47,7 +45,7 @@ function forgotPassword(request, response) {
                             return response.json(httpResponses.onResetFail);
                         let mailOptions = {
                             from:
-                                '<Jäsenrekisteri> jasenrekisteri@asteriski.fi',
+                                '"Asteriski jäsenrekisteri" jasenrekisteri@asteriski.fi',
                             to: user.email,
                             subject: 'Jäsenrekisterin salasanan nollaus',
                             text:

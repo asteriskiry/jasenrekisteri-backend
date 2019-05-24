@@ -5,7 +5,6 @@ const httpResponses = require('./');
 
 function list(request, response) {
     const accessTo = request.query.access.toLowerCase();
-    console.log(accessTo);
 
     if (accessTo === 'admin' || accessTo === 'board') {
         utils
