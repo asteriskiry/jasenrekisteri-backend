@@ -39,7 +39,9 @@ function registerUser(request, response) {
         newMember.tiviaMember = !!tiviaMember;
         newMember.accessRights = false;
         newMember.role = 'Member';
+        newMember.membershipStarts = new Date();
         newMember.accountCreated = new Date();
+        newMember.accepted = false;
         newMember.password = password;
 
         newMember.save(error => {

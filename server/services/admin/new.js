@@ -16,6 +16,7 @@ function save(request, response) {
         accessRights,
         membershipStarts,
         membershipEnds,
+        accepted,
         password,
         passwordAgain,
     } = request.body;
@@ -58,6 +59,7 @@ function save(request, response) {
                 newMember.membershipStarts = membershipStarts;
                 newMember.membershipEnds = membershipEnds;
                 newMember.accountCreated = new Date();
+                newMember.accepted = !!accepted;
                 newMember.password = password;
 
                 newMember.save(error => {

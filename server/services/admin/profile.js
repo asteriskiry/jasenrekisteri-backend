@@ -43,6 +43,7 @@ function update(request, response) {
         accessRights: request.body.accessRights,
         membershipStarts: request.body.membershipStarts,
         membershipEnds: request.body.membershipEnds,
+        accepted: request.body.accepted,
         password: request.body.password,
     };
 

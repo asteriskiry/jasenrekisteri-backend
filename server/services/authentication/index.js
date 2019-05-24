@@ -33,7 +33,7 @@ module.exports = {
     },
     onResetFail: {
         success: false,
-        message: 'Ongelma palautuksessa..',
+        message: 'Ongelma palautuksessa.',
     },
     onMailSent: {
         success: true,

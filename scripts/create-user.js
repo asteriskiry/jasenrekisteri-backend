@@ -47,6 +47,11 @@ var schema = {
             type: 'boolean',
             required: true,
         },
+        accepted: {
+            description: 'Hyväksytty jäseneksi (true/false)',
+            type: 'boolean',
+            required: true,
+        },
         password: {
             description: 'Salasana',
             hidden: true,
@@ -71,6 +76,7 @@ prompt.get(schema, function(err, result) {
     console.log('  TIVIAn jäsen: ' + result.tiviaMember);
     console.log('  Rooli: ' + result.role);
     console.log('  Kulkuoikeudet: ' + result.accessRights);
+    console.log('  Hyväksytty: ' + result.accepted);
 
     mongoose.connect(config.mongoUrl, { useNewUrlParser: true });
     var db = mongoose.connection;
@@ -87,8 +93,10 @@ prompt.get(schema, function(err, result) {
         newUser.tiviaMember = result.tiviaMember;
         newUser.role = result.role;
         newUser.accessRights = result.accessRights;
+        newUser.membershipStarts = new Date();
         newUser.accountCreated = new Date();
         newUser.password = result.password;
+        newUser.accepted = result.accepted;
 
         newUser.save(function(err) {
             if (err) return console.error(err);

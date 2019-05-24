@@ -4,11 +4,10 @@ function checkUserControl(id) {
     return new Promise((resolve, reject) => {
         Member.findOne({ _id: id }, (error, doc) => {
             if (error) reject(error);
+            let role = doc.role.toLowerCase();
             if (
-                doc.role === 'Admin' ||
-                doc.role === 'admin' ||
-                doc.role === 'Board' ||
-                doc.role === 'board'
+                role === 'admin' ||
+                role === 'board'
             )
                 resolve(true);
             reject({
