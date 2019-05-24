@@ -2,6 +2,7 @@
 
 const Member = require('../../models/Member');
 const httpResponses = require('./');
+const moment = require('moment');
 
 function registerUser(request, response) {
     let {
@@ -12,6 +13,7 @@ function registerUser(request, response) {
         hometown,
         tyyMember,
         tiviaMember,
+        membershipDuration,
         password,
         passwordAgain,
     } = request.body;
@@ -22,6 +24,7 @@ function registerUser(request, response) {
         !utuAccount ||
         !email ||
         !hometown ||
+        !membershipDuration ||
         !password ||
         !passwordAgain
     ) {
@@ -29,6 +32,15 @@ function registerUser(request, response) {
     } else if (password !== passwordAgain) {
         response.json(httpResponses.onNotSamePasswordError);
     } else {
+        let membershipEnds;
+        membershipDuration = Number(membershipDuration);
+        if (membershipDuration === 1) {
+            membershipEnds = moment(new Date()).add(1, 'y');
+        } else if (membershipDuration === 5) {
+            membershipEnds = moment(new Date()).add(5, 'y');
+        } else {
+            response.json(httpResponses.onValidationError);
+        }
         let newMember = new Member();
         newMember.firstName = firstName;
         newMember.lastName = lastName;
@@ -40,6 +52,7 @@ function registerUser(request, response) {
         newMember.accessRights = false;
         newMember.role = 'Member';
         newMember.membershipStarts = new Date();
+        newMember.membershipEnds = membershipEnds;
         newMember.accountCreated = new Date();
         newMember.accepted = false;
         newMember.password = password;
