@@ -1,16 +1,18 @@
 # Jäsenrekisteri-backend
-Jäsenrekisteri backend API Asteriski ry:n tarpeisiin / Membership register backend API for Asteriski ry
+Membership register backend API for Asteriski ry / Jäsenrekisterin backend API Asteriski ry:n tarpeisiin
 
 React frontend is here <https://github.com/asteriskiry/jasenrekisteri-frontend>.
 
 ### Tech
 - Node.js
-- Passport
+- Passport.js
 - Express.js
 - MongoDB
 
 ### Start
-Install node.js, npm and MongoDB. Start MongoDB with `systemctl start mongodb` or `mongod`.
+Install node.js, npm and MongoDB.
+
+Start MongoDB with `systemctl start mongodb` or `mongod`.
 ```bash
 git clone https://github.com/asteriskiry/jasenrekisteri-backend.git
 cd jasenrekisteri-backend
