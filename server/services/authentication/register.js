@@ -3,6 +3,7 @@
 const Member = require('../../models/Member');
 const httpResponses = require('./');
 const moment = require('moment');
+const mail = require('../../../config/mail');
 
 function registerUser(request, response) {
     let {
@@ -65,7 +66,78 @@ function registerUser(request, response) {
             if (error) {
                 return response.json(httpResponses.onUserSaveError);
             }
+
             response.json(httpResponses.onUserSaveSuccess);
+
+            let boardMailOptions = {
+                from: 'Asteriski jäsenrekisteri <jasenrekisteri@asteriski.fi>',
+                to: 'mjturt@utu.fi',
+                subject: 'Uusi jäsen',
+                text:
+                    'Uusi jäsen liittynyt\n\n' +
+                    'Jäsentiedot:\n\n' +
+                    'Etunimi: ' +
+                    firstName +
+                    '\n' +
+                    'Sukunimi: ' +
+                    lastName +
+                    '\n' +
+                    'UTU-tunus: ' +
+                    utuAccount +
+                    '\n' +
+                    'Sähköposti: ' +
+                    email +
+                    '\n' +
+                    'Kotikunta: ' +
+                    hometown +
+                    '\n' +
+                    'TYYn jäsen: ' +
+                    (tyyMember ? 'Kyllä' : 'Ei') +
+                    '\n' +
+                    'TIVIAn jäsen: ' +
+                    (tiviaMember ? 'Kyllä' : 'Ei') +
+                    '\n\n' +
+                    'Jäsen on maksanut jäsenmaksun ' + membershipDuration + ' vuoden ajalle' +
+                    '\n\n' +
+                    'Voitte hyväksyä jäsenen osoitteessa https://rekisteri.asteriski.fi',
+            };
+
+            let memberMailOptions = {
+                from: 'Asteriski jäsenrekisteri <jasenrekisteri@asteriski.fi>',
+                to: email,
+                subject: 'Vahvistus Asteriski ry:n jäseneksi liittymisestä',
+                text:
+                    'Onneksi olkoon Asteriski ry:n jäseneksi liittymisestä\n' +
+                    'Asteriski ry:n hallitus hyväksyy jäsenyytesi mahdollisimman pian\n\n' +
+                    'Jäsentiedot:\n\n' +
+                    'Etunimi: ' +
+                    firstName +
+                    '\n' +
+                    'Sukunimi: ' +
+                    lastName +
+                    '\n' +
+                    'UTU-tunus: ' +
+                    utuAccount +
+                    '\n' +
+                    'Sähköposti: ' +
+                    email +
+                    '\n' +
+                    'Kotikunta: ' +
+                    hometown +
+                    '\n' +
+                    'TYYn jäsen: ' +
+                    (tyyMember ? 'Kyllä' : 'Ei') +
+                    '\n' +
+                    'TIVIAn jäsen: ' +
+                    (tiviaMember ? 'Kyllä' : 'Ei') +
+                    '\n\n' +
+                    'Olet maksanut jäsenyytesi ' + membershipDuration + ' vuoden ajalle' +
+                    '\n\n' +
+                    'Pääset tarkastelemaan jäsentietojasi osoitteessa https://rekisteri.asteriski.fi',
+            };
+
+            mail.transporter.sendMail(boardMailOptions);
+            mail.transporter.sendMail(memberMailOptions);
         });
     }
 }

@@ -2,6 +2,7 @@ const Member = require('../../models/Member');
 
 const utils = require('../../utils');
 const httpResponses = require('./');
+const mail = require('../../../config/mail');
 
 function get(request, response) {
     const memberID = request.query.memberID;
@@ -61,6 +62,7 @@ function update(request, response) {
         return response.json(httpResponses.onNotSamePasswordError);
     }
 
+    // Check client side access
     const accessTo = request.body.access.toLowerCase();
 
     if (accessTo === 'admin' || accessTo === 'board') {
@@ -68,6 +70,32 @@ function update(request, response) {
             delete adminProfile.password;
         }
 
+        // Send mail to member if member is just accepted
+        utils
+            .checkUserControl(request.body.id)
+            .then(admin => {
+                Member.findOne({ _id: memberID })
+                    .lean()
+                    .exec((error, doc) => {
+                        if (error) return response.json(error);
+                        if (!doc.accepted && adminProfile.accepted) {
+                            let mailOptions = {
+                                from:
+                                    'Asteriski jäsenrekisteri <jasenrekisteri@asteriski.fi>',
+                                to: adminProfile.email,
+                                subject: 'Jäsenyytesi Asteriski ry:lle hyväksytty',
+                                text:
+                                'Jäsenyytesi Asteriski ry:lle hyväksytty'
+                            };
+                            mail.transporter.sendMail(mailOptions);
+                        }
+                    });
+            })
+            .catch(error => {
+                return response.json(httpResponses.onServerAdminFail);
+            });
+
+        // Save member info
         utils
             .checkUserControl(request.body.id)
             .then(admin => {
