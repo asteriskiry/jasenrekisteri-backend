@@ -1,17 +1,8 @@
 const cron = require('cron');
 const Member = require('../models/Member');
-const config = require('../../config/config');
-const nodemailer = require('nodemailer');
+const mail = require('../../config/mail');
 
 function startCronJobs() {
-    let transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: config.gmailUser,
-            pass: config.gmailPassword,
-        },
-    });
-
     const checkMembershipEnding = cron.job('*/15 * * * * *', function() {
         const currentDate = new Date();
         Member.find({ membershipEnds: { $lte: currentDate } }, function(
@@ -30,7 +21,7 @@ function startCronJobs() {
                         'Jäsenyytesi Asteriski ry:lle on päättynyt\n\n' +
                         'Maksa jäsenmaksusi osoitteessa https://rekisteri.asteriski.fi',
                 };
-                let mailSent = transporter.sendMail(mailOptions);
+                let mailSent = mail.transporter.sendMail(mailOptions);
                 if (mailSent) {
                     console.log('Sähköpostin lähetys onnistui');
                 } else {

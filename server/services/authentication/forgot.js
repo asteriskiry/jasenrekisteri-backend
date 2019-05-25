@@ -4,7 +4,7 @@ const httpResponses = require('./');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const config = require('../../../config/config');
-const nodemailer = require('nodemailer');
+const mail = require('../../../config/mail');
 
 function forgotPassword(request, response) {
     const { email } = request.body;
@@ -12,14 +12,6 @@ function forgotPassword(request, response) {
     if (!email) {
         return response.json(httpResponses.onEmailEmpty);
     }
-
-    let transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: config.gmailUser,
-            pass: config.gmailPassword,
-        },
-    });
 
     Member.findOne({ email: email })
         .lean()
@@ -55,7 +47,7 @@ function forgotPassword(request, response) {
                                 '/' +
                                 token,
                         };
-                        let mailSent = transporter.sendMail(mailOptions);
+                        let mailSent = mail.transporter.sendMail(mailOptions);
                         if (mailSent) {
                             return response.json(httpResponses.onMailSent);
                         } else {
