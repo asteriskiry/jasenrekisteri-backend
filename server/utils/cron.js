@@ -1,9 +1,14 @@
 const cron = require('cron');
+
 const Member = require('../models/Member');
+const EndedMembership = require('../models/EndedMembership');
+const ResetPassword = require('../models/ResetPassword');
+
 const mail = require('../../config/mail');
 
 function startCronJobs() {
-    const checkMembershipEnding = cron.job('*/15 * * * * *', function() {
+    // Check every day for ended memberships and send email
+    const checkMembershipEnding = cron.job('0 0 0 * * *', function() {
         const currentDate = new Date();
         Member.find({ membershipEnds: { $lte: currentDate } }, function(
             err,
@@ -11,26 +16,44 @@ function startCronJobs() {
         ) {
             if (err) console.log(err);
             members.map(user => {
-                console.log(user.email);
-                let mailOptions = {
-                    from:
-                        '"Asteriski jäsenrekisteri" jasenrekisteri@asteriski.fi',
-                    to: user.email,
-                    subject: 'Asteriski ry:n jäsenyytesi päättynyt',
-                    text:
-                        'Jäsenyytesi Asteriski ry:lle on päättynyt\n\n' +
-                        'Maksa jäsenmaksusi osoitteessa https://rekisteri.asteriski.fi',
-                };
-                let mailSent = mail.transporter.sendMail(mailOptions);
-                if (mailSent) {
-                    console.log('Sähköpostin lähetys onnistui');
-                } else {
-                    console.log('Sähköpostin lähetys epäonnistui');
-                }
+                // Check if mail alredy sent
+                EndedMembership.findOne({ userID: user._id }, function(
+                    err,
+                    ended
+                ) {
+                    if (err) console.log(err);
+                    if (!ended) {
+                        EndedMembership.create({ userID: user._id }).then(
+                            function() {
+                                console.log(user.email);
+                                let endingMailOptions = {
+                                    from:
+                                        'Asteriski jäsenrekisteri <jasenrekisteri@asteriski.fi>',
+                                    to: user.email,
+                                    subject:
+                                        'Asteriski ry:n jäsenyytesi päättynyt',
+                                    text:
+                                        'Jäsenyytesi Asteriski ry:lle on päättynyt\n\n' +
+                                        'Maksa jäsenmaksusi osoitteessa https://rekisteri.asteriski.fi',
+                                };
+                                mail.transporter.sendMail(endingMailOptions);
+                            }
+                        );
+                    }
+                });
             });
         });
         console.log('Cron');
     });
+
+    // Clean temporary databases every 3rd month
+    const cleanDatabases = cron.job('0 4 5 */3 * *', function() {
+        EndedMembership.deleteMany({}, function() {});
+        ResetPassword.deleteMany({}, function() {});
+    });
+
+    // Start jobs
+    cleanDatabases.start();
     checkMembershipEnding.start();
 }
 

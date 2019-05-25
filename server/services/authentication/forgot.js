@@ -35,7 +35,7 @@ function forgotPassword(request, response) {
                             return response.json(httpResponses.onResetFail);
                         let mailOptions = {
                             from:
-                                '"Asteriski jäsenrekisteri" jasenrekisteri@asteriski.fi',
+                                'Asteriski jäsenrekisteri <jasenrekisteri@asteriski.fi>',
                             to: user.email,
                             subject: 'Jäsenrekisterin salasanan nollaus',
                             text:
