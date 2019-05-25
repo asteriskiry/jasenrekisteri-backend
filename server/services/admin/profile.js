@@ -85,7 +85,8 @@ function update(request, response) {
                                 to: adminProfile.email,
                                 subject: 'Jäsenyytesi Asteriski ry:lle hyväksytty',
                                 text:
-                                'Jäsenyytesi Asteriski ry:lle hyväksytty'
+                                'Jäsenyytesi Asteriski ry:lle hyväksytty\n\n' +
+                                'Pääset tarkastelemaan jäsentietojasi osoitteessa https://rekisteri.asteriski.fi',
                             };
                             mail.transporter.sendMail(mailOptions);
                         }
