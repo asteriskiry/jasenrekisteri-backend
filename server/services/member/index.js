@@ -7,7 +7,7 @@ module.exports = {
     },
     onFieldEmpty: {
         success: false,
-        message: 'Kaikki kentät ovat pakollisia.',
+        message: 'Kaikki paitsi salasanakentät ovat pakollisia.',
     },
     onPasswordNotMatch: {
         success: false,
