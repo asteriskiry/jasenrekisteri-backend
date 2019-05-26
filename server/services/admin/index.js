@@ -29,8 +29,8 @@ module.exports = {
         success: false,
         message: 'Salasanat ei täsmää.',
     },
-    onNotSamePasswordError: {
+    onTooShortPassword: {
         success: false,
-        message: 'Salasanat ei täsmää.',
+        message: 'Salasanan minimipituus on 6 merkkiä.',
     },
 };

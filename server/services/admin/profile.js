@@ -70,10 +70,6 @@ function update(request, response) {
         return response.json(httpResponses.onNotSamePasswordError);
     }
 
-    if (request.body.password.length < 6) {
-        return response.json(httpResponses.onTooShortPassword);
-    }
-
     // Check client side access
 
     const accessTo = request.body.access.toLowerCase();
@@ -81,6 +77,8 @@ function update(request, response) {
     if (accessTo === 'admin' || accessTo === 'board') {
         if (request.body.password === '' || request.body.password === null) {
             delete adminProfile.password;
+        } else if (request.body.password.length < 6) {
+            return response.json(httpResponses.onTooShortPassword);
         }
 
         // Send mail to member if member is just accepted
