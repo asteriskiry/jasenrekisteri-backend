@@ -32,7 +32,7 @@ function save(request, response) {
             return response.json(httpResponses.onNotSamePasswordError);
         }
 
-        if (request.body.password.length < 6) {
+        if (request.body.password && request.body.password.length < 6) {
             return response.json(httpResponses.onTooShortPassword);
         }
 
