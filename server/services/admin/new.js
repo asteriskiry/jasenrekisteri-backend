@@ -3,6 +3,8 @@ const Member = require('../../models/Member');
 const utils = require('../../utils');
 const httpResponses = require('./');
 
+// Add new member
+
 function save(request, response) {
     const {
         firstName,
@@ -23,6 +25,8 @@ function save(request, response) {
 
     const accessTo = request.body.access.toLowerCase();
 
+    // Client side access check and validations
+
     if (accessTo === 'admin' || accessTo === 'board') {
         if (password !== passwordAgain) {
             return response.json(httpResponses.onNotSamePasswordError);
@@ -42,6 +46,8 @@ function save(request, response) {
         ) {
             return response.json(httpResponses.onAllFieldEmpty);
         }
+
+        // Backend side access check and save new member
 
         utils
             .checkUserControl(request.body.id)

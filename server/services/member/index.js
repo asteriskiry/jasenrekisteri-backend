@@ -1,3 +1,5 @@
+// Member responses
+
 module.exports = {
     onUpdateSuccess: {
         success: true,

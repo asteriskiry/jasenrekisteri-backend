@@ -1,3 +1,5 @@
+// Admin responses
+
 module.exports = {
     clientAdminFailed: {
         success: false,

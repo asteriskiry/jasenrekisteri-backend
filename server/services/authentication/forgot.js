@@ -9,18 +9,28 @@ const mail = require('../../../config/mail');
 function forgotPassword(request, response) {
     const { email } = request.body;
 
+    // Validations
+
     if (!email) {
         return response.json(httpResponses.onEmailEmpty);
     }
+
+    // Find member by email
 
     Member.findOne({ email: email })
         .lean()
         .exec((error, user) => {
             if (error) return response.json({ success: false, message: error });
             if (!user) return response.json(httpResponses.onUserNotFound);
+
+            // If alredy asked for new password, delete last temporary record
+
             ResetPassword.findOneAndDelete({ userID: user._id }, function(err) {
                 if (err) console.log(err);
             });
+
+            // Generate token and expire date and save to temporary database
+
             const token = crypto.randomBytes(32).toString('hex');
             bcrypt.genSalt(5, function(err, salt) {
                 if (err) console.log(err);
@@ -33,6 +43,9 @@ function forgotPassword(request, response) {
                     }).then(function(item) {
                         if (!item)
                             return response.json(httpResponses.onResetFail);
+
+                        // Send generated link to email
+
                         let mailOptions = {
                             from:
                                 'Asteriski jäsenrekisteri <jasenrekisteri@asteriski.fi>',

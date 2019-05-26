@@ -2,6 +2,8 @@ const Member = require('../../models/Member');
 const utils = require('../../utils');
 const httpResponses = require('./');
 
+// Get member details
+
 function fetchDetails(request, response) {
     const memberID = request.query.memberID;
 
@@ -16,6 +18,8 @@ function fetchDetails(request, response) {
     });
 }
 
+// Update member details
+
 function updateDetails(request, response) {
     utils
         .getUser(request.body.id)
@@ -23,6 +27,8 @@ function updateDetails(request, response) {
             let query = {
                 _id: request.body.id,
             };
+
+            // Validations
 
             if (
                 !request.body.firstName ||
@@ -55,6 +61,8 @@ function updateDetails(request, response) {
             ) {
                 delete record.password;
             }
+
+            // Update member details
 
             Member.findOneAndUpdate(
                 query,

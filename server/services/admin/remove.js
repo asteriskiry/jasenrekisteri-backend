@@ -3,6 +3,8 @@ const Member = require('../../models/Member');
 const utils = require('../../utils');
 const httpResponses = require('./');
 
+// Remove member
+
 function remove(request, response) {
     const accessTo = request.body.access.toLowerCase();
 

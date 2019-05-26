@@ -11,9 +11,13 @@ let http, userPassword;
 function loginUser(request, response) {
     let { email, password } = request.body;
 
+    // Validations
+
     if (!email || !password) {
         return response.json(httpResponses.onEmailOrPasswordEmpty);
     }
+
+    // Find member
 
     Member.findOne(
         {
@@ -28,6 +32,8 @@ function loginUser(request, response) {
         }
     );
 }
+
+// Compare passwords and set token
 
 function comparePassword(user) {
     let responseToken;

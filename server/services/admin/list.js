@@ -3,6 +3,8 @@ const Member = require('../../models/Member.js');
 const utils = require('../../utils');
 const httpResponses = require('./');
 
+// Member list
+
 function list(request, response) {
     const accessTo = request.query.access.toLowerCase();
 

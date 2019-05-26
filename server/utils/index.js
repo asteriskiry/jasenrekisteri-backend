@@ -1,5 +1,7 @@
 const Member = require('../models/Member');
 
+// Access control utils
+
 function checkUserControl(id) {
     return new Promise((resolve, reject) => {
         Member.findOne({ _id: id }, (error, doc) => {

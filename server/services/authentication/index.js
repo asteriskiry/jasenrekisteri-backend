@@ -1,3 +1,5 @@
+// All the authentication responses
+
 module.exports = {
     onEmailEmpty: {
         success: false,

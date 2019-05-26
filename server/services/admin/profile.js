@@ -4,10 +4,14 @@ const utils = require('../../utils');
 const httpResponses = require('./');
 const mail = require('../../../config/mail');
 
+// Get member details
+
 function get(request, response) {
     const memberID = request.query.memberID;
 
     const accessTo = request.query.access.toLowerCase();
+
+    // Check access and return member details
 
     if (accessTo === 'admin' || accessTo === 'board') {
         utils
@@ -29,6 +33,8 @@ function get(request, response) {
     }
 }
 
+// Update member details
+
 function update(request, response) {
     const memberID = request.body.memberID;
 
@@ -48,6 +54,8 @@ function update(request, response) {
         password: request.body.password,
     };
 
+    // Validations
+
     if (
         !request.body.firstName ||
         !request.body.lastName ||
@@ -63,6 +71,7 @@ function update(request, response) {
     }
 
     // Check client side access
+
     const accessTo = request.body.access.toLowerCase();
 
     if (accessTo === 'admin' || accessTo === 'board') {
@@ -71,6 +80,7 @@ function update(request, response) {
         }
 
         // Send mail to member if member is just accepted
+
         utils
             .checkUserControl(request.body.id)
             .then(admin => {
@@ -97,7 +107,8 @@ function update(request, response) {
                 return response.json(httpResponses.onServerAdminFail);
             });
 
-        // Save member info
+        // Save member details
+
         utils
             .checkUserControl(request.body.id)
             .then(admin => {

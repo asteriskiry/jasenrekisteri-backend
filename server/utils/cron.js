@@ -7,7 +7,9 @@ const ResetPassword = require('../models/ResetPassword');
 const mail = require('../../config/mail');
 
 function startCronJobs() {
+
     // Check every day for ended memberships and send email
+
     const checkMembershipEnding = cron.job('0 0 0 * * *', function() {
         const currentDate = new Date();
         Member.find({ membershipEnds: { $lte: currentDate } }, function(
@@ -16,7 +18,9 @@ function startCronJobs() {
         ) {
             if (err) console.log(err);
             members.map(user => {
+
                 // Check if mail alredy sent
+
                 EndedMembership.findOne({ userID: user._id }, function(
                     err,
                     ended
@@ -47,12 +51,14 @@ function startCronJobs() {
     });
 
     // Clean temporary databases every 3rd month
+
     const cleanDatabases = cron.job('0 4 5 */3 * *', function() {
         EndedMembership.deleteMany({}, function() {});
         ResetPassword.deleteMany({}, function() {});
     });
 
     // Start jobs
+
     cleanDatabases.start();
     checkMembershipEnding.start();
 }
