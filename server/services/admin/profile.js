@@ -70,6 +70,10 @@ function update(request, response) {
         return response.json(httpResponses.onNotSamePasswordError);
     }
 
+    if (request.body.password.length < 6) {
+        return response.json(httpResponses.onTooShortPassword);
+    }
+
     // Check client side access
 
     const accessTo = request.body.access.toLowerCase();

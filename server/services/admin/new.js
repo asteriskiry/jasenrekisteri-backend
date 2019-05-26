@@ -32,6 +32,10 @@ function save(request, response) {
             return response.json(httpResponses.onNotSamePasswordError);
         }
 
+        if (request.body.password.length < 6) {
+            return response.json(httpResponses.onTooShortPassword);
+        }
+
         if (
             !firstName ||
             !lastName ||
@@ -47,7 +51,7 @@ function save(request, response) {
             return response.json(httpResponses.onAllFieldEmpty);
         }
 
-        // Backend side access check and save new member
+        // Server side access check and save new member
 
         utils
             .checkUserControl(request.body.id)

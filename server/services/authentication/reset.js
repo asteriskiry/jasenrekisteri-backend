@@ -23,7 +23,7 @@ function resetPassword(request, response) {
         return response.json(httpResponses.onNotSamePasswordError);
     }
 
-    if (password.length <= 6) {
+    if (password.length < 6) {
         return response.json(httpResponses.onTooShortPassword);
     }
 

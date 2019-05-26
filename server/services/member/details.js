@@ -44,6 +44,10 @@ function updateDetails(request, response) {
                 return response.json(httpResponses.onPasswordNotMatch);
             }
 
+            if (request.body.password.length < 6) {
+                return response.json(httpResponses.onTooShortPassword);
+            }
+
             let record = {
                 firstName: request.body.firstName,
                 lastName: request.body.lastName,

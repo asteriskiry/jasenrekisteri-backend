@@ -34,7 +34,7 @@ function registerUser(request, response) {
         response.json(httpResponses.onValidationError);
     } else if (password !== passwordAgain) {
         response.json(httpResponses.onNotSamePasswordError);
-    } else if (password.length <= 6) {
+    } else if (password.length < 6) {
         response.json(httpResponses.onTooShortPassword);
     } else {
 

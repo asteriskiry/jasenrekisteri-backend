@@ -29,4 +29,8 @@ module.exports = {
         success: false,
         message: 'Salasanat ei täsmää.',
     },
+    onNotSamePasswordError: {
+        success: false,
+        message: 'Salasanat ei täsmää.',
+    },
 };
