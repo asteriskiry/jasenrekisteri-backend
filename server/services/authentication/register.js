@@ -19,6 +19,8 @@ function registerUser(request, response) {
         passwordAgain,
     } = request.body;
 
+    // Validations
+
     if (
         !firstName ||
         !lastName ||
@@ -32,7 +34,12 @@ function registerUser(request, response) {
         response.json(httpResponses.onValidationError);
     } else if (password !== passwordAgain) {
         response.json(httpResponses.onNotSamePasswordError);
+    } else if (password.length <= 6) {
+        response.json(httpResponses.onTooShortPassword);
     } else {
+
+        // Figure out membership end date
+
         let membershipEnds;
         membershipDuration = Number(membershipDuration);
         if (membershipDuration === 1) {
@@ -46,6 +53,9 @@ function registerUser(request, response) {
         } else {
             response.json(httpResponses.onValidationError);
         }
+
+        // New member record
+
         let newMember = new Member();
         newMember.firstName = firstName;
         newMember.lastName = lastName;
@@ -62,12 +72,16 @@ function registerUser(request, response) {
         newMember.accepted = false;
         newMember.password = password;
 
+        // Save new member
+
         newMember.save(error => {
             if (error) {
                 return response.json(httpResponses.onUserSaveError);
             }
 
             response.json(httpResponses.onUserSaveSuccess);
+
+            // Send mails to member and board
 
             let boardMailOptions = {
                 from: 'Asteriski jäsenrekisteri <jasenrekisteri@asteriski.fi>',
@@ -97,7 +111,9 @@ function registerUser(request, response) {
                     'TIVIAn jäsen: ' +
                     (tiviaMember ? 'Kyllä' : 'Ei') +
                     '\n\n' +
-                    'Jäsen on maksanut jäsenmaksun ' + membershipDuration + ' vuoden ajalle' +
+                    'Jäsen on maksanut jäsenmaksun ' +
+                    membershipDuration +
+                    ' vuoden ajalle' +
                     '\n\n' +
                     'Voitte hyväksyä jäsenen osoitteessa https://rekisteri.asteriski.fi',
             };
@@ -131,7 +147,9 @@ function registerUser(request, response) {
                     'TIVIAn jäsen: ' +
                     (tiviaMember ? 'Kyllä' : 'Ei') +
                     '\n\n' +
-                    'Olet maksanut jäsenyytesi ' + membershipDuration + ' vuoden ajalle' +
+                    'Olet maksanut jäsenyytesi ' +
+                    membershipDuration +
+                    ' vuoden ajalle' +
                     '\n\n' +
                     'Pääset tarkastelemaan jäsentietojasi osoitteessa https://rekisteri.asteriski.fi',
             };

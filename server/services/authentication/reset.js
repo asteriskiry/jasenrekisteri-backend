@@ -9,6 +9,8 @@ function resetPassword(request, response) {
     const { password } = request.body;
     const { passwordAgain } = request.body;
 
+    // Validations
+
     if (!password || !passwordAgain) {
         return response.json(httpResponses.onValidationError);
     }
@@ -16,6 +18,16 @@ function resetPassword(request, response) {
     if (password !== passwordAgain) {
         return response.json(httpResponses.onNotSamePasswordError);
     }
+
+    if (password !== passwordAgain) {
+        return response.json(httpResponses.onNotSamePasswordError);
+    }
+
+    if (password.length <= 6) {
+        return response.json(httpResponses.onTooShortPassword);
+    }
+
+    // Check if link is valid and update member record
 
     ResetPassword.findOne({
         userID: userID,
