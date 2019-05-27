@@ -3,6 +3,7 @@ const Member = require('../../models/Member');
 const utils = require('../../utils');
 const httpResponses = require('./');
 const mail = require('../../../config/mail');
+const config = require('../../../config/config');
 
 // Get member details
 
@@ -92,14 +93,14 @@ function update(request, response) {
                         if (error) return response.json(error);
                         if (!doc.accepted && adminProfile.accepted) {
                             let mailOptions = {
-                                from:
-                                    'Asteriski jäsenrekisteri <jasenrekisteri@asteriski.fi>',
+                                from: mail.mailSender,
                                 to: adminProfile.email,
                                 subject:
                                     'Jäsenyytesi Asteriski ry:lle hyväksytty',
                                 text:
                                     'Jäsenyytesi Asteriski ry:lle hyväksytty\n\n' +
-                                    'Pääset tarkastelemaan jäsentietojasi osoitteessa https://rekisteri.asteriski.fi',
+                                    'Pääset tarkastelemaan jäsentietojasi osoitteessa ' +
+                                    config.clientUrl,
                             };
                             mail.transporter.sendMail(mailOptions);
                         }

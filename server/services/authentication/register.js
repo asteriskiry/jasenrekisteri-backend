@@ -4,6 +4,7 @@ const Member = require('../../models/Member');
 const httpResponses = require('./');
 const moment = require('moment');
 const mail = require('../../../config/mail');
+const config = require('../../../config/config');
 
 function registerUser(request, response) {
     let {
@@ -37,7 +38,6 @@ function registerUser(request, response) {
     } else if (password.length < 6) {
         response.json(httpResponses.onTooShortPassword);
     } else {
-
         // Figure out membership end date
 
         let membershipEnds;
@@ -84,7 +84,7 @@ function registerUser(request, response) {
             // Send mails to member and board
 
             let boardMailOptions = {
-                from: 'Asteriski jäsenrekisteri <jasenrekisteri@asteriski.fi>',
+                from: mail.mailSender,
                 to: 'mjturt@utu.fi',
                 subject: 'Uusi jäsen',
                 text:
@@ -115,7 +115,8 @@ function registerUser(request, response) {
                     membershipDuration +
                     ' vuoden ajalle' +
                     '\n\n' +
-                    'Voitte hyväksyä jäsenen osoitteessa https://rekisteri.asteriski.fi',
+                    'Voitte hyväksyä jäsenen osoitteessa ' +
+                    config.clientUrl,
             };
 
             let memberMailOptions = {
@@ -151,7 +152,8 @@ function registerUser(request, response) {
                     membershipDuration +
                     ' vuoden ajalle' +
                     '\n\n' +
-                    'Pääset tarkastelemaan jäsentietojasi osoitteessa https://rekisteri.asteriski.fi',
+                    'Pääset tarkastelemaan jäsentietojasi osoitteessa ' +
+                    config.clientUrl,
             };
 
             mail.transporter.sendMail(boardMailOptions);

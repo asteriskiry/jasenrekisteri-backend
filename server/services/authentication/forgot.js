@@ -47,8 +47,7 @@ function forgotPassword(request, response) {
                         // Send generated link to email
 
                         let mailOptions = {
-                            from:
-                                'Asteriski jäsenrekisteri <jasenrekisteri@asteriski.fi>',
+                            from: mail.mailSender,
                             to: user.email,
                             subject: 'Jäsenrekisterin salasanan nollaus',
                             text:

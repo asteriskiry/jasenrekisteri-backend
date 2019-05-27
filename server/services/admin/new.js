@@ -5,6 +5,7 @@ const Member = require('../../models/Member');
 const utils = require('../../utils');
 const httpResponses = require('./');
 const mail = require('../../../config/mail');
+const config = require('../../../config/config');
 
 // Add new member
 
@@ -69,7 +70,8 @@ function save(request, response) {
                 newMember.password = password;
 
                 newMember.save(error => {
-                    if (error) return response.json(httpResponses.onMustBeUnique);
+                    if (error)
+                        return response.json(httpResponses.onMustBeUnique);
 
                     // Send mails to board and member
 
@@ -165,7 +167,8 @@ function save(request, response) {
                             'Salasana: ' +
                             password +
                             '\n\n' +
-                            'Pääset vaihtamaan salasanasi osoitteessa https://rekisteri.asteriski.fi',
+                            'Pääset vaihtamaan salasanasi osoitteessa ' +
+                            config.clientUrl,
                     };
 
                     mail.transporter.sendMail(boardMailOptions);
