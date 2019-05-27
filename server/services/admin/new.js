@@ -1,3 +1,4 @@
+const generator = require('generate-password');
 const Member = require('../../models/Member');
 
 const utils = require('../../utils');
@@ -19,8 +20,6 @@ function save(request, response) {
         membershipStarts,
         membershipEnds,
         accepted,
-        password,
-        passwordAgain,
     } = request.body;
 
     const accessTo = request.body.access.toLowerCase();
@@ -28,14 +27,6 @@ function save(request, response) {
     // Client side access check and validations
 
     if (accessTo === 'admin' || accessTo === 'board') {
-        if (password !== passwordAgain) {
-            return response.json(httpResponses.onNotSamePasswordError);
-        }
-
-        if (request.body.password && request.body.password.length < 6) {
-            return response.json(httpResponses.onTooShortPassword);
-        }
-
         if (
             !firstName ||
             !lastName ||
@@ -44,12 +35,15 @@ function save(request, response) {
             !hometown ||
             !role ||
             !membershipStarts ||
-            !membershipEnds ||
-            !password ||
-            !passwordAgain
+            !membershipEnds
         ) {
             return response.json(httpResponses.onAllFieldEmpty);
         }
+
+        const password = generator.generate({
+            length: 8,
+            numbers: true,
+        });
 
         // Server side access check and save new member
 
