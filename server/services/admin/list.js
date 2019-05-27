@@ -14,6 +14,7 @@ function list(request, response) {
             .then(user => {
                 Member.find({}, null).exec((error, docs) => {
                     if (error) return response.json(error);
+                    if (!docs) return response.json({ memberNotFound: true });
 
                     let updatedDocument = docs.map(doc => {
                         let documentToObject = doc.toObject();

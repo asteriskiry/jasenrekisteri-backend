@@ -10,6 +10,7 @@ const config = require('../../../config/config');
 function get(request, response) {
     const memberID = request.query.memberID;
 
+    console.log(request.query);
     const accessTo = request.query.access.toLowerCase();
 
     // Check access and return member details
@@ -22,6 +23,8 @@ function get(request, response) {
                     .lean()
                     .exec((error, doc) => {
                         if (error) return response.json(error);
+                        if (!doc)
+                            return response.json({ memberNotFound: true });
                         delete doc.password;
                         return response.json(doc);
                     });
@@ -118,7 +121,8 @@ function update(request, response) {
                 Member.findOneAndUpdate({ _id: memberID }, adminProfile)
                     .lean()
                     .exec((error, doc) => {
-                        if (error) return response.json(httpResponses.onMustBeUnique);
+                        if (error)
+                            return response.json(httpResponses.onMustBeUnique);
                         return response.json(
                             httpResponses.onProfileUpdateSuccess
                         );

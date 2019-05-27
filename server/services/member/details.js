@@ -10,6 +10,8 @@ function fetchDetails(request, response) {
     Member.findOne({ _id: memberID }, (error, doc) => {
         if (error) response.json(error);
 
+        if (!doc)
+            return response.json({ memberNotFound: true });
         const member = doc.toObject();
 
         delete member.password;
@@ -71,7 +73,8 @@ function updateDetails(request, response) {
                 record,
                 { new: true },
                 (error, doc) => {
-                    if (error) return response.json(httpResponses.onMustBeUnique);
+                    if (error)
+                        return response.json(httpResponses.onMustBeUnique);
                     return response.json(httpResponses.onUpdateSuccess);
                 }
             );
