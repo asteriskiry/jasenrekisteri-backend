@@ -10,9 +10,11 @@ const viewDir = process.env.VIEWDIR || './app/views';
 const env = process.env.NODE_ENV || 'local';
 const clientUrl = process.env.CLIENTURL || 'http://localhost:3000';
 const CSVFilePath = process.env.CSVFILEPATH || '/tmp/kulkuoikeudet_asteriski.csv';
+// Email Stuff
 const boardMailAddress = process.env.BOARDMAILADDRESS || 'asteriski@utu.fi';
 const mailSender = process.env.MAILSENDER || 'jasenrekisteri@asteriski.fi';
 // Gmail stuff for testing purposes only
+const useGmail = process.env.USEGMAIL || false;
 const gmailUser = process.env.GMAILUSER;
 const gmailPassword = process.env.GMAILPASSWORD;
 
@@ -27,6 +29,7 @@ module.exports = {
     CSVFilePath,
     boardMailAddress,
     mailSender,
+    useGmail,
     gmailUser,
     gmailPassword,
 };
