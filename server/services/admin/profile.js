@@ -118,7 +118,7 @@ function update(request, response) {
                 Member.findOneAndUpdate({ _id: memberID }, adminProfile)
                     .lean()
                     .exec((error, doc) => {
-                        if (error) return response.json(error);
+                        if (error) return response.json(httpResponses.onMustBeUnique);
                         return response.json(
                             httpResponses.onProfileUpdateSuccess
                         );

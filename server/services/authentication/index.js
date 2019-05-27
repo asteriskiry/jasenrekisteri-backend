@@ -27,7 +27,7 @@ module.exports = {
     },
     onUserSaveError: {
         success: false,
-        message: 'Sähköpostiosoite on jo käytössä.',
+        message: 'Sähköpostiosoitteen ja UTU-tunnuksen oltava uniikkeja.',
     },
     onNotSamePasswordError: {
         success: false,

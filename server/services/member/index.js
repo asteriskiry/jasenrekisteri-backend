@@ -25,4 +25,8 @@ module.exports = {
         success: false,
         message: 'Salasanan minimipituus on 6 merkkiä.',
     },
+    onMustBeUnique: {
+        success: false,
+        message: 'Sähköpostiosoitteen ja UTU-tunnuksen oltava uniikkeja.',
+    },
 };
