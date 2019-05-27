@@ -73,7 +73,7 @@ function save(request, response) {
                     if (error)
                         return response.json(httpResponses.onMustBeUnique);
 
-                    // Send mails to board and member
+                    // Send mail to board and member
 
                     let boardMailOptions = {
                         from: mail.mailSender,
@@ -126,7 +126,7 @@ function save(request, response) {
                         to: email,
                         subject: 'Sinut on lisätty Asteriski ry:n jäseneksi',
                         text:
-                            'Onneksi olkoon, sinut on lisätty Asteriski ry:n jäseneksi.\n' +
+                            'Onneksi olkoon, sinut on lisätty Asteriski ry:n jäseneksi.\n\n' +
                             'Jäsentiedot:\n\n' +
                             'Etunimi: ' +
                             firstName +
