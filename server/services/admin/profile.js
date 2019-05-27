@@ -10,7 +10,6 @@ const config = require('../../../config/config');
 function get(request, response) {
     const memberID = request.query.memberID;
 
-    console.log(request.query);
     const accessTo = request.query.access.toLowerCase();
 
     // Check access and return member details
