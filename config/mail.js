@@ -3,6 +3,9 @@
 const config = require('./config');
 const nodemailer = require('nodemailer');
 
+const boardMailAddress = config.boardMailAddress;
+const mailSender = config.mailSender;
+
 let transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -11,4 +14,4 @@ let transporter = nodemailer.createTransport({
     },
 });
 
-module.exports = { transporter };
+module.exports = { boardMailAddress, mailSender, transporter };

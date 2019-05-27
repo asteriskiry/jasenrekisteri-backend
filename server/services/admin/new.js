@@ -1,8 +1,10 @@
 const generator = require('generate-password');
-const Member = require('../../models/Member');
+const moment = require('moment');
 
+const Member = require('../../models/Member');
 const utils = require('../../utils');
 const httpResponses = require('./');
+const mail = require('../../../config/mail');
 
 // Add new member
 
@@ -67,7 +69,107 @@ function save(request, response) {
                 newMember.password = password;
 
                 newMember.save(error => {
-                    if (error) return response.json(error);
+                    if (error) return response.json(httpResponses.onMustBeUnique);
+
+                    // Send mails to board and member
+
+                    let boardMailOptions = {
+                        from: mail.mailSender,
+                        to: mail.boardMailAddress,
+                        subject: 'Uusi jäsen lisätty',
+                        text:
+                            'Uusi jäsen lisätty hallintapaneelin kautta.\n\n' +
+                            'Jäsentiedot:\n\n' +
+                            'Etunimi: ' +
+                            firstName +
+                            '\n' +
+                            'Sukunimi: ' +
+                            lastName +
+                            '\n' +
+                            'UTU-tunus: ' +
+                            utuAccount +
+                            '\n' +
+                            'Sähköposti: ' +
+                            email +
+                            '\n' +
+                            'Kotikunta: ' +
+                            hometown +
+                            '\n' +
+                            'TYYn jäsen: ' +
+                            (tyyMember ? 'Kyllä' : 'Ei') +
+                            '\n' +
+                            'TIVIAn jäsen: ' +
+                            (tiviaMember ? 'Kyllä' : 'Ei') +
+                            '\n' +
+                            'Rooli: ' +
+                            roleSwitchCase(role) +
+                            '\n' +
+                            '24/7 kulkuoikeudet: ' +
+                            (accessRights ? 'Kyllä' : 'Ei') +
+                            '\n' +
+                            'Jäsenyys alkaa: ' +
+                            moment(membershipStarts).format('DD.MM.YYYY') +
+                            '\n' +
+                            'Jäsenyys päättyy: ' +
+                            moment(membershipEnds).format('DD.MM.YYYY') +
+                            '\n' +
+                            'Hyväksytty jäseneksi: ' +
+                            (accepted ? 'Kyllä' : 'Ei') +
+                            '\n\n' +
+                            'Jäsenelle generoitu salasana on lähetetty hänelle sähköpostitse.',
+                    };
+
+                    let memberMailOptions = {
+                        from: mail.mailSender,
+                        to: email,
+                        subject: 'Sinut on lisätty Asteriski ry:n jäseneksi',
+                        text:
+                            'Onneksi olkoon, sinut on lisätty Asteriski ry:n jäseneksi.\n' +
+                            'Jäsentiedot:\n\n' +
+                            'Etunimi: ' +
+                            firstName +
+                            '\n' +
+                            'Sukunimi: ' +
+                            lastName +
+                            '\n' +
+                            'UTU-tunus: ' +
+                            utuAccount +
+                            '\n' +
+                            'Sähköposti: ' +
+                            email +
+                            '\n' +
+                            'Kotikunta: ' +
+                            hometown +
+                            '\n' +
+                            'TYYn jäsen: ' +
+                            (tyyMember ? 'Kyllä' : 'Ei') +
+                            '\n' +
+                            'TIVIAn jäsen: ' +
+                            (tiviaMember ? 'Kyllä' : 'Ei') +
+                            '\n' +
+                            'Rooli: ' +
+                            roleSwitchCase(role) +
+                            '\n' +
+                            '24/7 kulkuoikeudet: ' +
+                            (accessRights ? 'Kyllä' : 'Ei') +
+                            '\n' +
+                            'Jäsenyys alkaa: ' +
+                            moment(membershipStarts).format('DD.MM.YYYY') +
+                            '\n' +
+                            'Jäsenyys päättyy: ' +
+                            moment(membershipEnds).format('DD.MM.YYYY') +
+                            '\n' +
+                            'Hyväksytty jäseneksi: ' +
+                            (accepted ? 'Kyllä' : 'Ei') +
+                            '\n' +
+                            'Salasana: ' +
+                            password +
+                            '\n\n' +
+                            'Pääset vaihtamaan salasanasi osoitteessa https://rekisteri.asteriski.fi',
+                    };
+
+                    mail.transporter.sendMail(boardMailOptions);
+                    mail.transporter.sendMail(memberMailOptions);
 
                     return response.json(httpResponses.memberAddedSuccessfully);
                 });
@@ -77,6 +179,21 @@ function save(request, response) {
             });
     } else {
         return response.json(httpResponses.clientAdminFailed);
+    }
+}
+
+function roleSwitchCase(role) {
+    switch (role.toLowerCase()) {
+        case 'admin':
+            return 'Admin';
+        case 'board':
+            return 'Hallitus';
+        case 'functionary':
+            return 'Toimihenkilö';
+        case 'member':
+            return 'Jäsen';
+        default:
+            return 'Jäsen';
     }
 }
 

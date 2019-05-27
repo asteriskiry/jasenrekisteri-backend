@@ -19,13 +19,14 @@
         "ecmaVersion": 2018,
         "sourceType": "module"
     },
-    "plugins": [
-    ],
+    "plugins": [],
     "rules": {
         "no-console": "off",
         "max-len": "off",
         "strict": "off",
-        "indent": ["error", 4],
+        "indent": ["error", 4, {
+            "SwitchCase": 1
+        }],
         "comma-dangle": ["error", "only-multiline"]
     }
 }
