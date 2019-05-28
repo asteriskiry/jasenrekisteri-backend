@@ -31,7 +31,7 @@ npm run create-user
 
 You can import CSV files with:
 ```bash
-npm run import <full-path-to-csv> <jasenrekisteri-token> <id>
+npm run import "<full-path-to-csv>" "<jasenrekisteri-token>" "<id>"
 ```
 For example:
 ```bash
