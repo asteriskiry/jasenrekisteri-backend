@@ -88,7 +88,7 @@ function registerUser(request, response) {
                 to: 'mjturt@utu.fi',
                 subject: 'Uusi jäsen',
                 text:
-                    'Uusi jäsen liittynyt\n\n' +
+                    'Uusi jäsen liittynyt.\n\n' +
                     'Jäsentiedot:\n\n' +
                     'Etunimi: ' +
                     firstName +
@@ -124,8 +124,8 @@ function registerUser(request, response) {
                 to: email,
                 subject: 'Vahvistus Asteriski ry:n jäseneksi liittymisestä',
                 text:
-                    'Onneksi olkoon Asteriski ry:n jäseneksi liittymisestä\n' +
-                    'Asteriski ry:n hallitus hyväksyy jäsenyytesi mahdollisimman pian\n\n' +
+                    'Onneksi olkoon Asteriski ry:n jäseneksi liittymisestä.\n' +
+                    'Asteriski ry:n hallitus hyväksyy jäsenyytesi mahdollisimman pian.\n\n' +
                     'Jäsentiedot:\n\n' +
                     'Etunimi: ' +
                     firstName +

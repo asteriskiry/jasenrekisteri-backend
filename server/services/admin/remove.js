@@ -19,9 +19,9 @@ function remove(request, response) {
                 let memberMailOptions = {
                     from: mail.mailSender,
                     to: request.body.email,
-                    subject: 'Jäsentietosi Asteriski ry:llä on poistettu',
+                    subject: 'Asteriski ry:n jäsenyys päättynyt.',
                     text:
-                        'Jäsentietosi Asteriski ry:lle on poistettu.'
+                        'Asteriski ry:n jäsentietosi on poistettu. Tämän myötä jäsenyytesi on päättynyt.'
                 };
 
                 mail.transporter.sendMail(memberMailOptions);

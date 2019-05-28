@@ -49,10 +49,10 @@ function forgotPassword(request, response) {
                         let mailOptions = {
                             from: mail.mailSender,
                             to: user.email,
-                            subject: 'Jäsenrekisterin salasanan nollaus',
+                            subject: 'Jäsenrekisterin salasanan palautus',
                             text:
-                                'Jäsenrekisterin salasanan nollaus\n\n' +
-                                'Voit nollata jäsenrekisterin salasanan seuraavasta linkistä:\n\n' +
+                                'Sinun sähköpostiosoitteellasi on pyydetty salasanan palautusta Asteriski ry:n jäsenrekisterissä.\n\n' +
+                                'Voit nollata jäsenrekisterin salasanan seuraavasta linkistä:\n' +
                                 config.clientUrl +
                                 '/reset/' +
                                 user._id +

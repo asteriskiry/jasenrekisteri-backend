@@ -100,7 +100,7 @@ function update(request, response) {
                                 subject:
                                     'Jäsenyytesi Asteriski ry:lle hyväksytty',
                                 text:
-                                    'Jäsenyytesi Asteriski ry:lle hyväksytty\n\n' +
+                                    'Jäsenyytesi Asteriski ry:lle hyväksytty.\n\n' +
                                     'Pääset tarkastelemaan jäsentietojasi osoitteessa ' +
                                     config.clientUrl,
                             };
