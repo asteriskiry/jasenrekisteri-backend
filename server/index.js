@@ -37,9 +37,6 @@ module.exports = function() {
             server.use(express.static(config.staticFiles));
         }
 
-        // Ugly fix
-        server.disable('etag');
-
         routes.init(server);
     };
 
