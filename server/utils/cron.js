@@ -10,7 +10,6 @@ const config = require('../../config/config');
 const mail = require('../../config/mail');
 
 function startCronJobs() {
-
     // Check every day for ended memberships and send email
 
     const checkMembershipEnding = cron.job('0 0 0 * * *', function() {
@@ -21,7 +20,6 @@ function startCronJobs() {
         ) {
             if (err) console.log(err);
             members.map(user => {
-
                 // Check if mail alredy sent
 
                 EndedMembership.findOne({ userID: user._id }, function(
@@ -34,14 +32,15 @@ function startCronJobs() {
                             function() {
                                 console.log(user.email);
                                 let endingMailOptions = {
-                                    from:
-                                        'Asteriski jäsenrekisteri <jasenrekisteri@asteriski.fi>',
+                                    from: mail.mailSender,
                                     to: user.email,
                                     subject:
                                         'Asteriski ry:n jäsenyytesi päättynyt',
                                     text:
-                                        'Jäsenyytesi Asteriski ry:lle on päättynyt\n\n' +
-                                        'Maksa jäsenmaksusi osoitteessa https://rekisteri.asteriski.fi',
+                                        'Jäsenyytesi Asteriski ry:lle on päättynyt.\n\n' +
+                                        'Maksa jäsenmaksusi osoitteessa ' +
+                                        config.clientUrl +
+                                        ' tai Asteriski ry:n hallitukselle.',
                                 };
                                 mail.transporter.sendMail(endingMailOptions);
                             }
