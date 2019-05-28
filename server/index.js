@@ -19,7 +19,6 @@ module.exports = function() {
         server.set('env', config.env);
         server.set('port', config.port);
         server.set('hostname', config.host);
-        server.set('viewDir', config.viewDir);
 
         server.use(cors());
         server.use(bodyParser.json());
@@ -34,9 +33,9 @@ module.exports = function() {
         });
         require('../config/passport')(passport);
 
-        server.use('/uploads', express.static('uploads'));
-
-        server.set('views', server.get('viewDir'));
+        if (config.env === 'production') {
+            server.use(express.static(config.staticFiles));
+        }
 
         // Ugly fix
         server.disable('etag');
