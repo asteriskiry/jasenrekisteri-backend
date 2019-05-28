@@ -5,7 +5,6 @@ const csv = require('fast-csv');
 const fs = require('fs');
 const args = process.argv;
 
-console.log(args);
 let filePath = args[2];
 let jasenrekisteriToken = args[3];
 let id = args[4];
@@ -34,7 +33,6 @@ csv.fromStream(stream, { headers: false, delimiter: ';' })
             access: 'Admin',
             id: id,
         };
-        console.log(newData);
         axios.post('http://localhost:3001/api/admin/new', newData, {
             headers: {
                 Authorization: jasenrekisteriToken,
@@ -43,5 +41,5 @@ csv.fromStream(stream, { headers: false, delimiter: ';' })
         });
     })
     .on('end', function() {
-        console.log('done');
+        console.log('Done');
     });
