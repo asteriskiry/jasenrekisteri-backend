@@ -27,5 +27,22 @@ You can make admin account with:
 npm run-script create-user
 ```
 
+## Importing data
+
+You can import CSV files with:
+```bash
+npm run-script import <full-path-to-csv> <jasenrekisteri-token> <id>
+```
+For example:
+```bash
+npm run-script import "/home/mjt/data.csv" "JWT 12345" "123"
+```
+You can get id and jasenrekisteri-token by logging in to jäsenrekisteri with admin account and checking cookies with developer tools (Application -> Cookies).
+
+CSV data must be in this format:
+```bash
+firstname;lastname;utu_mail;membership_approved;membership_ends;hometown;tyy_member;tivia_member;board;
+```
+
 ---
 © Asteriski ry

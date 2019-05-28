@@ -3,12 +3,14 @@
 const axios = require('axios');
 const csv = require('fast-csv');
 const fs = require('fs');
+const args = process.argv;
 
-let stream = fs.createReadStream(__dirname + '/../csv/data.csv');
+console.log(args);
+let filePath = args[2];
+let jasenrekisteriToken = args[3];
+let id = args[4];
 
-// Log in with admin account (with browser) and check jasenrekisteri-token and id from cookie in developer tools
-const jasenrekisteriToken = '';
-const id = '';
+let stream = fs.createReadStream(filePath);
 
 csv.fromStream(stream, { headers: false, delimiter: ';' })
     .on('data', function(data) {
