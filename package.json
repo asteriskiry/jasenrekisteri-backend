@@ -1,10 +1,10 @@
 {
     "name": "Jasenrekisteri-backend",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Membership register backend",
     "main": "index.js",
     "repository": "https://github.com/asteriskiry/jasenrekisteri-backend",
-    "author": "Asteriski ry, Maks Turtiainen, Vili Ahava",
+    "author": "Maks Turtiainen",
     "license": "MIT",
     "scripts": {
         "start": "node index.js",

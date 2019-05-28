@@ -20,22 +20,22 @@ cp .env-sample .env
 npm install
 npm start
 ```
-Configure `.env`-file if needed. You can use `npm run-script watch` instead of `npm start` to watch file changes with nodemon.
+Configure `.env`-file if needed. You can use `npm run watch` instead of `npm start` to watch file changes with nodemon.
 
 You can make admin account with:
 ```bash
-npm run-script create-user
+npm run create-user
 ```
 
 ## Importing data
 
 You can import CSV files with:
 ```bash
-npm run-script import <full-path-to-csv> <jasenrekisteri-token> <id>
+npm run import <full-path-to-csv> <jasenrekisteri-token> <id>
 ```
 For example:
 ```bash
-npm run-script import "/home/mjt/data.csv" "JWT 12345" "123"
+npm run import "/home/mjt/data.csv" "JWT 12345" "123"
 ```
 You can get id and jasenrekisteri-token by logging in to jäsenrekisteri with admin account and checking cookies with developer tools (Application -> Cookies).
 
