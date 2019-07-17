@@ -13,7 +13,7 @@
         "create-user": "node scripts/create-user.js"
     },
     "dependencies": {
-        "axios": "^0.18.0",
+        "axios": "^0.19.0",
         "bcrypt": "latest",
         "body-parser": "^1.18.2",
         "commander": "^2.19.0",
