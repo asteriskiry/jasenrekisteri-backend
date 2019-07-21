@@ -7,15 +7,8 @@ const uuidv1 = require('uuid/v1');
 
 const client = new CheckoutFinland(
     process.env.MERCHANT_ID,
-    process.env.MERCHANT_SECRET,
+    process.env.MERCHANT_SECRET
 );
-
-// Turha
-function buy(request, response) {
-    return response.send(
-        '<form action="/api/payment/pay" method="post"><input type="submit" value="Buy a shoe!"></form>'
-    );
-}
 
 // Main stuff happens here
 async function pay(request, response) {
@@ -47,19 +40,20 @@ async function pay(request, response) {
     };
     const checkoutResponse = await client.createPayment(payment);
     console.log(checkoutResponse);
-    return response.json(checkoutResponse);
+    return response.json(checkoutResponse.providers);
 }
 
+// Work in progress
 function thanks(request, response) {
     response.send('Thanks for your purchase!');
 }
 
+// Work in progress
 function cancel(request, response) {
     return response.send('Your payment has been cancelled.');
 }
 
 module.exports = {
-    buy: buy,
     pay: pay,
     thanks: thanks,
     cancel: cancel,

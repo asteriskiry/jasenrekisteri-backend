@@ -10,6 +10,7 @@ const resetController = require('../../controllers/apis/reset');
 
 const adminController = require('../../controllers/apis/admin');
 const memberController = require('../../controllers/apis/member');
+const paymentController = require('../../controllers/apis/payment');
 
 router.use('/register', registerController);
 router.use('/login', loginController);
@@ -19,5 +20,6 @@ router.use('/reset', resetController);
 router.use('/admin', adminController);
 
 router.use('/member', memberController);
+router.use('/pay', paymentController);
 
 module.exports = router;
