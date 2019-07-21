@@ -15,14 +15,14 @@ async function pay(request, response) {
     const payment = {
         stamp: uuidv1(),
         reference: '3759170',
-        amount: 1525,
+        amount: 500,
         currency: 'EUR',
         language: 'FI',
         items: [
             {
-                unitPrice: 1525,
+                unitPrice: 500,
                 units: 1,
-                vatPercentage: 24,
+                vatPercentage: 0,
                 productCode: '#1234',
                 deliveryDate: '2018-09-01',
                 stamp: uuidv1(),
@@ -34,22 +34,27 @@ async function pay(request, response) {
             email: 'test.customer@example.com',
         },
         redirectUrls: {
-            success: 'https://ecom.example.com/cart/success',
-            cancel: 'https://ecom.example.com/cart/cancel',
+            success: 'https://localhost:3000/member/pay/thanks',
+            cancel: 'https://localhost:3000/member/pay/cancel',
         },
+        callbackUrls: {
+            success: 'https://rekkari.test:3001/api/pay/payment-thanks',
+            cancel: 'https://rekkari.test:3001/api/pay/payment-cancel',
+        }
     };
     const checkoutResponse = await client.createPayment(payment);
-    console.log(checkoutResponse);
     return response.json(checkoutResponse.providers);
 }
 
 // Work in progress
 function thanks(request, response) {
-    response.send('Thanks for your purchase!');
+    console.log(response);
+    return response.send('Thanks for your purchase!');
 }
 
 // Work in progress
 function cancel(request, response) {
+    console.log(response);
     return response.send('Your payment has been cancelled.');
 }
 

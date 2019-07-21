@@ -7,6 +7,8 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const https = require('https');
+var fs = require('fs');
 
 module.exports = function() {
     let server = express();
@@ -44,14 +46,22 @@ module.exports = function() {
         let hostname = server.get('hostname');
         let port = server.get('port');
 
-        server.listen(port, function() {
-            console.log(
-                'Jäsenrekisteri backend listening on http://' +
-                    hostname +
-                    ':' +
-                    port
-            );
-        });
+        https
+            .createServer(
+                {
+                    key: fs.readFileSync('server.key'),
+                    cert: fs.readFileSync('server.cert'),
+                },
+                server
+            )
+            .listen(port, function() {
+                console.log(
+                    'Jäsenrekisteri backend listening on http://' +
+                        hostname +
+                        ':' +
+                        port
+                );
+            });
     };
 
     return {
