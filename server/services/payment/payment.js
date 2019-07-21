@@ -2,75 +2,60 @@
 
 require('dotenv').config();
 
-var CheckoutApi = require('checkout-api');
+const CheckoutFinland = require('checkout-finland');
+const uuidv1 = require('uuid/v1');
 
-var checkout = new CheckoutApi({
-    merchantId: process.env.MERCHANT_ID,
-    merchantSecret: process.env.MERCHANT_SECRET,
-    baseUrl: process.env.BASE_URL,
-});
+const client = new CheckoutFinland(
+    process.env.MERCHANT_ID,
+    process.env.MERCHANT_SECRET,
+);
 
+// Turha
 function buy(request, response) {
     return response.send(
         '<form action="/api/payment/pay" method="post"><input type="submit" value="Buy a shoe!"></form>'
     );
 }
 
-function pay(request, response) {
-    var html = '<h1>Select payment method</h1>';
-
-    checkout
-        .preparePayment({
-            AMOUNT: 1000,
-            STAMP: Math.round(Math.random() * 100000), // this is just to keep the example simple
-            // you actually need to generate a unique stamp and store it in the database
-            REFERENCE: '12345',
-        })
-        .then(apiResponse => {
-            var banks = apiResponse.trade.payments.payment.banks;
-
-            // render html from the response
-            for (var bankName in banks) {
-                var hiddenFields = '';
-                var bank = banks[bankName];
-
-                for (var key in bank) {
-                    var value = bank[key];
-                    if (value === {}) {
-                        value = '';
-                    }
-                    hiddenFields += `<input type="hidden" name="${key}" value="${value}" />`;
-                }
-
-                html += `<form action="${bank.url}" method="post">
-            ${hiddenFields}
-            <input type="image" src="${bank.icon}" />
-            <span>${bank.name}</span>
-          </form>`;
-            }
-
-            return response.json(banks);
-        });
+// Main stuff happens here
+async function pay(request, response) {
+    const payment = {
+        stamp: uuidv1(),
+        reference: '3759170',
+        amount: 1525,
+        currency: 'EUR',
+        language: 'FI',
+        items: [
+            {
+                unitPrice: 1525,
+                units: 1,
+                vatPercentage: 24,
+                productCode: '#1234',
+                deliveryDate: '2018-09-01',
+                stamp: uuidv1(),
+                merchant: process.env.MERCHANT_ID,
+                reference: 'kurssi-1',
+            },
+        ],
+        customer: {
+            email: 'test.customer@example.com',
+        },
+        redirectUrls: {
+            success: 'https://ecom.example.com/cart/success',
+            cancel: 'https://ecom.example.com/cart/cancel',
+        },
+    };
+    const checkoutResponse = await client.createPayment(payment);
+    console.log(checkoutResponse);
+    return response.json(checkoutResponse);
 }
 
 function thanks(request, response) {
-    var status = parseInt(request.query.STATUS, 10);
-    if (
-        checkout.validateReturnMsg(request.query) &&
-        (status === 2 || status >= 5)
-    ) {
-        response.send('Thanks for your purchase!');
-    } else {
-        response.send('Unfortunately something went wrong.');
-    }
+    response.send('Thanks for your purchase!');
 }
 
 function cancel(request, response) {
-    if (checkout.validateReturnMsg(request.query)) {
-        return response.send('Your payment has been cancelled.');
-    } else {
-        return response.send('Unfortunately something went wrong.');
-    }
+    return response.send('Your payment has been cancelled.');
 }
 
 module.exports = {

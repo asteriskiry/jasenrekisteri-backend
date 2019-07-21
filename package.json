@@ -16,7 +16,7 @@
         "axios": "^0.19.0",
         "bcrypt": "latest",
         "body-parser": "^1.18.2",
-        "checkout-api": "^2.0.1",
+        "checkout-finland": "^1.0.2",
         "commander": "^2.19.0",
         "cookie-parser": "~1.4.3",
         "cors": "^2.8.5",
