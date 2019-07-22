@@ -5,8 +5,7 @@ const paymentService = require('../../services/payment/payment');
 
 let router = express.Router();
 
-router.post('/', paymentService.pay);
-router.post('/payment-thanks', paymentService.thanks);
-router.post('/payment-cancel', paymentService.cancel);
+router.post('/', paymentService.createPayment);
+router.post('/payment-success', paymentService.paymentSuccess);
 
 module.exports = router;
