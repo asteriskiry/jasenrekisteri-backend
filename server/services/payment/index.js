@@ -1,12 +1,8 @@
 // Payment responses
 
 module.exports = {
-    onPaymentSuccess: {
-        success: true,
-        message: 'Maksu onnistui.',
-    },
-    onPaymentFailed: {
+    onError: {
         success: false,
-        message: 'Maksu epäonnistui.',
+        message: 'Jotain meni vikaan.',
     },
 };
