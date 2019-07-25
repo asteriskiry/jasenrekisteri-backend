@@ -10,7 +10,8 @@
         "start": "node index.js",
         "watch": "node_modules/.bin/nodemon index.js",
         "import": "node scripts/import.js",
-        "create-user": "node scripts/create-user.js"
+        "create-user": "node scripts/create-user.js",
+        "create-product": "node scripts/create-product.js"
     },
     "dependencies": {
         "axios": "^0.19.0",
