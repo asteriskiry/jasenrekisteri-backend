@@ -6,6 +6,10 @@ const CheckoutFinland = require('checkout-finland');
 const uuidv1 = require('uuid/v1');
 const httpResponses = require('./');
 
+const Member = require('../../models/Member');
+const Payment = require('../../models/Payment');
+const Product = require('../../models/Product');
+
 // Work in progress
 
 // Initialize Checkout API
@@ -16,24 +20,29 @@ const client = new CheckoutFinland(
 
 // Create payment
 async function createPayment(request, response) {
-    let firstName = request.body.firstName;
-    let lastName = request.body.lastName;
-    let id = request.body.id;
-    let email = request.body.email;
-    let hometown = request.body.hometown;
-    let membershipLength = parseInt(request.body.membershipLength, 10);
+    let memberId = request.body.memberId;
+    let productId = request.body.productId;
 
-    // Validate
-    if (
-        !(membershipLength === 1 || membershipLength === 5) ||
-        !firstName ||
-        !lastName ||
-        !id ||
-        !email ||
-        !hometown
-    ) {
-        return response.json(httpResponses.onError);
-    }
+    Member.findOne({ _id: memberId }, (error, member) => {
+        if (error || !member)
+            return response.json(httpResponses.onError);
+        const memberObj = member.toObject();
+
+        Product.findOne({ productId: productId }, (error, product) => {
+            if (error || !product)
+                return response.json(httpResponses.onError);
+            const productObj = product.toObject();
+        });
+    });
+
+    // Payment record
+    let record = {
+        firstName: firstName,
+        lastName: lastName,
+        userId: id,
+        email: email,
+        hometown: hometown,
+    };
 
     // Payment request data
     const payment = {
