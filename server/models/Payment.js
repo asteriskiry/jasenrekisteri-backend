@@ -11,8 +11,6 @@ const PaymentSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        lowercase: true,
-        unique: true,
         required: true,
     },
     hometown: {
@@ -37,11 +35,12 @@ const PaymentSchema = new mongoose.Schema({
     },
     stamp: {
         type: String,
+        unique: true,
         required: true,
     },
     status: {
         type: String,
-        enum: ['Canceled', 'Pendind', 'Success'],
+        enum: ['Canceled', 'Pending', 'Success'],
         default: 'Pending',
         required: true,
     },
