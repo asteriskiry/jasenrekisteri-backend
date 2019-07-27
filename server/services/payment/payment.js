@@ -74,7 +74,6 @@ async function createPayment(request, response) {
                             deliveryDate: moment(productObj.timestamp).format(
                                 'YYYY-MM-DD'
                             ),
-                            stamp: uuidv1(),
                             merchant: process.env.MERCHANT_ID,
                             reference: reference,
                             description: productObj.name,
@@ -105,7 +104,7 @@ async function createPayment(request, response) {
 // When payment is made frontend calls this endpoint
 function paymentSuccess(request, response) {
     console.log(request.body);
-    return response.send('Thanks for your purchase!');
+    return response.json(httpResponses.onPaymentSuccess);
 }
 
 module.exports = {

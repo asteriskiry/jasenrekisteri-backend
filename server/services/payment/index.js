@@ -5,4 +5,12 @@ module.exports = {
         success: false,
         message: 'Jotain meni vikaan.',
     },
+    onPaymentError: {
+        success: false,
+        message: 'Jotain meni vikaan. Ota yhteyttä Asteriskin hallitukseen.',
+    },
+    onPaymentSuccess: {
+        success: true,
+        message: 'Maksun käsittely onnistui.',
+    },
 };
