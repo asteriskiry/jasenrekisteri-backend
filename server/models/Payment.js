@@ -44,6 +44,15 @@ const PaymentSchema = new mongoose.Schema({
         default: 'Pending',
         required: true,
     },
+    reference: {
+        type: String,
+    },
+    transactionId: {
+        type: String,
+    },
+    signature: {
+        type: String,
+    }
 });
 
 module.exports = mongoose.model('Payment', PaymentSchema);

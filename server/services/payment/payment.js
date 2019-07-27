@@ -37,6 +37,9 @@ async function createPayment(request, response) {
             // Generate stamp (this is how payment is identified)
             const stamp = uuidv1();
 
+            // Generate order reference
+            const reference = uuidv1();
+
             // Create payment record
             let newPayment = new Payment();
             newPayment.firstName = memberObj.firstName;
@@ -49,6 +52,7 @@ async function createPayment(request, response) {
             newPayment.amountSnt = productObj.priceSnt;
             newPayment.stamp = stamp;
             newPayment.status = 'Pending';
+            newPayment.reference = reference;
 
             // Save new payment record
             newPayment.save(async function(error) {
@@ -57,7 +61,7 @@ async function createPayment(request, response) {
                 // Payment request data
                 const payment = {
                     stamp: stamp,
-                    reference: '3759170',
+                    reference: reference,
                     amount: productObj.priceSnt,
                     currency: 'EUR',
                     language: 'FI',
@@ -72,7 +76,7 @@ async function createPayment(request, response) {
                             ),
                             stamp: uuidv1(),
                             merchant: process.env.MERCHANT_ID,
-                            reference: productObj.productId,
+                            reference: reference,
                             description: productObj.name,
                             category: productObj.category
                         },
@@ -87,7 +91,6 @@ async function createPayment(request, response) {
                         cancel: process.env.CLIENTURL + '/member/pay/cancel',
                     },
                 };
-                console.log(payment);
 
                 // Create paymnet request to Checkout API
                 const checkoutResponse = await client.createPayment(payment);
@@ -101,7 +104,7 @@ async function createPayment(request, response) {
 
 // When payment is made frontend calls this endpoint
 function paymentSuccess(request, response) {
-    console.log(request);
+    console.log(request.body);
     return response.send('Thanks for your purchase!');
 }
 
