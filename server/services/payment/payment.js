@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const CheckoutFinland = require('checkout-finland');
 const uuidv1 = require('uuid/v1');
+const moment = require('moment');
 const httpResponses = require('./');
 
 const Member = require('../../models/Member');
@@ -55,31 +56,38 @@ async function createPayment(request, response) {
 
                 // Payment request data
                 const payment = {
-                    stamp: uuidv1(),
+                    stamp: stamp,
                     reference: '3759170',
-                    amount: 500,
+                    amount: productObj.priceSnt,
                     currency: 'EUR',
                     language: 'FI',
                     items: [
                         {
-                            unitPrice: 500,
+                            unitPrice: productObj.priceSnt,
                             units: 1,
                             vatPercentage: 0,
-                            productCode: '#1234',
-                            deliveryDate: '2018-09-01',
+                            productCode: productObj.productId,
+                            deliveryDate: moment(productObj.timestamp).format(
+                                'YYYY-MM-DD'
+                            ),
                             stamp: uuidv1(),
                             merchant: process.env.MERCHANT_ID,
-                            reference: 'kurssi-1',
+                            reference: productObj.productId,
+                            description: productObj.name,
+                            category: productObj.category
                         },
                     ],
                     customer: {
-                        email: 'test.customer@example.com',
+                        email: memberObj.email,
+                        firstName: memberObj.firstName,
+                        lastName: memberObj.lastName,
                     },
                     redirectUrls: {
                         success: process.env.CLIENTURL + '/member/pay/thanks',
                         cancel: process.env.CLIENTURL + '/member/pay/cancel',
                     },
                 };
+                console.log(payment);
 
                 // Create paymnet request to Checkout API
                 const checkoutResponse = await client.createPayment(payment);
