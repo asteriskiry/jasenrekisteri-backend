@@ -6,6 +6,7 @@ const CheckoutFinland = require('checkout-finland');
 const uuidv1 = require('uuid/v1');
 const moment = require('moment');
 const httpResponses = require('./');
+const cryptoRandomString = require('crypto-random-string');
 
 const Member = require('../../models/Member');
 const Payment = require('../../models/Payment');
@@ -35,7 +36,7 @@ async function createPayment(request, response) {
             const productObj = product.toObject();
 
             // Generate stamp (this is how payment is identified)
-            const stamp = uuidv1();
+            const stamp = cryptoRandomString({length: 30});
 
             // Generate order reference
             const reference = uuidv1();
@@ -77,7 +78,7 @@ async function createPayment(request, response) {
                             merchant: process.env.MERCHANT_ID,
                             reference: reference,
                             description: productObj.name,
-                            category: productObj.category
+                            category: productObj.category,
                         },
                     ],
                     customer: {
@@ -104,6 +105,50 @@ async function createPayment(request, response) {
 // When payment is made frontend calls this endpoint
 function paymentSuccess(request, response) {
     console.log(request.body);
+    const account = request.body.account;
+    const algorithm = request.body.algorithm;
+    const amount = request.body.amount;
+    const stamp = request.body.stamp;
+    const reference = request.body.reference;
+    const transactionId = request.body.transactionId;
+    const status = request.body.status;
+    const provider = request.body.provider;
+    const signature = request.body.signature;
+
+    // Validations
+
+    // Check if all needed parameters are provided
+    if (
+        !account ||
+        !algorithm ||
+        !amount ||
+        !stamp ||
+        !reference ||
+        !transactionId ||
+        !status ||
+        !provider ||
+        !signature
+    ) {
+        return response.json(httpResponses.onPaymentError);
+    }
+
+    // Validate signature
+    const sigValidationData = {
+        'checkout-account': account,
+        'checkout-algorithm': algorithm,
+        'checkout-amount': amount,
+        'checkout-stamp': stamp,
+        'checkout-reference': reference,
+        'checkout-transaction-id': transactionId,
+        'checkout-status': status,
+        'checkout-provider': provider,
+    };
+    const calculatedSignature = client.calculateHmac(sigValidationData, '');
+
+    if (calculatedSignature !== signature) {
+        return response.json(httpResponses.onPaymentError);
+    }
+
     return response.json(httpResponses.onPaymentSuccess);
 }
 
