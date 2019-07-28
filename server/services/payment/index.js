@@ -13,4 +13,8 @@ module.exports = {
         success: true,
         message: 'Maksun käsittely onnistui.',
     },
+    onPaymentCancel: {
+        success: true,
+        message: 'Maksu peruutettu.',
+    },
 };

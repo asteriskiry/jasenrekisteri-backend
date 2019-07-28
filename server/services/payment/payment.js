@@ -36,7 +36,7 @@ async function createPayment(request, response) {
             const productObj = product.toObject();
 
             // Generate stamp (this is how payment is identified)
-            const stamp = cryptoRandomString({length: 30});
+            const stamp = cryptoRandomString({ length: 30 });
 
             // Generate order reference
             const reference = uuidv1();
@@ -149,7 +149,34 @@ function paymentSuccess(request, response) {
         return response.json(httpResponses.onPaymentError);
     }
 
-    return response.json(httpResponses.onPaymentSuccess);
+    // Success / Cancel handling
+
+    // Success
+    if (status === 'ok') {
+        // Find payment by stamp and update record
+        const filter = { stamp: stamp };
+        const update = { status: 'Success' };
+
+        // If payment alredy handled must be also checked..
+        Payment.findOneAndUpdate(
+            filter,
+            update,
+            { new: true },
+            (error, payment) => {
+                if (error) return response.json(httpResponses.onPaymentError);
+                console.log(payment);
+                return response.json(httpResponses.onPaymentSuccess);
+            }
+        );
+
+        // Cancel
+    } else if (status === 'fail') {
+        return response.json(httpResponses.onPaymentCancel);
+
+        // Something else
+    } else {
+        return response.json(httpResponses.onPaymentError);
+    }
 }
 
 module.exports = {
