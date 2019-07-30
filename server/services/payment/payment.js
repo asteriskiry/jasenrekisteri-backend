@@ -15,10 +15,7 @@ const Product = require('../../models/Product');
 // Work in progress
 
 // Initialize Checkout API
-const client = new CheckoutFinland(
-    process.env.MERCHANT_ID,
-    process.env.MERCHANT_SECRET
-);
+const client = new CheckoutFinland(process.env.MERCHANT_ID, process.env.MERCHANT_SECRET);
 
 // Create payment
 async function createPayment(request, response) {
@@ -43,6 +40,7 @@ async function createPayment(request, response) {
 
             // Create payment record
             let newPayment = new Payment();
+            newPayment.memberId = memberObj._id;
             newPayment.firstName = memberObj.firstName;
             newPayment.lastName = memberObj.lastName;
             newPayment.email = memberObj.email;
@@ -54,6 +52,7 @@ async function createPayment(request, response) {
             newPayment.stamp = stamp;
             newPayment.status = 'Pending';
             newPayment.reference = reference;
+            newPayment.processed = false;
 
             // Save new payment record
             newPayment.save(async function(error) {
@@ -72,9 +71,7 @@ async function createPayment(request, response) {
                             units: 1,
                             vatPercentage: 0,
                             productCode: productObj.productId,
-                            deliveryDate: moment(productObj.timestamp).format(
-                                'YYYY-MM-DD'
-                            ),
+                            deliveryDate: moment(productObj.timestamp).format('YYYY-MM-DD'),
                             merchant: process.env.MERCHANT_ID,
                             reference: reference,
                             description: productObj.name,
@@ -104,7 +101,6 @@ async function createPayment(request, response) {
 
 // When payment is made frontend calls this endpoint
 function paymentSuccess(request, response) {
-    console.log(request.body);
     const account = request.body.account;
     const algorithm = request.body.algorithm;
     const amount = request.body.amount;
@@ -154,20 +150,52 @@ function paymentSuccess(request, response) {
     // Success
     if (status === 'ok') {
         // Find payment by stamp and update record
-        const filter = { stamp: stamp };
-        const update = { status: 'Success' };
+        const paymentFilter = { stamp: stamp, processed: false };
+        const paymentUpdate = { status: 'Success', processed: true };
 
-        // If payment alredy handled must be also checked..
-        Payment.findOneAndUpdate(
-            filter,
-            update,
-            { new: true },
-            (error, payment) => {
-                if (error) return response.json(httpResponses.onPaymentError);
-                console.log(payment);
-                return response.json(httpResponses.onPaymentSuccess);
-            }
-        );
+        Payment.findOneAndUpdate(paymentFilter, paymentUpdate, { new: true }, (error, payment) => {
+            if (error) return response.json(httpResponses.onPaymentError);
+            if (!payment) return response.json(httpResponses.onPaymentNotFoundOrAlredyProcessed);
+            const memberId = payment.memberId;
+            const memberFilter = { _id: memberId };
+            Member.findOne(memberFilter, (error, member) => {
+                if (error || !member) return response.json(httpResponses.onPaymentError);
+                const currentEndDate = member.membershipEnds;
+                let memberUpdate = null;
+                if (payment.productId === '1111') {
+                    memberUpdate = {
+                        membershipEnds: moment(currentEndDate)
+                            .add(1, 'y')
+                            .toDate(),
+                    };
+                } else if (payment.productId === '1555') {
+                    memberUpdate = {
+                        membershipEnds: moment(currentEndDate)
+                            .add(5, 'y')
+                            .toDate(),
+                    };
+                } else {
+                    return response.json(httpResponses.onPaymentError);
+                }
+                Member.findOneAndUpdate(memberFilter, memberUpdate, { new: true }, (error, updatedMember) => {
+                    if (error || !updatedMember) return response.json(httpResponses.onPaymentError);
+                    const responseBody = {
+                        success: true,
+                        message: 'Maksun käsittely onnistui.',
+                        paymentData: {
+                            firstName: updatedMember.firstName,
+                            lastName: updatedMember.lastName,
+                            email: updatedMember.email,
+                            membershipEnds: updatedMember.membershipEnds,
+                            amount: payment.amountSnt,
+                            timestamp: payment.timestamp,
+                            product: payment.productName,
+                        },
+                    };
+                    return response.json(responseBody);
+                });
+            });
+        });
 
         // Cancel
     } else if (status === 'fail') {

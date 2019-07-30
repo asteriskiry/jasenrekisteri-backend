@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const PaymentSchema = new mongoose.Schema({
+    memberId: {
+        type: String,
+        required: true,
+    },
     firstName: {
         type: String,
         required: true,
@@ -47,12 +51,11 @@ const PaymentSchema = new mongoose.Schema({
     reference: {
         type: String,
     },
-    transactionId: {
-        type: String,
+    processed: {
+        type: Boolean,
+        required: true,
+        default: false,
     },
-    signature: {
-        type: String,
-    }
 });
 
 module.exports = mongoose.model('Payment', PaymentSchema);

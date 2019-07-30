@@ -17,4 +17,8 @@ module.exports = {
         success: true,
         message: 'Maksu peruutettu.',
     },
+    onPaymentNotFoundOrAlredyProcessed: {
+        success: false,
+        message: 'Kyseinen maksu on jo käsitelty tai sitä ei löytynyt.',
+    },
 };
