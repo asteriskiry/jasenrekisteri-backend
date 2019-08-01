@@ -100,7 +100,7 @@ async function createPayment(request, response) {
 }
 
 // When payment is made frontend calls this endpoint
-function paymentSuccess(request, response) {
+function paymentReturn(request, response) {
     const account = request.body.account;
     const algorithm = request.body.algorithm;
     const amount = request.body.amount;
@@ -209,5 +209,5 @@ function paymentSuccess(request, response) {
 
 module.exports = {
     createPayment: createPayment,
-    paymentSuccess: paymentSuccess,
+    paymentReturn: paymentReturn,
 };
