@@ -84,8 +84,8 @@ async function createPayment(request, response) {
                         lastName: memberObj.lastName,
                     },
                     redirectUrls: {
-                        success: process.env.CLIENTURL + '/member/pay/thanks',
-                        cancel: process.env.CLIENTURL + '/member/pay/cancel',
+                        success: process.env.CLIENTURL + '/member/pay/return',
+                        cancel: process.env.CLIENTURL + '/member/pay/return',
                     },
                 };
 
@@ -158,25 +158,41 @@ function paymentReturn(request, response) {
             if (!payment) return response.json(httpResponses.onPaymentNotFoundOrAlredyProcessed);
             const memberId = payment.memberId;
             const memberFilter = { _id: memberId };
+
+            // Find member whose payment it is and take current membership ending date
             Member.findOne(memberFilter, (error, member) => {
                 if (error || !member) return response.json(httpResponses.onPaymentError);
                 const currentEndDate = member.membershipEnds;
                 let memberUpdate = null;
+                let currentYear = moment().year();
+
+                // Figure out new membership ending date
+                // 1 year mebership (5€)
                 if (payment.productId === '1111') {
                     memberUpdate = {
                         membershipEnds: moment(currentEndDate)
                             .add(1, 'y')
                             .toDate(),
                     };
+                    // 5 year mebership (20€)
                 } else if (payment.productId === '1555') {
                     memberUpdate = {
                         membershipEnds: moment(currentEndDate)
                             .add(5, 'y')
                             .toDate(),
                     };
+                    // "Piltti"-offer: to the end of current yead + 1 year (7€)
+                } else if (payment.productId === '1222') {
+                    memberUpdate = {
+                        membershipEnds: moment(currentYear + '-12-31')
+                            .add(1, 'y')
+                            .toDate(),
+                    };
                 } else {
                     return response.json(httpResponses.onPaymentError);
                 }
+
+                // Update the new membership ending date and send payment success response to front
                 Member.findOneAndUpdate(memberFilter, memberUpdate, { new: true }, (error, updatedMember) => {
                     if (error || !updatedMember) return response.json(httpResponses.onPaymentError);
                     const responseBody = {
@@ -199,7 +215,15 @@ function paymentReturn(request, response) {
 
         // Cancel
     } else if (status === 'fail') {
-        return response.json(httpResponses.onPaymentCancel);
+        // Find payment by stamp and update record
+        const paymentFilter = { stamp: stamp, processed: false };
+        const paymentUpdate = { status: 'Canceled', processed: true };
+
+        Payment.findOneAndUpdate(paymentFilter, paymentUpdate, { new: true }, (error, payment) => {
+            if (error) return response.json(httpResponses.onPaymentError);
+            if (!payment) return response.json(httpResponses.onPaymentNotFoundOrAlredyProcessed);
+            return response.json(httpResponses.onPaymentCancel);
+        });
 
         // Something else
     } else {
