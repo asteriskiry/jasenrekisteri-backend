@@ -22,7 +22,13 @@ npm start
 ```
 Configure `.env`-file if needed. You can use `npm run watch` instead of `npm start` to watch file changes with nodemon.
 
-You can make admin account with:
+Create default database entries with:
+```bash
+npm run create-defaults
+```
+This creates `admin@example.com` -account with password `password`. It creates 3 default products too. In production delete this account after you create some real user account.
+
+Alternatively you can make admin account manually with:
 ```bash
 npm run create-user
 ```
@@ -47,6 +53,12 @@ firstname;lastname;utu_mail;membership_approved;membership_ends;hometown;tyy_mem
 ## Payment integration
 
 Membership registry has payment integration with [Checkout Finland](https://checkout.fi) provided by finnish bank Osuuspankki.
+
+
+You can create new products with:
+```bash
+npm run create-product
+```
 
 ---
 © Asteriski ry
