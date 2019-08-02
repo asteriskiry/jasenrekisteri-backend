@@ -17,7 +17,7 @@ function forgotPassword(request, response) {
 
     // Find member by email
 
-    Member.findOne({ email: email })
+    Member.findOne({ email: email, active: true })
         .lean()
         .exec((error, user) => {
             if (error) return response.json({ success: false, message: error });

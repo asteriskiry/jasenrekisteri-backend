@@ -22,6 +22,7 @@ function loginUser(request, response) {
     Member.findOne(
         {
             email: email,
+            active: true,
         },
         function(error, user) {
             if (error) return response.json(error);
@@ -33,7 +34,7 @@ function loginUser(request, response) {
     );
 }
 
-// Compare passwords and set token
+// Compare passwords and send token
 
 function comparePassword(user) {
     let responseToken;

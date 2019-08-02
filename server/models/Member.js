@@ -61,8 +61,15 @@ const MemberSchema = new mongoose.Schema({
         type: Boolean,
         required: true,
     },
+    // Only members that are just joined and have not paid yet can have this somethin else that "true"
+    active: {
+        type: Boolean,
+        required: true,
+        default: true,
+    },
 });
 
+// Hash passwords
 MemberSchema.pre('save', function(next) {
     let user = this;
 

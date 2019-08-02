@@ -67,6 +67,7 @@ function save(request, response) {
                 newMember.membershipEnds = membershipEnds;
                 newMember.accountCreated = new Date();
                 newMember.accepted = !!accepted;
+                newMember.active = true;
                 newMember.password = password;
 
                 newMember.save(error => {
