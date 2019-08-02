@@ -7,6 +7,7 @@ const uuidv1 = require('uuid/v1');
 const moment = require('moment');
 const httpResponses = require('./');
 const cryptoRandomString = require('crypto-random-string');
+const mail = require('../../../config/mail');
 
 const Member = require('../../models/Member');
 const Payment = require('../../models/Payment');
@@ -192,9 +193,45 @@ function paymentReturn(request, response) {
                     return response.json(httpResponses.onPaymentError);
                 }
 
-                // Update the new membership ending date and send payment success response to front
+                // Update the new membership ending date
                 Member.findOneAndUpdate(memberFilter, memberUpdate, { new: true }, (error, updatedMember) => {
                     if (error || !updatedMember) return response.json(httpResponses.onPaymentError);
+
+                    // Email receipt to member
+                    let endingMailOptions = {
+                        from: mail.mailSender,
+                        to: updatedMember.email,
+                        subject: 'Kuitti Asteriski ry jäsenmaksusta',
+                        text:
+                            'Kuitti Asteriski ry jäsenmaksusta:\n\n' +
+                            'Jäsenen nimi: ' +
+                            updatedMember.firstName +
+                            ' ' +
+                            updatedMember.lastName +
+                            '\n' +
+                            'Jäsenen UTU-tunnus: ' +
+                            updatedMember.utuAccount +
+                            '\n' +
+                            'Jäsenen sähköpostiosoite: ' +
+                            updatedMember.email +
+                            '\n' +
+                            'Tuote: ' +
+                            payment.productName +
+                            '\n' +
+                            'Maksun määrä: ' +
+                            payment.amountSnt / 100 +
+                            ' €\n' +
+                            'Maksun aikaleima: ' +
+                            moment(payment.timestamp).format('DD.MM.YYYY HH:mm:ss') +
+                            '\n' +
+                            'Uusi jäsenyyden päättymispäivä: ' +
+                            moment(updatedMember.membershipEnds).format('DD.MM.YYYY') +
+                            '\n\n' +
+                            'Maksajan tiedot ovat samat kuin jäsenen. Kiitos maksustasi.',
+                    };
+                    mail.transporter.sendMail(endingMailOptions);
+
+                    // Payment response body
                     const responseBody = {
                         success: true,
                         message: 'Maksun käsittely onnistui.',
@@ -208,6 +245,8 @@ function paymentReturn(request, response) {
                             product: payment.productName,
                         },
                     };
+
+                    // Send payment success response to front
                     return response.json(responseBody);
                 });
             });
@@ -225,7 +264,7 @@ function paymentReturn(request, response) {
             return response.json(httpResponses.onPaymentCancel);
         });
 
-        // Something else
+        // Something else (should not happen)
     } else {
         return response.json(httpResponses.onPaymentError);
     }
