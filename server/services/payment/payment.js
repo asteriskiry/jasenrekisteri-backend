@@ -174,6 +174,7 @@ function paymentReturn(request, response) {
                         membershipEnds: moment(currentEndDate)
                             .add(1, 'y')
                             .toDate(),
+                        active: true,
                     };
                     // 5 year mebership (20€)
                 } else if (payment.productId === '1555') {
@@ -181,13 +182,15 @@ function paymentReturn(request, response) {
                         membershipEnds: moment(currentEndDate)
                             .add(5, 'y')
                             .toDate(),
+                        active: true,
                     };
-                    // "Piltti"-offer: to the end of current yead + 1 year (7€)
+                    // "Piltti"-offer: to the end of current year + 1 year (7€)
                 } else if (payment.productId === '1222') {
                     memberUpdate = {
                         membershipEnds: moment(currentYear + '-12-31')
                             .add(1, 'y')
                             .toDate(),
+                        active: true,
                     };
                 } else {
                     return response.json(httpResponses.onPaymentError);

@@ -2,7 +2,6 @@
 
 const Member = require('../../models/Member');
 const httpResponses = require('./');
-const moment = require('moment');
 const mail = require('../../../config/mail');
 const config = require('../../../config/config');
 
@@ -22,38 +21,13 @@ function registerUser(request, response) {
 
     // Validations
 
-    if (
-        !firstName ||
-        !lastName ||
-        !utuAccount ||
-        !email ||
-        !hometown ||
-        !membershipDuration ||
-        !password ||
-        !passwordAgain
-    ) {
+    if (!firstName || !lastName || !utuAccount || !email || !hometown || !password || !passwordAgain) {
         response.json(httpResponses.onValidationError);
     } else if (password !== passwordAgain) {
         response.json(httpResponses.onNotSamePasswordError);
     } else if (password.length < 6) {
         response.json(httpResponses.onTooShortPassword);
     } else {
-        // Figure out membership end date
-
-        let membershipEnds;
-        membershipDuration = Number(membershipDuration);
-        if (membershipDuration === 1) {
-            membershipEnds = moment(new Date()).add(1, 'y');
-        } else if (membershipDuration === 5) {
-            membershipEnds = moment(new Date()).add(5, 'y');
-        } else if (membershipDuration === 1.5) {
-            membershipEnds = moment(new Date()).add(1, 'y');
-            membershipEnds = moment(membershipEnds).month(11);
-            membershipEnds = moment(membershipEnds).date(31);
-        } else {
-            response.json(httpResponses.onValidationError);
-        }
-
         // New member record
 
         let newMember = new Member();
@@ -67,9 +41,10 @@ function registerUser(request, response) {
         newMember.accessRights = false;
         newMember.role = 'Member';
         newMember.membershipStarts = new Date();
-        newMember.membershipEnds = membershipEnds;
+        newMember.membershipEnds = new Date();
         newMember.accountCreated = new Date();
         newMember.accepted = false;
+        newMember.active = false;
         newMember.password = password;
 
         // Save new member
@@ -79,13 +54,17 @@ function registerUser(request, response) {
                 return response.json(httpResponses.onUserSaveError);
             }
 
-            response.json(httpResponses.onUserSaveSuccess);
+            response.json({
+                success: true,
+                message: 'Käyttäjätunnus luotu onnistuneesti.',
+                memberId: newMember._id,
+            });
 
             // Send mails to member and board
 
             let boardMailOptions = {
                 from: mail.mailSender,
-                to: 'mjturt@utu.fi',
+                to: mail.boardMailAddress,
                 subject: 'Uusi jäsen',
                 text:
                     'Uusi jäsen liittynyt.\n\n' +
@@ -120,7 +99,7 @@ function registerUser(request, response) {
             };
 
             let memberMailOptions = {
-                from: 'Asteriski jäsenrekisteri <jasenrekisteri@asteriski.fi>',
+                from: mail.mailSender,
                 to: email,
                 subject: 'Vahvistus Asteriski ry:n jäseneksi liittymisestä',
                 text:
