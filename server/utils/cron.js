@@ -14,69 +14,49 @@ function startCronJobs() {
 
     const checkMembershipEnding = cron.job('0 0 0 * * *', function() {
         const currentDate = new Date();
-        Member.find({ membershipEnds: { $lte: currentDate } }, function(
-            err,
-            members
-        ) {
+        Member.find({ membershipEnds: { $lte: currentDate } }, function(err, members) {
             if (err) console.log(err);
             members.map(user => {
                 // Check if mail alredy sent
 
-                EndedMembership.findOne({ userID: user._id }, function(
-                    err,
-                    ended
-                ) {
+                EndedMembership.findOne({ userID: user._id }, function(err, ended) {
                     if (err) console.log(err);
                     if (!ended) {
-                        EndedMembership.create({ userID: user._id }).then(
-                            function() {
-                                console.log(user.email);
-                                let endingMailOptions = {
-                                    from: mail.mailSender,
-                                    to: user.email,
-                                    subject:
-                                        'Asteriski ry:n jäsenyytesi päättynyt',
-                                    text:
-                                        'Jäsenyytesi Asteriski ry:lle on päättynyt.\n\n' +
-                                        'Maksa jäsenmaksusi osoitteessa ' +
-                                        config.clientUrl +
-                                        ' tai Asteriski ry:n hallitukselle.',
-                                };
-                                mail.transporter.sendMail(endingMailOptions);
-                            }
-                        );
+                        EndedMembership.create({ userID: user._id }).then(function() {
+                            let endingMailOptions = {
+                                from: mail.mailSender,
+                                to: user.email,
+                                subject: 'Asteriski ry:n jäsenyytesi päättynyt',
+                                text:
+                                    'Jäsenyytesi Asteriski ry:lle on päättynyt.\n\n' +
+                                    'Maksa jäsenmaksusi osoitteessa ' +
+                                    config.clientUrl +
+                                    ' tai käteisenä Asteriski ry:n hallitukselle.',
+                            };
+                            mail.transporter.sendMail(endingMailOptions);
+                        });
                     }
                 });
             });
         });
-        console.log('Cron');
     });
 
     // Export member list to CSV every day
 
     const exportToCSV = cron.job('0 0 4 * * *', function() {
         const filePath = config.CSVFilePath;
-        fs.writeFileSync(
-            filePath,
-            'PersonId;Company;Role;RoleValidity;ValidityStart;ValidityEnd;SpecialCondition\n'
-        );
+        fs.writeFileSync(filePath, 'PersonId;Company;Role;RoleValidity;ValidityStart;ValidityEnd;SpecialCondition\n');
         Member.find({}, function(err, members) {
             if (err) console.log(err);
             members.map(user => {
-                if (
-                    user.accepted &&
-                    user.membershipStarts &&
-                    user.membershipEnds
-                ) {
+                if (user.accepted && user.membershipStarts && user.membershipEnds) {
                     if (user.accessRights) {
                         fs.appendFileSync(
                             filePath,
                             'U_' +
                                 user.utuAccount +
                                 ';0245896-3;A_AJ_Asteriski_hallitus;R;' +
-                                moment(user.membershipStarts).format(
-                                    'YYYYMMDD'
-                                ) +
+                                moment(user.membershipStarts).format('YYYYMMDD') +
                                 ';' +
                                 moment(user.membershipEnds).format('YYYYMMDD') +
                                 ';\n'
@@ -87,9 +67,7 @@ function startCronJobs() {
                             'U_' +
                                 user.utuAccount +
                                 ';0245896-3;A_AJ_Asteriski_jäsen;R;' +
-                                moment(user.membershipStarts).format(
-                                    'YYYYMMDD'
-                                ) +
+                                moment(user.membershipStarts).format('YYYYMMDD') +
                                 ';' +
                                 moment(user.membershipEnds).format('YYYYMMDD') +
                                 ';\n'
