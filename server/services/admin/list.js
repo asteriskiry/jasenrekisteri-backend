@@ -12,7 +12,7 @@ function list(request, response) {
         utils
             .checkUserControl(request.query.id)
             .then(user => {
-                Member.find({ active: true }, null).exec((error, docs) => {
+                Member.find({}, null).exec((error, docs) => {
                     if (error) return response.json(error);
                     if (!docs) return response.json({ memberNotFound: true });
 

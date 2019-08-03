@@ -8,12 +8,12 @@ const moment = require('moment');
 const httpResponses = require('./');
 const cryptoRandomString = require('crypto-random-string');
 const mail = require('../../../config/mail');
+const config = require('../../../config/config');
 
 const Member = require('../../models/Member');
+const TempMember = require('../../models/TempMember');
 const Payment = require('../../models/Payment');
 const Product = require('../../models/Product');
-
-// Work in progress
 
 // Initialize Checkout API
 const client = new CheckoutFinland(process.env.MERCHANT_ID, process.env.MERCHANT_SECRET);
@@ -24,78 +24,82 @@ async function createPayment(request, response) {
     let productId = request.body.productId;
 
     // Find the member whose payment it is
-    Member.findOne({ _id: memberId }, (error, member) => {
-        if (error || !member) return response.json(httpResponses.onError);
-        const memberObj = member.toObject();
+    const memberQuery = Member.findOne({ _id: memberId });
+    let member = await memberQuery.exec();
+    // If not found try tempMembers (just joined)
+    if (!member) {
+        const tempMemberQuery = TempMember.findOne({ _id: memberId });
+        member = await tempMemberQuery.exec();
+    }
+    const memberObj = member.toObject();
 
-        // Find product
-        Product.findOne({ productId: productId }, (error, product) => {
-            if (error || !product) return response.json(httpResponses.onError);
-            const productObj = product.toObject();
+    // Find product
+    Product.findOne({ productId: productId }, (error, product) => {
+        if (error || !product) return response.json(httpResponses.onError);
+        const productObj = product.toObject();
 
-            // Generate stamp (this is how payment is identified)
-            const stamp = cryptoRandomString({ length: 30 });
+        // Generate stamp (this is how payment is identified)
+        const stamp = cryptoRandomString({ length: 30 });
 
-            // Generate order reference
-            const reference = uuidv1();
+        // Generate order reference
+        const reference = uuidv1();
 
-            // Create payment record
-            let newPayment = new Payment();
-            newPayment.memberId = memberObj._id;
-            newPayment.firstName = memberObj.firstName;
-            newPayment.lastName = memberObj.lastName;
-            newPayment.email = memberObj.email;
-            newPayment.hometown = memberObj.hometown;
-            newPayment.timestamp = new Date();
-            newPayment.productId = productObj.productId;
-            newPayment.productName = productObj.name;
-            newPayment.amountSnt = productObj.priceSnt;
-            newPayment.stamp = stamp;
-            newPayment.status = 'Pending';
-            newPayment.reference = reference;
-            newPayment.processed = false;
+        // Create payment record
+        let newPayment = new Payment();
+        newPayment.memberId = memberObj._id;
+        newPayment.firstName = memberObj.firstName;
+        newPayment.lastName = memberObj.lastName;
+        newPayment.email = memberObj.email;
+        newPayment.hometown = memberObj.hometown;
+        newPayment.timestamp = new Date();
+        newPayment.productId = productObj.productId;
+        newPayment.productName = productObj.name;
+        newPayment.amountSnt = productObj.priceSnt;
+        newPayment.stamp = stamp;
+        newPayment.status = 'Pending';
+        newPayment.reference = reference;
+        newPayment.processed = false;
 
-            // Save new payment record
-            newPayment.save(async function(error) {
-                if (error) return response.json(httpResponses.onError);
+        // Save new payment record
+        newPayment.save(async function(error) {
+            if (error) return response.json(httpResponses.onError);
 
-                // Payment request data
-                const payment = {
-                    stamp: stamp,
-                    reference: reference,
-                    amount: productObj.priceSnt,
-                    currency: 'EUR',
-                    language: 'FI',
-                    items: [
-                        {
-                            unitPrice: productObj.priceSnt,
-                            units: 1,
-                            vatPercentage: 0,
-                            productCode: productObj.productId,
-                            deliveryDate: moment(productObj.timestamp).format('YYYY-MM-DD'),
-                            merchant: process.env.MERCHANT_ID,
-                            reference: reference,
-                            description: productObj.name,
-                            category: productObj.category,
-                        },
-                    ],
-                    customer: {
-                        email: memberObj.email,
-                        firstName: memberObj.firstName,
-                        lastName: memberObj.lastName,
+            // Payment request data
+            const payment = {
+                stamp: stamp,
+                reference: reference,
+                amount: productObj.priceSnt,
+                currency: 'EUR',
+                language: 'FI',
+                items: [
+                    {
+                        unitPrice: productObj.priceSnt,
+                        units: 1,
+                        vatPercentage: 0,
+                        productCode: productObj.productId,
+                        deliveryDate: moment(productObj.timestamp).format('YYYY-MM-DD'),
+                        merchant: process.env.MERCHANT_ID,
+                        reference: reference,
+                        description: productObj.name,
+                        category: productObj.category,
                     },
-                    redirectUrls: {
-                        success: process.env.CLIENTURL + '/member/pay/return',
-                        cancel: process.env.CLIENTURL + '/member/pay/return',
-                    },
-                };
+                ],
+                customer: {
+                    email: memberObj.email,
+                    firstName: memberObj.firstName,
+                    lastName: memberObj.lastName,
+                },
+                redirectUrls: {
+                    success: process.env.CLIENTURL + '/member/pay/return',
+                    cancel: process.env.CLIENTURL + '/member/pay/return',
+                },
+            };
 
-                // Create paymnet request to Checkout API
-                const checkoutResponse = await client.createPayment(payment);
+            // Create paymnet request to Checkout API
+            const checkoutResponse = await client.createPayment(payment);
 
-                // Return banks to frontend
-                return response.json(checkoutResponse.providers);
-            });
+            // Return banks to frontend
+            return response.json(checkoutResponse.providers);
         });
     });
 }
@@ -162,96 +166,270 @@ function paymentReturn(request, response) {
 
             // Find member whose payment it is and take current membership ending date
             Member.findOne(memberFilter, (error, member) => {
-                if (error || !member) return response.json(httpResponses.onPaymentError);
-                const currentEndDate = member.membershipEnds;
-                let memberUpdate = null;
-                let currentYear = moment().year();
+                if (error) return response.json(httpResponses.onPaymentError);
 
-                // Figure out new membership ending date
-                // 1 year mebership (5€)
-                if (payment.productId === '1111') {
-                    memberUpdate = {
-                        membershipEnds: moment(currentEndDate)
-                            .add(1, 'y')
-                            .toDate(),
-                        active: true,
-                    };
-                    // 5 year mebership (20€)
-                } else if (payment.productId === '1555') {
-                    memberUpdate = {
-                        membershipEnds: moment(currentEndDate)
-                            .add(5, 'y')
-                            .toDate(),
-                        active: true,
-                    };
-                    // "Piltti"-offer: to the end of current year + 1 year (7€)
-                } else if (payment.productId === '1222') {
-                    memberUpdate = {
-                        membershipEnds: moment(currentYear + '-12-31')
-                            .add(1, 'y')
-                            .toDate(),
-                        active: true,
-                    };
+                const currentYear = moment().year();
+                const currentDate = new Date();
+
+                // If member not found (==new member) find temporary record and create new member based on it
+                if (!member) {
+                    TempMember.findOne(memberFilter, (error, tempMember) => {
+                        if (error || !tempMember) return response.json(httpResponses.onPaymentError);
+                        let membershipEnds = null;
+
+                        // Figure out membership ending date
+                        // 1 year mebership (5€)
+                        if (payment.productId === '1111') {
+                            membershipEnds = moment(currentDate)
+                                .add(1, 'y')
+                                .toDate();
+                            // 5 year mebership (20€)
+                        } else if (payment.productId === '1555') {
+                            membershipEnds = moment(currentDate)
+                                .add(5, 'y')
+                                .toDate();
+                            // "Piltti"-offer: to the end of current year + 1 year (7€)
+                        } else if (payment.productId === '1222') {
+                            membershipEnds = moment(currentYear + '-12-31')
+                                .add(1, 'y')
+                                .toDate();
+                        } else {
+                            return response.json(httpResponses.onPaymentError);
+                        }
+
+                        let newMember = new Member();
+                        newMember._id = tempMember._id;
+                        newMember.firstName = tempMember.firstName;
+                        newMember.lastName = tempMember.lastName;
+                        newMember.utuAccount = tempMember.utuAccount;
+                        newMember.email = tempMember.email;
+                        newMember.hometown = tempMember.hometown;
+                        newMember.tyyMember = !!tempMember.tyyMember;
+                        newMember.tiviaMember = !!tempMember.tiviaMember;
+                        newMember.accessRights = false;
+                        newMember.role = 'Member';
+                        newMember.membershipStarts = new Date();
+                        newMember.membershipEnds = membershipEnds;
+                        newMember.accountCreated = new Date();
+                        newMember.accepted = false;
+                        newMember.password = tempMember.password;
+                        newMember.save(error => {
+                            if (error) return response.json(httpResponses.onPaymentError);
+
+                            // Email to new member
+                            let newMemberMailOptions = {
+                                from: mail.mailSender,
+                                to: newMember.email,
+                                subject: 'Vahvistus Asteriski ry:n jäseneksi liittymisestä ja kuitti',
+                                text:
+                                    'Onneksi olkoon Asteriski ry:n jäseneksi liittymisestä.\n' +
+                                    'Asteriski ry:n hallitus hyväksyy jäsenyytesi mahdollisimman pian.\n\n' +
+                                    'Jäsentiedot:\n\n' +
+                                    'Etunimi: ' +
+                                    newMember.firstName +
+                                    '\n' +
+                                    'Sukunimi: ' +
+                                    newMember.lastName +
+                                    '\n' +
+                                    'UTU-tunus: ' +
+                                    newMember.utuAccount +
+                                    '\n' +
+                                    'Sähköposti: ' +
+                                    newMember.email +
+                                    '\n' +
+                                    'Kotikunta: ' +
+                                    newMember.hometown +
+                                    '\n' +
+                                    'TYYn jäsen: ' +
+                                    (newMember.tyyMember ? 'Kyllä' : 'Ei') +
+                                    '\n' +
+                                    'TIVIAn jäsen: ' +
+                                    (newMember.tiviaMember ? 'Kyllä' : 'Ei') +
+                                    '\n\n' +
+                                    'Olet maksanut tuotteesta: ' +
+                                    payment.productName +
+                                    '\n\n' +
+                                    'Pääset tarkastelemaan jäsentietojasi osoitteessa ' +
+                                    config.clientUrl +
+                                    '\n\n' +
+                                    'Kuitti Asteriski ry jäsenmaksusta:\n\n' +
+                                    'Jäsenen nimi: ' +
+                                    newMember.firstName +
+                                    ' ' +
+                                    newMember.lastName +
+                                    '\n' +
+                                    'Jäsenen UTU-tunnus: ' +
+                                    newMember.utuAccount +
+                                    '\n' +
+                                    'Jäsenen sähköpostiosoite: ' +
+                                    newMember.email +
+                                    '\n' +
+                                    'Tuote: ' +
+                                    payment.productName +
+                                    '\n' +
+                                    'Maksun määrä: ' +
+                                    payment.amountSnt / 100 +
+                                    ' €\n' +
+                                    'Maksun aikaleima: ' +
+                                    moment(payment.timestamp).format('DD.MM.YYYY HH:mm:ss') +
+                                    '\n' +
+                                    'Uusi jäsenyyden päättymispäivä: ' +
+                                    moment(newMember.membershipEnds).format('DD.MM.YYYY') +
+                                    '\n\n' +
+                                    'Maksajan tiedot ovat samat kuin jäsenen. Kiitos maksustasi.',
+                            };
+                            mail.transporter.sendMail(newMemberMailOptions);
+
+                            // Inform board of new member by email
+                            let boardMailOptions = {
+                                from: mail.mailSender,
+                                to: mail.boardMailAddress,
+                                subject: 'Asteriski ry:n uusi jäsen',
+                                text:
+                                    'Uusi jäsen liittynyt.\n\n' +
+                                    'Jäsentiedot:\n\n' +
+                                    'Etunimi: ' +
+                                    newMember.firstName +
+                                    '\n' +
+                                    'Sukunimi: ' +
+                                    newMember.lastName +
+                                    '\n' +
+                                    'UTU-tunus: ' +
+                                    newMember.utuAccount +
+                                    '\n' +
+                                    'Sähköposti: ' +
+                                    newMember.email +
+                                    '\n' +
+                                    'Kotikunta: ' +
+                                    newMember.hometown +
+                                    '\n' +
+                                    'TYYn jäsen: ' +
+                                    (newMember.tyyMember ? 'Kyllä' : 'Ei') +
+                                    '\n' +
+                                    'TIVIAn jäsen: ' +
+                                    (newMember.tiviaMember ? 'Kyllä' : 'Ei') +
+                                    '\n\n' +
+                                    'Jäsen on maksanut tuotteesta: ' +
+                                    payment.productName +
+                                    '\n\n' +
+                                    'Voitte hyväksyä jäsenen osoitteessa ' +
+                                    config.clientUrl,
+                            };
+                            mail.transporter.sendMail(boardMailOptions);
+
+                            // Payment response body
+                            const responseBody = {
+                                success: true,
+                                message: 'Maksun käsittely onnistui.',
+                                paymentData: {
+                                    firstName: newMember.firstName,
+                                    lastName: newMember.lastName,
+                                    email: newMember.email,
+                                    membershipEnds: newMember.membershipEnds,
+                                    amount: payment.amountSnt,
+                                    timestamp: payment.timestamp,
+                                    product: payment.productName,
+                                },
+                            };
+
+                            // Send payment success response to front
+                            return response.json(responseBody);
+                        });
+                    });
+
+                    // If member founds its has to be current member who just paying membership
                 } else {
-                    return response.json(httpResponses.onPaymentError);
+                    // If membership expired do not use old end date (use current date)
+                    let currentEndDate = member.membershipEnds;
+                    if (currentEndDate < currentDate) {
+                        currentEndDate = currentDate;
+                    }
+
+                    let memberUpdate = null;
+
+                    // Figure out new membership ending date
+                    // 1 year mebership (5€)
+                    if (payment.productId === '1111') {
+                        memberUpdate = {
+                            membershipEnds: moment(currentEndDate)
+                                .add(1, 'y')
+                                .toDate(),
+                        };
+                        // 5 year mebership (20€)
+                    } else if (payment.productId === '1555') {
+                        memberUpdate = {
+                            membershipEnds: moment(currentEndDate)
+                                .add(5, 'y')
+                                .toDate(),
+                        };
+                        // "Piltti"-offer: to the end of current year + 1 year (7€)
+                    } else if (payment.productId === '1222') {
+                        memberUpdate = {
+                            membershipEnds: moment(currentYear + '-12-31')
+                                .add(1, 'y')
+                                .toDate(),
+                        };
+                    } else {
+                        return response.json(httpResponses.onPaymentError);
+                    }
+
+                    // Update the new membership ending date
+                    Member.findOneAndUpdate(memberFilter, memberUpdate, { new: true }, (error, updatedMember) => {
+                        if (error || !updatedMember) return response.json(httpResponses.onPaymentError);
+
+                        // Email receipt to member
+                        let receiptMailOptions = {
+                            from: mail.mailSender,
+                            to: updatedMember.email,
+                            subject: 'Kuitti Asteriski ry jäsenmaksusta',
+                            text:
+                                'Kuitti Asteriski ry jäsenmaksusta:\n\n' +
+                                'Jäsenen nimi: ' +
+                                updatedMember.firstName +
+                                ' ' +
+                                updatedMember.lastName +
+                                '\n' +
+                                'Jäsenen UTU-tunnus: ' +
+                                updatedMember.utuAccount +
+                                '\n' +
+                                'Jäsenen sähköpostiosoite: ' +
+                                updatedMember.email +
+                                '\n' +
+                                'Tuote: ' +
+                                payment.productName +
+                                '\n' +
+                                'Maksun määrä: ' +
+                                payment.amountSnt / 100 +
+                                ' €\n' +
+                                'Maksun aikaleima: ' +
+                                moment(payment.timestamp).format('DD.MM.YYYY HH:mm:ss') +
+                                '\n' +
+                                'Uusi jäsenyyden päättymispäivä: ' +
+                                moment(updatedMember.membershipEnds).format('DD.MM.YYYY') +
+                                '\n\n' +
+                                'Maksajan tiedot ovat samat kuin jäsenen. Kiitos maksustasi.',
+                        };
+                        mail.transporter.sendMail(receiptMailOptions);
+
+                        // Payment response body
+                        const responseBody = {
+                            success: true,
+                            message: 'Maksun käsittely onnistui.',
+                            paymentData: {
+                                firstName: updatedMember.firstName,
+                                lastName: updatedMember.lastName,
+                                email: updatedMember.email,
+                                membershipEnds: updatedMember.membershipEnds,
+                                amount: payment.amountSnt,
+                                timestamp: payment.timestamp,
+                                product: payment.productName,
+                            },
+                        };
+
+                        // Send payment success response to front
+                        return response.json(responseBody);
+                    });
                 }
-
-                // Update the new membership ending date
-                Member.findOneAndUpdate(memberFilter, memberUpdate, { new: true }, (error, updatedMember) => {
-                    if (error || !updatedMember) return response.json(httpResponses.onPaymentError);
-
-                    // Email receipt to member
-                    let endingMailOptions = {
-                        from: mail.mailSender,
-                        to: updatedMember.email,
-                        subject: 'Kuitti Asteriski ry jäsenmaksusta',
-                        text:
-                            'Kuitti Asteriski ry jäsenmaksusta:\n\n' +
-                            'Jäsenen nimi: ' +
-                            updatedMember.firstName +
-                            ' ' +
-                            updatedMember.lastName +
-                            '\n' +
-                            'Jäsenen UTU-tunnus: ' +
-                            updatedMember.utuAccount +
-                            '\n' +
-                            'Jäsenen sähköpostiosoite: ' +
-                            updatedMember.email +
-                            '\n' +
-                            'Tuote: ' +
-                            payment.productName +
-                            '\n' +
-                            'Maksun määrä: ' +
-                            payment.amountSnt / 100 +
-                            ' €\n' +
-                            'Maksun aikaleima: ' +
-                            moment(payment.timestamp).format('DD.MM.YYYY HH:mm:ss') +
-                            '\n' +
-                            'Uusi jäsenyyden päättymispäivä: ' +
-                            moment(updatedMember.membershipEnds).format('DD.MM.YYYY') +
-                            '\n\n' +
-                            'Maksajan tiedot ovat samat kuin jäsenen. Kiitos maksustasi.',
-                    };
-                    mail.transporter.sendMail(endingMailOptions);
-
-                    // Payment response body
-                    const responseBody = {
-                        success: true,
-                        message: 'Maksun käsittely onnistui.',
-                        paymentData: {
-                            firstName: updatedMember.firstName,
-                            lastName: updatedMember.lastName,
-                            email: updatedMember.email,
-                            membershipEnds: updatedMember.membershipEnds,
-                            amount: payment.amountSnt,
-                            timestamp: payment.timestamp,
-                            product: payment.productName,
-                        },
-                    };
-
-                    // Send payment success response to front
-                    return response.json(responseBody);
-                });
             });
         });
 

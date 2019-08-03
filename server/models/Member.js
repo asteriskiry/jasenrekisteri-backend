@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
+// Main member schema
+
 const MemberSchema = new mongoose.Schema({
     firstName: {
         type: String,
@@ -61,12 +63,6 @@ const MemberSchema = new mongoose.Schema({
         type: Boolean,
         required: true,
     },
-    // Only members that are just joined and have not paid yet can have this somethin else that "true"
-    active: {
-        type: Boolean,
-        required: true,
-        default: true,
-    },
 });
 
 // Hash passwords
@@ -95,6 +91,7 @@ MemberSchema.pre('save', function(next) {
     }
 });
 
+// Update password and hash it if it is not empty
 MemberSchema.pre('findOneAndUpdate', function(next) {
     const update = this.getUpdate();
     if (update.password !== '' && update.password !== undefined) {
@@ -109,6 +106,7 @@ MemberSchema.pre('findOneAndUpdate', function(next) {
     }
 });
 
+// Password comparing
 MemberSchema.methods.comparePassword = function(pw, cb) {
     bcrypt.compare(pw, this.password, function(err, isMatch) {
         if (err) {

@@ -22,7 +22,6 @@ function loginUser(request, response) {
     Member.findOne(
         {
             email: email,
-            active: true,
         },
         function(error, user) {
             if (error) return response.json(error);

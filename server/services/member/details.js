@@ -7,7 +7,7 @@ const httpResponses = require('./');
 function fetchDetails(request, response) {
     const memberID = request.query.memberID;
 
-    Member.findOne({ _id: memberID, active: true }, (error, doc) => {
+    Member.findOne({ _id: memberID }, (error, doc) => {
         if (error) response.json(error);
 
         if (!doc)
