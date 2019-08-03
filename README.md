@@ -1,6 +1,8 @@
 # Jäsenrekisteri-backend
 Membership register backend API for Asteriski ry / Jäsenrekisterin backend API Asteriski ry:n tarpeisiin
 
+Author: [Maks Turtiainen](https://github.com/mjturt)
+
 React frontend is here <https://github.com/asteriskiry/jasenrekisteri-frontend>.
 
 ### Tech
