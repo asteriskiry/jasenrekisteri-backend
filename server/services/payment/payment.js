@@ -5,6 +5,8 @@ require('dotenv').config();
 const CheckoutFinland = require('checkout-finland');
 const uuidv1 = require('uuid/v1');
 const moment = require('moment');
+const generator = require('generate-password');
+
 const httpResponses = require('./');
 const cryptoRandomString = require('crypto-random-string');
 const mail = require('../../../config/mail');
@@ -197,6 +199,12 @@ function paymentReturn(request, response) {
                             return response.json(httpResponses.onPaymentError);
                         }
 
+                        // Generate password for new user
+                        const password = generator.generate({
+                            length: 8,
+                            numbers: true,
+                        });
+
                         let newMember = new Member();
                         newMember._id = tempMember._id;
                         newMember.firstName = tempMember.firstName;
@@ -212,7 +220,7 @@ function paymentReturn(request, response) {
                         newMember.membershipEnds = membershipEnds;
                         newMember.accountCreated = new Date();
                         newMember.accepted = false;
-                        newMember.password = tempMember.password;
+                        newMember.password = password;
                         newMember.save(error => {
                             if (error) return response.json(httpResponses.onPaymentError);
 
@@ -249,8 +257,13 @@ function paymentReturn(request, response) {
                                     'Olet maksanut tuotteesta: ' +
                                     payment.productName +
                                     '\n\n' +
-                                    'Pääset tarkastelemaan jäsentietojasi osoitteessa ' +
+                                    'Sinulle generoitu salasana: ' +
+                                    password +
+                                    '\n\n' +
+                                    'Pääset tarkastelemaan jäsentietojasi ja vaihtamaan salasanasi osoitteessa ' +
                                     config.clientUrl +
+                                    '\n\n' +
+                                    '-----------------------------------------' +
                                     '\n\n' +
                                     'Kuitti Asteriski ry jäsenmaksusta:\n\n' +
                                     'Jäsenen nimi: ' +

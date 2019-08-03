@@ -3,6 +3,8 @@
 const TempMember = require('../../models/TempMember');
 const httpResponses = require('./');
 
+// Here we only make temporary member record. We create real one when the payment is made.
+
 function registerUser(request, response) {
     let {
         firstName,
@@ -12,18 +14,12 @@ function registerUser(request, response) {
         hometown,
         tyyMember,
         tiviaMember,
-        password,
-        passwordAgain,
     } = request.body;
 
     // Validations
 
-    if (!firstName || !lastName || !utuAccount || !email || !hometown || !password || !passwordAgain) {
+    if (!firstName || !lastName || !utuAccount || !email || !hometown) {
         response.json(httpResponses.onValidationError);
-    } else if (password !== passwordAgain) {
-        response.json(httpResponses.onNotSamePasswordError);
-    } else if (password.length < 6) {
-        response.json(httpResponses.onTooShortPassword);
     } else {
         // New member record
 
@@ -35,7 +31,6 @@ function registerUser(request, response) {
         newTempMember.hometown = hometown;
         newTempMember.tyyMember = !!tyyMember;
         newTempMember.tiviaMember = !!tiviaMember;
-        newTempMember.password = password;
 
         // Save new member
 
