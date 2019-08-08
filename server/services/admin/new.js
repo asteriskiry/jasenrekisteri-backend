@@ -71,8 +71,7 @@ function save(request, response) {
                 newMember.password = password;
 
                 newMember.save(error => {
-                    if (error)
-                        return response.json(httpResponses.onMustBeUnique);
+                    if (error) return response.json(httpResponses.onMustBeUnique);
 
                     // Send mail to board and member
 
@@ -119,7 +118,9 @@ function save(request, response) {
                             'Hyväksytty jäseneksi: ' +
                             (accepted ? 'Kyllä' : 'Ei') +
                             '\n\n' +
-                            'Jäsenelle generoitu salasana on lähetetty hänelle sähköpostitse.',
+                            'Jäsenelle generoitu salasana on lähetetty hänelle sähköpostitse.' +
+                            '\n\n' +
+                            'Tähän sähköpostiin ei voi vastata.',
                     };
 
                     let memberMailOptions = {
@@ -169,7 +170,9 @@ function save(request, response) {
                             password +
                             '\n\n' +
                             'Pääset vaihtamaan salasanasi osoitteessa ' +
-                            config.clientUrl,
+                            config.clientUrl +
+                            '\n\n' +
+                            'Tähän sähköpostiin ei voi vastata. Kysymyksissä ota yhteyttä osoitteeseen asteriski@utu.fi.',
                     };
 
                     mail.transporter.sendMail(boardMailOptions);

@@ -31,7 +31,9 @@ function startCronJobs() {
                                     'Jäsenyytesi Asteriski ry:lle on päättynyt.\n\n' +
                                     'Maksa jäsenmaksusi osoitteessa ' +
                                     config.clientUrl +
-                                    ' tai käteisenä Asteriski ry:n hallitukselle.',
+                                    ' tai käteisenä Asteriski ry:n hallitukselle.' +
+                                    '\n\n' +
+                                    'Tähän sähköpostiin ei voi vastata. Kysymyksissä ota yhteyttä osoitteeseen asteriski@utu.fi.',
                             };
                             mail.transporter.sendMail(endingMailOptions);
                         });

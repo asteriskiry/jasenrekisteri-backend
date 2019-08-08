@@ -181,8 +181,7 @@ function paymentReturn(request, response) {
                         // Figure out new membership ending date
                         // 1 year mebership (5€)
                         if (payment.productId === '1111') {
-                            membershipEnds = moment(currentYear + '-12-31')
-                                .toDate();
+                            membershipEnds = moment(currentYear + '-12-31').toDate();
                             // 5 year mebership (20€)
                         } else if (payment.productId === '1555') {
                             membershipEnds = moment(currentYear + '-12-31')
@@ -287,7 +286,9 @@ function paymentReturn(request, response) {
                                     'Uusi jäsenyyden päättymispäivä: ' +
                                     moment(newMember.membershipEnds).format('DD.MM.YYYY') +
                                     '\n\n' +
-                                    'Maksajan tiedot ovat samat kuin jäsenen. Kiitos maksustasi.',
+                                    'Maksajan tiedot ovat samat kuin jäsenen. Kiitos maksustasi.' +
+                                    '\n\n' +
+                                    'Tähän sähköpostiin ei voi vastata. Kysymyksissä ota yhteyttä osoitteeseen asteriski@utu.fi.',
                             };
                             mail.transporter.sendMail(newMemberMailOptions);
 
@@ -324,7 +325,9 @@ function paymentReturn(request, response) {
                                     payment.productName +
                                     '\n\n' +
                                     'Voitte hyväksyä jäsenen osoitteessa ' +
-                                    config.clientUrl,
+                                    config.clientUrl +
+                                    '\n\n' +
+                                    'Tähän sähköpostiin ei voi vastata.',
                             };
                             mail.transporter.sendMail(boardMailOptions);
 
@@ -367,8 +370,7 @@ function paymentReturn(request, response) {
                         }
                         console.log('endyear: ' + endYear);
                         memberUpdate = {
-                            membershipEnds: moment(endYear + '-12-31')
-                                .toDate(),
+                            membershipEnds: moment(endYear + '-12-31').toDate(),
                         };
                         // 5 year mebership (20€)
                     } else if (payment.productId === '1555') {
@@ -379,8 +381,7 @@ function paymentReturn(request, response) {
                             endYear = currentEndYear + 5;
                         }
                         memberUpdate = {
-                            membershipEnds: moment(endYear + '-12-31')
-                                .toDate(),
+                            membershipEnds: moment(endYear + '-12-31').toDate(),
                         };
                     } else {
                         return response.json(httpResponses.onPaymentError);
@@ -420,7 +421,9 @@ function paymentReturn(request, response) {
                                 'Uusi jäsenyyden päättymispäivä: ' +
                                 moment(updatedMember.membershipEnds).format('DD.MM.YYYY') +
                                 '\n\n' +
-                                'Maksajan tiedot ovat samat kuin jäsenen. Kiitos maksustasi.',
+                                'Maksajan tiedot ovat samat kuin jäsenen. Kiitos maksustasi.' +
+                                '\n\n' +
+                                'Tähän sähköpostiin ei voi vastata. Kysymyksissä ota yhteyttä osoitteeseen asteriski@utu.fi.',
                         };
                         mail.transporter.sendMail(receiptMailOptions);
 

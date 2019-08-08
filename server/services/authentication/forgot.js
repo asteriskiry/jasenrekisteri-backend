@@ -41,8 +41,7 @@ function forgotPassword(request, response) {
                         resetPasswordToken: hash,
                         expire: Date.now() + 3600000,
                     }).then(function(item) {
-                        if (!item)
-                            return response.json(httpResponses.onResetFail);
+                        if (!item) return response.json(httpResponses.onResetFail);
 
                         // Send generated link to email
 
@@ -57,7 +56,9 @@ function forgotPassword(request, response) {
                                 '/reset/' +
                                 user._id +
                                 '/' +
-                                token,
+                                token +
+                                '\n\n' +
+                                'Tähän sähköpostiin ei voi vastata. Kysymyksissä ota yhteyttä osoitteeseen asteriski@utu.fi.',
                         };
                         let mailSent = mail.transporter.sendMail(mailOptions);
                         if (mailSent) {

@@ -22,8 +22,7 @@ function get(request, response) {
                     .lean()
                     .exec((error, doc) => {
                         if (error) return response.json(error);
-                        if (!doc)
-                            return response.json({ memberNotFound: true });
+                        if (!doc) return response.json({ memberNotFound: true });
                         delete doc.password;
                         return response.json(doc);
                     });
@@ -97,12 +96,13 @@ function update(request, response) {
                             let mailOptions = {
                                 from: mail.mailSender,
                                 to: adminProfile.email,
-                                subject:
-                                    'Jäsenyytesi Asteriski ry:lle hyväksytty',
+                                subject: 'Jäsenyytesi Asteriski ry:lle hyväksytty',
                                 text:
                                     'Jäsenyytesi Asteriski ry:lle hyväksytty.\n\n' +
                                     'Pääset tarkastelemaan jäsentietojasi osoitteessa ' +
-                                    config.clientUrl,
+                                    config.clientUrl +
+                                    '\n\n' +
+                                    'Tähän sähköpostiin ei voi vastata. Kysymyksissä ota yhteyttä osoitteeseen asteriski@utu.fi.',
                             };
                             mail.transporter.sendMail(mailOptions);
                         }
@@ -120,11 +120,8 @@ function update(request, response) {
                 Member.findOneAndUpdate({ _id: memberID }, adminProfile)
                     .lean()
                     .exec((error, doc) => {
-                        if (error)
-                            return response.json(httpResponses.onMustBeUnique);
-                        return response.json(
-                            httpResponses.onProfileUpdateSuccess
-                        );
+                        if (error) return response.json(httpResponses.onMustBeUnique);
+                        return response.json(httpResponses.onProfileUpdateSuccess);
                     });
             })
             .catch(error => {
