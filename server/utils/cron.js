@@ -89,7 +89,7 @@ function startCronJobs() {
 
     // Start jobs
 
-    cleanDatabases.start();
+    // cleanDatabases.start();
     checkMembershipEnding.start();
     exportToCSV.start();
 }
