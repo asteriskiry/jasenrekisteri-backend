@@ -29,4 +29,8 @@ module.exports = {
         success: false,
         message: 'Sähköpostiosoitteen ja UTU-tunnuksen oltava uniikkeja.',
     },
+    onValidationError: {
+        success: false,
+        message: 'Jossakin kentässä on vikaa.',
+    },
 };

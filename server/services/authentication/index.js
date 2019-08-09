@@ -21,9 +21,13 @@ module.exports = {
         success: false,
         message: 'Väärä salasana.',
     },
-    onValidationError: {
+    onEmptyError: {
         success: false,
         message: 'Kaikki kentät ovat pakollisia.',
+    },
+    onValidationError: {
+        success: false,
+        message: 'Jossakin kentässä on vikaa.',
     },
     onUserSaveError: {
         success: false,

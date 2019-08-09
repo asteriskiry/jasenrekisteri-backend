@@ -12,11 +12,7 @@ function resetPassword(request, response) {
     // Validations
 
     if (!password || !passwordAgain) {
-        return response.json(httpResponses.onValidationError);
-    }
-
-    if (password !== passwordAgain) {
-        return response.json(httpResponses.onNotSamePasswordError);
+        return response.json(httpResponses.onEmptyError);
     }
 
     if (password !== passwordAgain) {

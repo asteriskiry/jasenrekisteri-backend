@@ -4,6 +4,8 @@ const utils = require('../../utils');
 const httpResponses = require('./');
 const mail = require('../../../config/mail');
 const config = require('../../../config/config');
+const formatters = require('../../utils/formatters');
+const validator = require('validator');
 
 // Get member details
 
@@ -40,24 +42,9 @@ function get(request, response) {
 function update(request, response) {
     const memberID = request.body.memberID;
 
-    const adminProfile = {
-        firstName: request.body.firstName,
-        lastName: request.body.lastName,
-        utuAccount: request.body.utuAccount,
-        email: request.body.email,
-        hometown: request.body.hometown,
-        tyyMember: request.body.tyyMember,
-        tiviaMember: request.body.tiviaMember,
-        role: request.body.role,
-        accessRights: request.body.accessRights,
-        membershipStarts: request.body.membershipStarts,
-        membershipEnds: request.body.membershipEnds,
-        accepted: request.body.accepted,
-        password: request.body.password,
-    };
-
     // Validations
 
+    console.log(typeof request.body.membershipEnds);
     if (
         !request.body.firstName ||
         !request.body.lastName ||
@@ -66,11 +53,45 @@ function update(request, response) {
         !request.body.hometown
     ) {
         return response.json(httpResponses.onFieldEmpty);
+    } else if (
+        !validator.isAlpha(request.body.firstName, 'sv-SE') ||
+        !validator.isAlpha(request.body.lastName, 'sv-SE') ||
+        !validator.isAlpha(request.body.utuAccount, 'sv-SE') ||
+        !validator.isEmail(request.body.email) ||
+        !validator.isAlpha(request.body.hometown, 'sv-SE') ||
+        !typeof request.body.tyyMember === 'boolean' ||
+        !typeof request.body.tiviaMember === 'boolean' ||
+        !typeof request.body.accessRights === 'boolean' ||
+        !typeof request.body.accepted === 'boolean' ||
+        !validator.isIn(request.body.role, ['Admin', 'Board', 'Member', 'Functionary']) ||
+        !validator.isISO8601(request.body.membershipStarts) ||
+        !validator.isISO8601(request.body.membershipEnds)
+    ) {
+        return response.json(httpResponses.onValidationError);
     }
 
     if (request.body.password !== request.body.passwordAgain) {
         return response.json(httpResponses.onNotSamePasswordError);
     }
+
+    // Updated member data
+
+    const adminProfile = {
+        firstName: formatters.capitalizeFirstLetter(request.body.firstName),
+        lastName: formatters.capitalizeFirstLetter(request.body.lastName),
+        utuAccount: request.body.utuAccount.toLowerCase(),
+        email: request.body.email.toLowerCase(),
+        hometown: formatters.capitalizeFirstLetter(request.body.hometown),
+        tyyMember: !!request.body.tyyMember,
+        tiviaMember: !!request.body.tiviaMember,
+        role: request.body.role,
+        accessRights: !!request.body.accessRights,
+        membershipStarts: request.body.membershipStarts,
+        membershipEnds: request.body.membershipEnds,
+        accepted: !!request.body.accepted,
+        password: request.body.password,
+    };
+
 
     // Check client side access
 

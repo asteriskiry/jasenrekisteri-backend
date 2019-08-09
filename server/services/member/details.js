@@ -1,6 +1,8 @@
 const Member = require('../../models/Member');
 const utils = require('../../utils');
 const httpResponses = require('./');
+const formatters = require('../../utils/formatters');
+const validator = require('validator');
 
 // Get member details
 
@@ -10,8 +12,7 @@ function fetchDetails(request, response) {
     Member.findOne({ _id: memberID }, (error, doc) => {
         if (error) response.json(error);
 
-        if (!doc)
-            return response.json({ memberNotFound: true });
+        if (!doc) return response.json({ memberNotFound: true });
         const member = doc.toObject();
 
         delete member.password;
@@ -40,6 +41,16 @@ function updateDetails(request, response) {
                 !request.body.hometown
             ) {
                 return response.json(httpResponses.onFieldEmpty);
+            } else if (
+                !validator.isAlpha(request.body.firstName, 'sv-SE') ||
+                !validator.isAlpha(request.body.lastName, 'sv-SE') ||
+                !validator.isAlpha(request.body.utuAccount, 'sv-SE') ||
+                !validator.isEmail(request.body.email) ||
+                !validator.isAlpha(request.body.hometown, 'sv-SE') ||
+                !typeof request.body.tyyMember === 'boolean' ||
+                !typeof request.body.tiviaMember === 'boolean'
+            ) {
+                return response.json(httpResponses.onValidationError);
             }
 
             if (request.body.password !== request.body.passwordAgain) {
@@ -47,20 +58,17 @@ function updateDetails(request, response) {
             }
 
             let record = {
-                firstName: request.body.firstName,
-                lastName: request.body.lastName,
-                utuAccount: request.body.utuAccount,
-                email: request.body.email,
-                hometown: request.body.hometown,
+                firstName: formatters.capitalizeFirstLetter(request.body.firstName),
+                lastName: formatters.capitalizeFirstLetter(request.body.lastName),
+                utuAccount: request.body.utuAccount.toLowerCase(),
+                email: request.body.email.toLowerCase(),
+                hometown: formatters.capitalizeFirstLetter(request.body.hometown),
                 tyyMember: request.body.tyyMember,
                 tiviaMember: request.body.tiviaMember,
                 password: request.body.password,
             };
 
-            if (
-                request.body.password === '' ||
-                request.body.password === null
-            ) {
+            if (request.body.password === '' || request.body.password === null) {
                 delete record.password;
             } else if (request.body.password.length < 6) {
                 return response.json(httpResponses.onTooShortPassword);
@@ -68,16 +76,10 @@ function updateDetails(request, response) {
 
             // Update member details
 
-            Member.findOneAndUpdate(
-                query,
-                record,
-                { new: true },
-                (error, doc) => {
-                    if (error)
-                        return response.json(httpResponses.onMustBeUnique);
-                    return response.json(httpResponses.onUpdateSuccess);
-                }
-            );
+            Member.findOneAndUpdate(query, record, { new: true }, (error, doc) => {
+                if (error) return response.json(httpResponses.onMustBeUnique);
+                return response.json(httpResponses.onUpdateSuccess);
+            });
         })
         .catch(error => {
             return response.json(error);
