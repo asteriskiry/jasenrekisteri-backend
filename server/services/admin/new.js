@@ -6,6 +6,8 @@ const utils = require('../../utils');
 const httpResponses = require('./');
 const mail = require('../../../config/mail');
 const config = require('../../../config/config');
+const formatters = require('../../utils/formatters');
+const validator = require('validator');
 
 // Add new member
 
@@ -41,6 +43,21 @@ function save(request, response) {
             !membershipEnds
         ) {
             return response.json(httpResponses.onAllFieldEmpty);
+        } else if (
+            !validator.matches(request.body.firstName, /[a-zA-Z\u00c0-\u017e-]{2,20}$/g) ||
+            !validator.matches(request.body.lastName, /[a-zA-Z\u00c0-\u017e-]{2,25}$/g) ||
+            !validator.matches(request.body.utuAccount, /[a-öA-Ö]{4,8}$/g) ||
+            !validator.isEmail(request.body.email) ||
+            !validator.matches(request.body.hometown, /[a-zA-Z\u00c0-\u017e-]{2,25}$/g) ||
+            !typeof request.body.tyyMember === 'boolean' ||
+            !typeof request.body.tiviaMember === 'boolean' ||
+            !typeof request.body.accessRights === 'boolean' ||
+            !typeof request.body.accepted === 'boolean' ||
+            !validator.isIn(request.body.role, ['Admin', 'Board', 'Member', 'Functionary']) ||
+            !validator.isISO8601(request.body.membershipStarts) ||
+            !validator.isISO8601(request.body.membershipEnds)
+        ) {
+            return response.json(httpResponses.onValidationError);
         }
 
         const password = generator.generate({
@@ -54,11 +71,11 @@ function save(request, response) {
             .checkUserControl(request.body.id)
             .then(user => {
                 let newMember = new Member();
-                newMember.firstName = firstName;
-                newMember.lastName = lastName;
-                newMember.utuAccount = utuAccount;
-                newMember.email = email;
-                newMember.hometown = hometown;
+                newMember.firstName = formatters.capitalizeFirstLetter(firstName);
+                newMember.lastName = formatters.capitalizeFirstLetter(lastName);
+                newMember.utuAccount = utuAccount.toLowerCase();
+                newMember.email = email.toLowerCase();
+                newMember.hometown = formatters.capitalizeFirstLetter(hometown);
                 newMember.tyyMember = !!tyyMember;
                 newMember.tiviaMember = !!tiviaMember;
                 newMember.role = role;
@@ -67,7 +84,6 @@ function save(request, response) {
                 newMember.membershipEnds = membershipEnds;
                 newMember.accountCreated = new Date();
                 newMember.accepted = !!accepted;
-                newMember.active = true;
                 newMember.password = password;
 
                 newMember.save(error => {
