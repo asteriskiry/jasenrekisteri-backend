@@ -15,13 +15,13 @@ function registerUser(request, response) {
     if (!firstName || !lastName || !utuAccount || !email || !hometown) {
         response.json(httpResponses.onEmptyError);
     } else if (
-        !validator.isAlpha(firstName, 'sv-SE') ||
-        !validator.isAlpha(lastName, 'sv-SE') ||
-        !validator.isAlpha(utuAccount, 'sv-SE') ||
-        !validator.isEmail(email) ||
-        !validator.isAlpha(hometown, 'sv-SE') ||
-        !typeof tyyMember === 'boolean' ||
-        !typeof tiviaMember === 'boolean'
+        !validator.matches(request.body.firstName, /[a-zA-Z\u00c0-\u017e-]{2,20}$/g) ||
+        !validator.matches(request.body.lastName, /[a-zA-Z\u00c0-\u017e-]{2,25}$/g) ||
+        !validator.matches(request.body.utuAccount, /[a-öA-Ö]{4,8}$/g) ||
+        !validator.isEmail(request.body.email) ||
+        !validator.matches(request.body.hometown, /[a-zA-Z\u00c0-\u017e-]{2,25}$/g) ||
+        !typeof request.body.tyyMember === 'boolean' ||
+        !typeof request.body.tiviaMember === 'boolean'
     ) {
         response.json(httpResponses.onValidationError);
     } else {
