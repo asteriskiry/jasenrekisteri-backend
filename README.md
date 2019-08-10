@@ -11,6 +11,8 @@ React frontend is here <https://github.com/asteriskiry/jasenrekisteri-frontend>.
 - Express.js
 - MongoDB
 
+Minimal [API documentation](./API.md).
+
 ### Start
 Install node.js, npm and MongoDB.
 
