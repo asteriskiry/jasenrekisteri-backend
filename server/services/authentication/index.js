@@ -61,4 +61,8 @@ module.exports = {
         success: false,
         message: 'Salasanan minimipituus on 6 merkkiä.',
     },
+    onError: {
+        success: false,
+        message: 'Jotain meni vikaan.',
+    },
 };

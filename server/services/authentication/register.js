@@ -1,6 +1,7 @@
 'use strict';
 
 const TempMember = require('../../models/TempMember');
+const Member = require('../../models/Member');
 const httpResponses = require('./');
 const formatters = require('../../utils/formatters');
 const validator = require('validator');
@@ -25,29 +26,38 @@ function registerUser(request, response) {
     ) {
         response.json(httpResponses.onValidationError);
     } else {
-        // New member record
+        // Check if email and utuAccount are unique
 
-        let newTempMember = new TempMember();
-        newTempMember.firstName = formatters.capitalizeFirstLetter(firstName);
-        newTempMember.lastName = formatters.capitalizeFirstLetter(lastName);
-        newTempMember.utuAccount = utuAccount.toLowerCase();
-        newTempMember.email = email.toLowerCase();
-        newTempMember.hometown = formatters.capitalizeFirstLetter(hometown);
-        newTempMember.tyyMember = !!tyyMember;
-        newTempMember.tiviaMember = !!tiviaMember;
+        Member.findOne({ $or: [{ email: email }, { utuAccount: utuAccount }] }).exec(function(err, member) {
+            if (err) response.json(httpResponses.onError);
+            if (member) {
+                response.json(httpResponses.onUserSaveError);
+            } else {
+                // New temp member record
 
-        // Save new member
+                let newTempMember = new TempMember();
+                newTempMember.firstName = formatters.capitalizeFirstLetter(firstName);
+                newTempMember.lastName = formatters.capitalizeFirstLetter(lastName);
+                newTempMember.utuAccount = utuAccount.toLowerCase();
+                newTempMember.email = email.toLowerCase();
+                newTempMember.hometown = formatters.capitalizeFirstLetter(hometown);
+                newTempMember.tyyMember = !!tyyMember;
+                newTempMember.tiviaMember = !!tiviaMember;
 
-        newTempMember.save(error => {
-            if (error) {
-                return response.json(httpResponses.onUserSaveError);
+                // Save new member
+
+                newTempMember.save(error => {
+                    if (error) {
+                        return response.json(httpResponses.onUserSaveError);
+                    }
+
+                    response.json({
+                        success: true,
+                        message: 'Käyttäjätunnus luotu onnistuneesti.',
+                        memberId: newTempMember._id,
+                    });
+                });
             }
-
-            response.json({
-                success: true,
-                message: 'Käyttäjätunnus luotu onnistuneesti.',
-                memberId: newTempMember._id,
-            });
         });
     }
 }
