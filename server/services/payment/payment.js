@@ -254,7 +254,7 @@ function paymentReturn(request, response) {
                                     'Olet maksanut tuotteesta: ' +
                                     payment.productName +
                                     '\n\n' +
-                                    'Sinulle generoitu salasana: ' +
+                                    'Sinulle generoitu salasana (suositeltua olisi vaihtaa): ' +
                                     password +
                                     '\n\n' +
                                     'Pääset tarkastelemaan jäsentietojasi ja vaihtamaan salasanasi osoitteessa ' +
