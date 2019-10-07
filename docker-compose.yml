@@ -1,0 +1,18 @@
+version: '2.4'
+services:
+  mongo:
+    image: mongo
+    ports:
+      - 27017:27017
+  web:
+    build: .
+    ports:
+      - 3001:3001
+    entrypoint: bash -c 'npm run create-defaults && npm start'
+    depends_on:
+      mongo:
+        condition: service_started
+    environment:
+      - MONGOURL='mongodb://host.docker.internal:27017/jasenrekisteri'
+      - STATICFILES="/full/path/to/build"
+      - SECRET="secret"
