@@ -2,13 +2,17 @@ version: '2.4'
 services:
   mongo:
     image: mongo
+    command: --quiet
     ports:
       - 27017:27017
   web:
     build: .
     ports:
       - 3001:3001
-    entrypoint: bash -c 'npm run create-defaults && npm start'
+    entrypoint: bash -c 'npm run create-defaults && npm run watch'
+    volumes:
+      - .:/app
+      - /app/node_modules
     depends_on:
       mongo:
         condition: service_started
