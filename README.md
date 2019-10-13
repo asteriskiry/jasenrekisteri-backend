@@ -14,6 +14,16 @@ React frontend is here <https://github.com/asteriskiry/jasenrekisteri-frontend>.
 Minimal [API documentation](./API.md).
 
 ### Start
+Install Docker and Docker-compose. Start Docker and run:
+```bash
+docker-compose up
+```
+After that backend is listening at <http://localhost:3001>
+
+Or you can do things manually:
+
+### Manual install
+
 Install node.js, npm and MongoDB.
 
 Start MongoDB with `systemctl start mongodb` or `mongod`.

@@ -55,20 +55,19 @@ db.once('open', async function() {
     membership2.priceSnt = 700;
     membership2.membershipDuration = 1.5;
 
-    adminUser.save(function(err) {
-        if (err) return console.error(err);
-        console.log('\x1b[32m%s\x1b[0m', '    admin@example.com -käyttäjän tallennus onnistui (salasana: password).');
-    });
-    membership1.save(function(err) {
-        if (err) return console.error(err);
-        console.log('\x1b[32m%s\x1b[0m', '    1 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1111).');
-    });
-    membership5.save(function(err) {
-        if (err) return console.error(err);
-        console.log('\x1b[32m%s\x1b[0m', '    5 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1555).');
-    });
-    membership2.save(function(err) {
-        if (err) return console.error(err);
-        console.log('\x1b[32m%s\x1b[0m', '    Pilttitarjous -tuotteen tallennus onnistui. (tuotekoodi: 1222)');
+    await adminUser.save()
+        .then(() => console.log('\x1b[32m%s\x1b[0m', '    admin@example.com -käyttäjän tallennus onnistui (salasana: password).'))
+        .catch(err => console.error(err));
+    await membership1.save()
+        .then(() => console.log('\x1b[32m%s\x1b[0m', '    1 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1111).'))
+        .catch(err => console.error(err));
+    await membership5.save()
+        .then(() => console.log('\x1b[32m%s\x1b[0m', '    5 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1555).'))
+        .catch(err => console.error(err));
+    await membership2.save()
+        .then(() => console.log('\x1b[32m%s\x1b[0m', '    Pilttitarjous -tuotteen tallennus onnistui. (tuotekoodi: 1222)'))
+        .catch(err => console.error(err));
+    db.close(() => {
+        console.log(('\x1b[32m%s\x1b[0m', '    Skripti valmistui!'));
     });
 });
