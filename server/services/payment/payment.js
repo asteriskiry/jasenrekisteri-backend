@@ -97,6 +97,8 @@ async function createPayment(request, response) {
                 },
             };
 
+            if (process.env.NODE_ENV === 'development') return response.json(stamp)
+                
             // Create paymnet request to Checkout API
             const checkoutResponse = await client.createPayment(payment);
 
@@ -134,22 +136,23 @@ function paymentReturn(request, response) {
     ) {
         return response.json(httpResponses.onPaymentError);
     }
+    if (process.env.NODE_ENV !== 'development') {
+        // Validate signature
+        const sigValidationData = {
+            'checkout-account': account,
+            'checkout-algorithm': algorithm,
+            'checkout-amount': amount,
+            'checkout-stamp': stamp,
+            'checkout-reference': reference,
+            'checkout-transaction-id': transactionId,
+            'checkout-status': status,
+            'checkout-provider': provider,
+        };
+        const calculatedSignature = client.calculateHmac(sigValidationData, '');
 
-    // Validate signature
-    const sigValidationData = {
-        'checkout-account': account,
-        'checkout-algorithm': algorithm,
-        'checkout-amount': amount,
-        'checkout-stamp': stamp,
-        'checkout-reference': reference,
-        'checkout-transaction-id': transactionId,
-        'checkout-status': status,
-        'checkout-provider': provider,
-    };
-    const calculatedSignature = client.calculateHmac(sigValidationData, '');
-
-    if (calculatedSignature !== signature) {
-        return response.json(httpResponses.onPaymentError);
+        if (calculatedSignature !== signature) {
+            return response.json(httpResponses.onPaymentError);
+        }
     }
 
     // Success / Cancel handling
@@ -345,7 +348,9 @@ function paymentReturn(request, response) {
                                     product: payment.productName,
                                 },
                             };
-
+                            if (process.env.NODE_ENV === 'development') {
+                                responseBody['password'] = password
+                            }
                             // Send payment success response to front
                             return response.json(responseBody);
                         });

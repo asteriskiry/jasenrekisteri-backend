@@ -24,7 +24,9 @@ module.exports = function() {
         server.use(bodyParser.json());
         server.use(bodyParser.urlencoded({ extended: false }));
         server.use(cookieParser());
-        server.use(logger('dev'));
+        server.use(logger('dev', {
+            skip: function(req, res) { return req.path == '/healthcheck' } // dont flood log with containers healtcheck calls
+        }));
         server.use(passport.initialize());
         mongoose.connect(config.mongoUrl, {
             useNewUrlParser: true,

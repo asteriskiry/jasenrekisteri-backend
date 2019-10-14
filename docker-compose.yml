@@ -16,7 +16,22 @@ services:
     depends_on:
       mongo:
         condition: service_started
+    healthcheck:
+      test: "curl --fail http://localhost:3001/healthcheck || exit 1"
+      interval: 5s
+      timeout: 1s
     environment:
+      - NODE_ENV=development
       - MONGOURL='mongodb://host.docker.internal:27017/jasenrekisteri'
       - STATICFILES="/full/path/to/build"
       - SECRET="secret"
+  robot:
+    build: 
+      context: .
+      dockerfile: tests/robot/Dockerfile
+    entrypoint: robot --outputdir /robot/results /robot
+    depends_on:
+      web:
+        condition: service_healthy
+    volumes:
+      - /tmp/jasenrekisteri-backend-testresults:/robot/results
