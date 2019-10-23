@@ -30,6 +30,7 @@ module.exports = function() {
             useNewUrlParser: true,
             useCreateIndex: true,
             useFindAndModify: false,
+            useUnifiedTopology: true,
         });
         require('../config/passport')(passport);
 
