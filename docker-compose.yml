@@ -3,6 +3,7 @@ version: "3.2"
 services:
   mongo:
     image: mongo
+    command: --quiet
     restart: always
     networks:
       - jasenrekisteri

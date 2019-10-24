@@ -66,25 +66,25 @@ db.once('open', async function() {
                 '    admin@example.com -käyttäjän tallennus onnistui (salasana: password).'
             )
         )
-        .catch(err => console.error(err));
+        .catch(err => console.warn(err.message));
     await membership1
         .save()
         .then(() =>
             console.log('\x1b[32m%s\x1b[0m', '    1 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1111).')
         )
-        .catch(err => console.error(err));
+        .catch(err => console.warn(err.message));
     await membership5
         .save()
         .then(() =>
             console.log('\x1b[32m%s\x1b[0m', '    5 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1555).')
         )
-        .catch(err => console.error(err));
+        .catch(err => console.warn(err.message));
     await membership2
         .save()
         .then(() =>
             console.log('\x1b[32m%s\x1b[0m', '    Pilttitarjous -tuotteen tallennus onnistui. (tuotekoodi: 1222)')
         )
-        .catch(err => console.error(err));
+        .catch(err => console.warn(err.message));
     db.close(() => {
         console.log(('\x1b[32m%s\x1b[0m', '    Skripti valmistui!'));
     });
