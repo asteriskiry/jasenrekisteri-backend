@@ -42,7 +42,7 @@ prompt.get(schema, function(err, result) {
     console.log('  Tuotteen hinta sentteinä: ' + result.priceSnt);
     console.log('  Jäsenyyden pituus: ' + result.membershipDuration);
 
-    mongoose.connect(config.mongoUrl, { useNewUrlParser: true });
+    mongoose.connect(config.mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
     var db = mongoose.connection;
 
     db.once('open', function() {
