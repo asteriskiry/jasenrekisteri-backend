@@ -9,10 +9,13 @@ let config = require('../config/config');
 console.log('\x1b[36m%s\x1b[0m', 'Skripti luo 4 tietokantamerkintää: 1 käyttäjätunnus ja 3 jäsenyystuotetta.');
 console.log('\x1b[36m%s\x1b[0m', 'Kun skripti on valmis voit sulkea yhteyden Ctrl-c:llä.');
 console.log('');
-console.log('\x1b[33m%s\x1b[0m', 'Tuotannossa: Poista luotu käyttätunnus kun saat tehtyä oikean käyttäjätunnuksen tilalle.');
+console.log(
+    '\x1b[33m%s\x1b[0m',
+    'Tuotannossa: Poista luotu käyttätunnus kun saat tehtyä oikean käyttäjätunnuksen tilalle.'
+);
 console.log('');
 
-mongoose.connect(config.mongoUrl, { useNewUrlParser: true });
+mongoose.connect(config.mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
 let db = mongoose.connection;
 
 db.once('open', async function() {
@@ -55,18 +58,33 @@ db.once('open', async function() {
     membership2.priceSnt = 700;
     membership2.membershipDuration = 1.5;
 
-    await adminUser.save()
-        .then(() => console.log('\x1b[32m%s\x1b[0m', '    admin@example.com -käyttäjän tallennus onnistui (salasana: password).'))
-        .catch(err => console.error(err));
-    await membership1.save()
-        .then(() => console.log('\x1b[32m%s\x1b[0m', '    1 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1111).'))
-        .catch(err => console.error(err));
-    await membership5.save()
-        .then(() => console.log('\x1b[32m%s\x1b[0m', '    5 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1555).'))
-        .catch(err => console.error(err));
-    await membership2.save()
-        .then(() => console.log('\x1b[32m%s\x1b[0m', '    Pilttitarjous -tuotteen tallennus onnistui. (tuotekoodi: 1222)'))
-        .catch(err => console.error(err));
+    await adminUser
+        .save()
+        .then(() =>
+            console.log(
+                '\x1b[32m%s\x1b[0m',
+                '    admin@example.com -käyttäjän tallennus onnistui (salasana: password).'
+            )
+        )
+        .catch(err => console.warn(err.message));
+    await membership1
+        .save()
+        .then(() =>
+            console.log('\x1b[32m%s\x1b[0m', '    1 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1111).')
+        )
+        .catch(err => console.warn(err.message));
+    await membership5
+        .save()
+        .then(() =>
+            console.log('\x1b[32m%s\x1b[0m', '    5 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1555).')
+        )
+        .catch(err => console.warn(err.message));
+    await membership2
+        .save()
+        .then(() =>
+            console.log('\x1b[32m%s\x1b[0m', '    Pilttitarjous -tuotteen tallennus onnistui. (tuotekoodi: 1222)')
+        )
+        .catch(err => console.warn(err.message));
     db.close(() => {
         console.log(('\x1b[32m%s\x1b[0m', '    Skripti valmistui!'));
     });

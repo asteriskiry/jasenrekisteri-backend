@@ -78,7 +78,7 @@ prompt.get(schema, function(err, result) {
     console.log('  Kulkuoikeudet: ' + result.accessRights);
     console.log('  Hyväksytty: ' + result.accepted);
 
-    mongoose.connect(config.mongoUrl, { useNewUrlParser: true });
+    mongoose.connect(config.mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
     var db = mongoose.connection;
 
     db.once('open', function() {
