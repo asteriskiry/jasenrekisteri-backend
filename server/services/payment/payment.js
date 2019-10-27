@@ -236,7 +236,7 @@ function paymentReturn(request, response) {
                                     'Sukunimi: ' +
                                     newMember.lastName +
                                     '\n' +
-                                    'UTU-tunus: ' +
+                                    'UTU-tunnus: ' +
                                     newMember.utuAccount +
                                     '\n' +
                                     'Sähköposti: ' +
@@ -306,7 +306,7 @@ function paymentReturn(request, response) {
                                     'Sukunimi: ' +
                                     newMember.lastName +
                                     '\n' +
-                                    'UTU-tunus: ' +
+                                    'UTU-tunnus: ' +
                                     newMember.utuAccount +
                                     '\n' +
                                     'Sähköposti: ' +

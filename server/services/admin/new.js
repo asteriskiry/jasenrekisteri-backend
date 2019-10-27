@@ -104,7 +104,7 @@ function save(request, response) {
                             'Sukunimi: ' +
                             lastName +
                             '\n' +
-                            'UTU-tunus: ' +
+                            'UTU-tunnus: ' +
                             utuAccount +
                             '\n' +
                             'Sähköposti: ' +
@@ -152,7 +152,7 @@ function save(request, response) {
                             'Sukunimi: ' +
                             lastName +
                             '\n' +
-                            'UTU-tunus: ' +
+                            'UTU-tunnus: ' +
                             utuAccount +
                             '\n' +
                             'Sähköposti: ' +
@@ -200,14 +200,14 @@ function save(request, response) {
                             config.clientUrl +
                             '\n\n' +
                             'Uuden jäsenreksiterin avulla voit tarkistaa jäsentietosi, jäsenyytesi voimassaolon ja esimerkiksi kulkuoikeuksesi statuksen. Voit myös muuttaa jäsentietojasi suoraan nettikäyttöliittymästä. Jäsenmaksun maksaminen on myös mahdollista ja jäsenyytesi voimassaolo päivittyy reaaliaikaisesti. Kulkuoikeudet päivittyvät yliopiston järjestelmään noin vuorokauden sisällä. Maksuvaihtoehtoja löytyy verkkopankeista Mobilepayhyn.\n\n' +
-                            'Tietosi on tallnnettu uuteen jäsenrekisteriisi jäsentiedoilla:\n\n' +
+                            'Tietosi on tallennettu uuteen jäsenrekisteriisi jäsentiedoilla:\n\n' +
                             'Etunimi: ' +
                             firstName +
                             '\n' +
                             'Sukunimi: ' +
                             lastName +
                             '\n' +
-                            'UTU-tunus: ' +
+                            'UTU-tunnus: ' +
                             utuAccount +
                             '\n' +
                             'Sähköposti: ' +
