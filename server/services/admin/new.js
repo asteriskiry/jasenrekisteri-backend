@@ -191,8 +191,74 @@ function save(request, response) {
                             'Tähän sähköpostiin ei voi vastata. Kysymyksissä ota yhteyttä osoitteeseen asteriski@utu.fi.',
                     };
 
-                    mail.transporter.sendMail(boardMailOptions);
-                    mail.transporter.sendMail(memberMailOptions);
+                    let importMailOptions = {
+                        from: mail.mailSender,
+                        to: email,
+                        subject: 'Asteriski ry:n uusi jäsenrekisteri julkaistu',
+                        text:
+                            'Asteriski ry on julkaissut uuden jäsenrekisterin: ' +
+                            config.clientUrl +
+                            '\n\n' +
+                            'Uuden jäsenreksiterin avulla voit tarkistaa jäsentietosi, jäsenyytesi voimassaolon ja esimerkiksi kulkuoikeuksesi statuksen. Voit myös muuttaa jäsentietojasi suoraan nettikäyttöliittymästä. Jäsenmaksun maksaminen on myös mahdollista ja jäsenyytesi voimassaolo päivittyy reaaliaikaisesti. Kulkuoikeudet päivittyvät yliopiston järjestelmään noin vuorokauden sisällä. Maksuvaihtoehtoja löytyy verkkopankeista Mobilepayhyn.\n\n' +
+                            'Tietosi on tallnnettu uuteen jäsenrekisteriisi jäsentiedoilla:\n\n' +
+                            'Etunimi: ' +
+                            firstName +
+                            '\n' +
+                            'Sukunimi: ' +
+                            lastName +
+                            '\n' +
+                            'UTU-tunus: ' +
+                            utuAccount +
+                            '\n' +
+                            'Sähköposti: ' +
+                            email +
+                            '\n' +
+                            'Kotikunta: ' +
+                            hometown +
+                            '\n' +
+                            'TYYn jäsen: ' +
+                            (tyyMember ? 'Kyllä' : 'Ei') +
+                            '\n' +
+                            'TIVIAn jäsen: ' +
+                            (tiviaMember ? 'Kyllä' : 'Ei') +
+                            '\n' +
+                            'Rooli: ' +
+                            roleSwitchCase(role) +
+                            '\n' +
+                            '24/7 kulkuoikeudet: ' +
+                            (accessRights ? 'Kyllä' : 'Ei') +
+                            '\n' +
+                            'Jäsenyys alknut: ' +
+                            moment(membershipStarts).format('DD.MM.YYYY') +
+                            '\n' +
+                            'Jäsenyys päättyy: ' +
+                            moment(membershipEnds).format('DD.MM.YYYY') +
+                            '\n' +
+                            'Hyväksytty jäseneksi: ' +
+                            (accepted ? 'Kyllä' : 'Ei') +
+                            '\n\n' +
+                            'Sinulle generoitu salasana jolla pääset kirjautumaan: ' +
+                            '\n\n' +
+                            password +
+                            '\n\n' +
+                            'Käyttäjätunnuksena toimii sähköpostiosoitteesi.' +
+                            '\n\n' +
+                            'Heti ensimmäisenä kannattaa käydä tarkistamassa jäsentietosi ja vaihtamassa salasana osoitteessa ' +
+                            config.clientUrl +
+                            '\n\n' +
+                            'Jäsenasioissa voit ottaa yhteyttä Asteriski ry:n hallitukseen (asteriski@utu.fi)' +
+                            '\n' +
+                            'Teknisissä asioissa voit ottaa yhteyttä WWW-toimikuntaan (www-asteriski@utu.fi) tai suoraan kehittäjään Maks Turtiaiseen (mjturt@utu.fi)' +
+                            '\n\n' +
+                            'Tähän sähköpostiin ei voi vastata.',
+                    };
+
+                    if (config.importMode === '1') {
+                        mail.transporter.sendMail(importMailOptions);
+                    } else {
+                        mail.transporter.sendMail(boardMailOptions);
+                        mail.transporter.sendMail(memberMailOptions);
+                    }
 
                     return response.json(httpResponses.memberAddedSuccessfully);
                 });
