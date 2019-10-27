@@ -196,10 +196,10 @@ function save(request, response) {
                         to: email,
                         subject: 'Asteriski ry:n uusi jäsenrekisteri julkaistu',
                         text:
-                            'Asteriski ry on julkaissut uudet jäsenrekisterin: ' +
+                            'Asteriski ry on julkaissut uuden jäsenrekisterin: ' +
                             config.clientUrl +
                             '\n\n' +
-                            'Uuden jäsenreksiterin avulla voit tarkistaa jäsentietosi, jäsenyytesi voimassaolon ja esimerkiksi kulkuoikeuksesi statuksen. Voit myös muuttaa jäsentietojasi suoraan nettikäyttöliittymästä. Jäsenmaksun maksaminen on myös mahdollista ja jäsenyytesi voimassaolo päivittyvät reaaliaikaisesti. Kulkuoikeudet päivittyvät noin vuorokauden sisällä. Maksuvaihtoehtoja löytyy verkkopankeista Mobilepayhyn.\n\n' +
+                            'Uuden jäsenreksiterin avulla voit tarkistaa jäsentietosi, jäsenyytesi voimassaolon ja esimerkiksi kulkuoikeuksesi statuksen. Voit myös muuttaa jäsentietojasi suoraan nettikäyttöliittymästä. Jäsenmaksun maksaminen on myös mahdollista ja jäsenyytesi voimassaolo päivittyy reaaliaikaisesti. Kulkuoikeudet päivittyvät yliopiston järjestelmään noin vuorokauden sisällä. Maksuvaihtoehtoja löytyy verkkopankeista Mobilepayhyn.\n\n' +
                             'Tietosi on tallnnettu uuteen jäsenrekisteriisi jäsentiedoilla:\n\n' +
                             'Etunimi: ' +
                             firstName +
@@ -237,7 +237,7 @@ function save(request, response) {
                             'Hyväksytty jäseneksi: ' +
                             (accepted ? 'Kyllä' : 'Ei') +
                             '\n\n' +
-                            'Sinulle generoitu salasana jolla pääse kirjautumaan: ' +
+                            'Sinulle generoitu salasana jolla pääset kirjautumaan: ' +
                             '\n\n' +
                             password +
                             '\n\n' +
@@ -253,7 +253,6 @@ function save(request, response) {
                             'Tähän sähköpostiin ei voi vastata.',
                     };
 
-                    console.log(config.importMode);
                     if (config.importMode === '1') {
                         mail.transporter.sendMail(importMailOptions);
                     } else {
