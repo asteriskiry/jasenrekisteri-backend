@@ -10,6 +10,7 @@ const staticFiles = process.env.STATICFILES;
 const env = process.env.ENV || 'local';
 const clientUrl = process.env.CLIENTURL || 'http://localhost:3000';
 const CSVFilePath = process.env.CSVFILEPATH || '/tmp/kulkuoikeudet_asteriski.csv';
+const importMode = process.env.IMPORT_MODE || '0'
 // Email Stuff
 const boardMailAddress = process.env.BOARDMAILADDRESS || 'asteriski@utu.fi';
 const mailSender = process.env.MAILSENDER || 'jasenrekisteri@asteriski.fi';
@@ -27,6 +28,7 @@ module.exports = {
     env,
     clientUrl,
     CSVFilePath,
+    importMode,
     boardMailAddress,
     mailSender,
     useGmail,

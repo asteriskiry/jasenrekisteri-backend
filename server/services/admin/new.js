@@ -253,8 +253,13 @@ function save(request, response) {
                             'Tähän sähköpostiin ei voi vastata.',
                     };
 
-                    mail.transporter.sendMail(boardMailOptions);
-                    mail.transporter.sendMail(importMailOptions);
+                    console.log(config.importMode);
+                    if (config.importMode === '1') {
+                        mail.transporter.sendMail(importMailOptions);
+                    } else {
+                        mail.transporter.sendMail(boardMailOptions);
+                        mail.transporter.sendMail(memberMailOptions);
+                    }
 
                     return response.json(httpResponses.memberAddedSuccessfully);
                 });
