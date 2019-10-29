@@ -15,11 +15,11 @@ module.exports = {
     },
     onUserNotFound: {
         success: false,
-        message: 'Tällä sähköpostiosoitteella ei löytynyt jäsentietoja.',
+        message: 'Väärä sähköposti tai salasana.',
     },
     onAuthenticationFail: {
         success: false,
-        message: 'Väärä salasana.',
+        message: 'Väärä sähköposti tai salasana.',
     },
     onEmptyError: {
         success: false,
