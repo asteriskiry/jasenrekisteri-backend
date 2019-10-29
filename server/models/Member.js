@@ -14,8 +14,6 @@ const MemberSchema = new mongoose.Schema({
     },
     utuAccount: {
         type: String,
-        unique: true,
-        required: true,
     },
     email: {
         type: String,

@@ -35,7 +35,6 @@ function save(request, response) {
         if (
             !firstName ||
             !lastName ||
-            !utuAccount ||
             !email ||
             !hometown ||
             !role ||
@@ -46,7 +45,6 @@ function save(request, response) {
         } else if (
             !validator.matches(request.body.firstName, /[a-zA-Z\u00c0-\u017e- ]{2,20}$/g) ||
             !validator.matches(request.body.lastName, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-            !validator.matches(request.body.utuAccount, /[a-öA-Ö]{4,8}$/g) ||
             !validator.isEmail(request.body.email) ||
             !validator.matches(request.body.hometown, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
             !typeof request.body.tyyMember === 'boolean' ||
