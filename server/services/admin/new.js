@@ -199,7 +199,7 @@ function save(request, response) {
                             'Asteriski ry on julkaissut uuden jäsenrekisterin: ' +
                             config.clientUrl +
                             '\n\n' +
-                            'Uuden jäsenreksiterin avulla voit tarkistaa jäsentietosi, jäsenyytesi voimassaolon ja esimerkiksi kulkuoikeuksesi statuksen. Voit myös muuttaa jäsentietojasi suoraan nettikäyttöliittymästä. Jäsenmaksun maksaminen on myös mahdollista ja jäsenyytesi voimassaolo päivittyy reaaliaikaisesti. Kulkuoikeudet päivittyvät yliopiston järjestelmään noin vuorokauden sisällä. Maksuvaihtoehtoja löytyy verkkopankeista Mobilepayhyn.\n\n' +
+                            'Uuden jäsenreksiterin avulla voit tarkistaa jäsentietosi, jäsenyytesi voimassaolon ja esimerkiksi kulkuoikeuksesi statuksen. Voit myös muuttaa jäsentietojasi suoraan nettikäyttöliittymästä. Jäsenmaksun maksaminen on myös mahdollista ja jäsenyytesi voimassaolo päivittyy reaaliaikaisesti. Kulkuoikeudet päivittyvät yliopiston järjestelmään noin vuorokauden sisällä. Maksuvaihtoehtoina on tavallisimmat verkkopankit.\n\n' +
                             'Tietosi on tallennettu uuteen jäsenrekisteriisi jäsentiedoilla:\n\n' +
                             'Etunimi: ' +
                             firstName +
