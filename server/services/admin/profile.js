@@ -30,6 +30,7 @@ function get(request, response) {
                     });
             })
             .catch(error => {
+                console.log(error);
                 return response.json(httpResponses.onServerAdminFail);
             });
     } else {
@@ -128,6 +129,7 @@ function update(request, response) {
                     });
             })
             .catch(error => {
+                console.log(error);
                 return response.json(httpResponses.onServerAdminFail);
             });
 
@@ -144,6 +146,7 @@ function update(request, response) {
                     });
             })
             .catch(error => {
+                console.log(error);
                 return response.json(httpResponses.onServerAdminFail);
             });
     } else {

@@ -28,6 +28,7 @@ function list(request, response) {
                 });
             })
             .catch(error => {
+                console.log(error);
                 return response.json(httpResponses.onServerAdminFail);
             });
     } else {
