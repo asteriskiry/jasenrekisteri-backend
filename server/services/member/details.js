@@ -45,8 +45,7 @@ function updateDetails(request, response) {
                 !validator.matches(request.body.lastName, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
                 !validator.isEmail(request.body.email) ||
                 !validator.matches(request.body.hometown, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-                !typeof request.body.tyyMember === 'boolean' ||
-                !typeof request.body.tiviaMember === 'boolean'
+                !typeof request.body.tyyMember === 'boolean'
             ) {
                 return response.json(httpResponses.onValidationError);
             }
@@ -62,7 +61,6 @@ function updateDetails(request, response) {
                 email: request.body.email.toLowerCase(),
                 hometown: formatters.capitalizeFirstLetter(request.body.hometown),
                 tyyMember: request.body.tyyMember,
-                tiviaMember: request.body.tiviaMember,
                 password: request.body.password,
             };
 

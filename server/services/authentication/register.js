@@ -9,7 +9,7 @@ const validator = require('validator');
 // Here we only make temporary member record. We create real one when the payment is made.
 
 function registerUser(request, response) {
-    let { firstName, lastName, utuAccount, email, hometown, tyyMember, tiviaMember } = request.body;
+    let { firstName, lastName, utuAccount, email, hometown, tyyMember } = request.body;
 
     // Validations
 
@@ -20,8 +20,7 @@ function registerUser(request, response) {
         !validator.matches(request.body.lastName, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
         !validator.isEmail(request.body.email) ||
         !validator.matches(request.body.hometown, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-        !typeof request.body.tyyMember === 'boolean' ||
-        !typeof request.body.tiviaMember === 'boolean'
+        !typeof request.body.tyyMember === 'boolean'
     ) {
         response.json(httpResponses.onValidationError);
     } else {
@@ -41,7 +40,6 @@ function registerUser(request, response) {
                 newTempMember.email = email.toLowerCase();
                 newTempMember.hometown = formatters.capitalizeFirstLetter(hometown);
                 newTempMember.tyyMember = !!tyyMember;
-                newTempMember.tiviaMember = !!tiviaMember;
 
                 // Save new member
 
