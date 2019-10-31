@@ -42,10 +42,18 @@ db.once('open', async function() {
                 subject: subject,
                 text: { path: emailFilePath },
             };
-            mail.transporter.sendMail(mailOptions);
+            return new Promise(function(resolve, reject) {
+                mail.transporter.sendMail(mailOptions, (err, info) => {
+                    if (err) {
+                        console.log('error: ', err);
+                        reject(err);
+                    } else {
+                        console.log('Mail to ' + user.email + ' sent');
+                        resolve(info);
+                    }
+                });
+            });
         });
     });
-    db.close(() => {
-        console.log(('Mails sent'));
-    });
+    db.close(() => {});
 });
