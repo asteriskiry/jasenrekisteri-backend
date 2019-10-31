@@ -64,6 +64,13 @@ CSV data must be in this format:
 firstname;lastname;utu_mail;membership_approved;membership_ends;hometown;tyy_member;tivia_member;board;
 ```
 
+## Mail sending
+
+You can send mail to all members with:
+```bash
+npm run mass-mailer -- -s <subject> -e <path to file that contains email body>
+```
+
 ## Payment integration
 
 Membership registry has payment integration with [Checkout Finland](https://checkout.fi) provided by finnish bank Osuuspankki.
