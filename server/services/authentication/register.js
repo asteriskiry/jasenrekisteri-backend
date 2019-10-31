@@ -13,12 +13,11 @@ function registerUser(request, response) {
 
     // Validations
 
-    if (!firstName || !lastName || !utuAccount || !email || !hometown) {
+    if (!firstName || !lastName || !email || !hometown) {
         response.json(httpResponses.onEmptyError);
     } else if (
         !validator.matches(request.body.firstName, /[a-zA-Z\u00c0-\u017e- ]{2,20}$/g) ||
         !validator.matches(request.body.lastName, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-        !validator.matches(request.body.utuAccount, /[a-öA-Ö]{4,8}$/g) ||
         !validator.isEmail(request.body.email) ||
         !validator.matches(request.body.hometown, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
         !typeof request.body.tyyMember === 'boolean' ||
@@ -26,9 +25,9 @@ function registerUser(request, response) {
     ) {
         response.json(httpResponses.onValidationError);
     } else {
-        // Check if email and utuAccount are unique
+        // Check that email is unique
 
-        Member.findOne({ $or: [{ email: email }, { utuAccount: utuAccount }] }).exec(function(err, member) {
+        Member.findOne({ email: email }).exec(function(err, member) {
             if (err) response.json(httpResponses.onError);
             if (member) {
                 response.json(httpResponses.onUserSaveError);
@@ -38,7 +37,7 @@ function registerUser(request, response) {
                 let newTempMember = new TempMember();
                 newTempMember.firstName = formatters.capitalizeFirstLetter(firstName);
                 newTempMember.lastName = formatters.capitalizeFirstLetter(lastName);
-                newTempMember.utuAccount = utuAccount.toLowerCase();
+                newTempMember.utuAccount = utuAccount ? utuAccount.toLowerCase() : '';
                 newTempMember.email = email.toLowerCase();
                 newTempMember.hometown = formatters.capitalizeFirstLetter(hometown);
                 newTempMember.tyyMember = !!tyyMember;
