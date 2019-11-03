@@ -87,5 +87,9 @@ You can create new products with:
 npm run create-product
 ```
 
+## Other
+
+Every night backend exports list of members with access rights to our office to be available to university facilities managment.
+
 ---
 © Asteriski ry
