@@ -14,6 +14,12 @@ React frontend is here <https://github.com/asteriskiry/jasenrekisteri-frontend>.
 Minimal [API documentation](./API.md).
 
 ### Start
+
+First copy .env-sample to .env (and configure it if needed):
+```bash
+cp .env-sample .env
+```
+
 Install Docker and Docker-compose. Start Docker and run:
 ```bash
 docker-compose up
