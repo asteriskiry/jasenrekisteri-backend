@@ -40,6 +40,7 @@ function registerUser(request, response) {
                 newTempMember.email = email.toLowerCase();
                 newTempMember.hometown = formatters.capitalizeFirstLetter(hometown);
                 newTempMember.tyyMember = !!tyyMember;
+                newTempMember.tiviaMember = false;
 
                 // Save new member
 
