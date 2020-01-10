@@ -45,7 +45,7 @@ function startCronJobs() {
 
     // Export member list to CSV every day
 
-    const exportToCSV = cron.job('0 0 4 * * *', function() {
+    const exportToCSV = cron.job('0 0 * * * *', function() {
         const filePath = config.CSVFilePath;
         fs.writeFileSync(filePath, 'PersonId;Company;Role;RoleValidity;ValidityStart;ValidityEnd;SpecialCondition\n');
         Member.find({}, function(err, members) {
