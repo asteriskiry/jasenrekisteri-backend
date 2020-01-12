@@ -96,7 +96,7 @@ function update(request, response) {
 
     const accessTo = request.body.access.toLowerCase();
 
-    if (accessTo === 'admin' || accessTo === 'board') {
+    if (accessTo === 'admin') {
         if (request.body.password === '' || request.body.password === null) {
             delete adminProfile.password;
         } else if (request.body.password.length < 6) {
@@ -106,7 +106,7 @@ function update(request, response) {
         // Send mail to member if member is just accepted
 
         utils
-            .checkUserControl(request.body.id)
+            .checkAdminControl(request.body.id)
             .then(admin => {
                 Member.findOne({ _id: memberID })
                     .lean()

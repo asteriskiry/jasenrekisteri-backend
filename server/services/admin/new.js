@@ -31,7 +31,7 @@ function save(request, response) {
 
     // Client side access check and validations
 
-    if (accessTo === 'admin' || accessTo === 'board') {
+    if (accessTo === 'admin') {
         if (
             !firstName ||
             !lastName ||
@@ -66,7 +66,7 @@ function save(request, response) {
         // Server side access check and save new member
 
         utils
-            .checkUserControl(request.body.id)
+            .checkAdminControl(request.body.id)
             .then(user => {
                 let newMember = new Member();
                 newMember.firstName = formatters.capitalizeFirstLetter(firstName);

@@ -20,6 +20,23 @@ function checkUserControl(id) {
     });
 }
 
+function checkAdminControl(id) {
+    return new Promise((resolve, reject) => {
+        Member.findOne({ _id: id }, (error, doc) => {
+            if (error) reject(error);
+            let role = doc.role.toLowerCase();
+            if (
+                role === 'admin'
+            )
+                resolve(true);
+            reject({
+                success: false,
+                message: 'Tämä alue on vain ylläpitäjille.',
+            });
+        });
+    });
+}
+
 function getUser(id) {
     return new Promise((resolve, reject) => {
         Member.findOne({ _id: id }, (error, user) => {
@@ -31,5 +48,6 @@ function getUser(id) {
 
 module.exports = {
     checkUserControl: checkUserControl,
+    checkAdminControl: checkAdminControl,
     getUser: getUser,
 };
