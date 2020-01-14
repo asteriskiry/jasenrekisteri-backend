@@ -42,7 +42,7 @@ function comparePassword(user) {
         if (error) return http.json(error);
         if (isMatch && !error) {
             var token = jwt.sign(user.toJSON(), config.secret, {
-                expiresIn: '1h',
+                expiresIn: '180d',
             });
 
             if (user != null) {
