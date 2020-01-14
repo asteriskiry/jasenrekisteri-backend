@@ -8,6 +8,7 @@ function setPassortConfigs(passport) {
 
     opts.jwtFromRequest = ExtractJwt.fromAuthHeaderWithScheme('jwt');
     opts.secretOrKey = config.secret;
+    opts.jsonWebTokenOptions = { expiresIn: '180d' };
     passport.use(
         new JwtStrategy(opts, (jwt_payload, done) => {
             Member.findOne({ id: jwt_payload.id }, (err, user) => {
