@@ -22,7 +22,7 @@ function startCronJobs() {
 
           EndedMembership.findOne({ userID: user._id }, function(err, ended) {
             if (err) console.log(err)
-            let email = emails.endedMembershipMail(config.clientUrl)
+            let email = emails.endedMembershipMail()
             let endingMailOptions = {
               from: mail.mailSender,
               to: user.email,

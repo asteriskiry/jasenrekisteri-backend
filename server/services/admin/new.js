@@ -244,10 +244,10 @@ function save(request, response) {
           }
 
           if (config.importMode === '1') {
-            mail.transporter.sendMail(importMailOptions)
+            mail.transporter.sendMail(importMailOptions, mail.callback)
           } else {
-            mail.transporter.sendMail(boardMailOptions)
-            mail.transporter.sendMail(memberMailOptions)
+            mail.transporter.sendMail(boardMailOptions, mail.callback)
+            mail.transporter.sendMail(memberMailOptions, mail.callback)
           }
 
           return response.json(httpResponses.memberAddedSuccessfully)

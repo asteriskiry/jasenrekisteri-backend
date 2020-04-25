@@ -29,7 +29,7 @@ const transporter = useGmail === '1' ? gmailTransporter : sendmailTransporter
 function callback(error, info) {
   let logEntry
   if (error) {
-    logEntry = 'Error: Date: ' + new Date() + ', ' + 'Error: ' + JSON.stringify(error) + '\n'
+    logEntry = 'Error: Date: ' + new Date() + ', ' + 'Info: ' + JSON.stringify(error) + '\n'
   } else {
     logEntry = 'Success: Date: ' + new Date() + ', ' + 'Info: ' + JSON.stringify(info) + '\n'
   }
