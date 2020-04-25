@@ -9,6 +9,8 @@ services:
       - jasenrekisteri
     volumes:
       - db-data:/data/db
+    ports:
+      - 27017:27017
   node:
     build:
       context: .
@@ -26,7 +28,7 @@ services:
     depends_on:
       - mongo
     environment:
-      - MONGOURL='mongodb://mongo:27017/jasenrekisteri'
+      - MONGOURL=mongodb://mongo:27017/jasenrekisteri
 
 volumes:
   db-data:
