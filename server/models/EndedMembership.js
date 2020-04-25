@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 
 const EndedMembershipSchema = new mongoose.Schema({
-    userID: {
-        type: String,
-    },
-});
+  userID: {
+    type: String,
+  },
+})
 
-module.exports = mongoose.model('EndedMembership', EndedMembershipSchema);
+module.exports = mongoose.model('EndedMembership', EndedMembershipSchema)

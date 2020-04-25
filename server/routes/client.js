@@ -1,10 +1,10 @@
-'use strict';
+'use strict'
 
-const express = require('express');
-const clientController = require('../controllers/client');
+const express = require('express')
+const clientController = require('../controllers/client')
 
-let router = express.Router();
+let router = express.Router()
 
-router.get('/*', clientController.index);
+router.get('/*', clientController.index)
 
-module.exports = router;
+module.exports = router

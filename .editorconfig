@@ -1,4 +1,4 @@
-# 4 space indentation
+# 2 space indentation
 [*.js]
 indent_style = space
-indent_size = 4
+indent_size = 2

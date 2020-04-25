@@ -1,10 +1,10 @@
-'use strict';
+'use strict'
 
-const express = require('express');
-const loginService = require('../../services/authentication/login');
+const express = require('express')
+const loginService = require('../../services/authentication/login')
 
-let router = express.Router();
+let router = express.Router()
 
-router.post('/', loginService.loginUser);
+router.post('/', loginService.loginUser)
 
-module.exports = router;
+module.exports = router

@@ -1,13 +1,13 @@
-'use strict';
+'use strict'
 
-const apiRoute = require('./apis');
-const clientRoute = require('./client');
+const apiRoute = require('./apis')
+const clientRoute = require('./client')
 
 function init(server) {
-    server.use('/api', apiRoute);
-    server.use('/', clientRoute);
+  server.use('/api', apiRoute)
+  server.use('/', clientRoute)
 }
 
 module.exports = {
-    init: init,
-};
+  init: init,
+}

@@ -24,9 +24,10 @@
         "no-console": "off",
         "max-len": "off",
         "strict": "off",
-        "indent": ["error", 4, {
+        "indent": ["error", 2, {
             "SwitchCase": 1
         }],
-        "comma-dangle": ["error", "only-multiline"]
+        "comma-dangle": ["error", "only-multiline"],
+        "semi": ["error", "never"]
     }
 }
