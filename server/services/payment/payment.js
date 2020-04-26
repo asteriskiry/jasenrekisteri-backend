@@ -246,7 +246,7 @@ function paymentReturn(request, response) {
                 text: newMemberMemberMail.text,
               }
 
-              mail.transporter.sendMail(newMemberMailOptions)
+              mail.transporter.sendMail(newMemberMailOptions, mail.callback)
 
               // Inform board of new member by email
 
@@ -268,7 +268,7 @@ function paymentReturn(request, response) {
                 text: newMemberBoardMail.text,
               }
 
-              mail.transporter.sendMail(boardMailOptions)
+              mail.transporter.sendMail(boardMailOptions, mail.callback)
 
               // Payment response body
               const responseBody = {
@@ -350,7 +350,7 @@ function paymentReturn(request, response) {
               text: receiptMail.text,
             }
 
-            mail.transporter.sendMail(receiptMailOptions)
+            mail.transporter.sendMail(receiptMailOptions, mail.callback)
 
             // Payment response body
 

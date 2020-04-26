@@ -25,7 +25,7 @@ function remove(request, response) {
           text: email.text,
         }
 
-        mail.transporter.sendMail(memberMailOptions, mail.transporter)
+        mail.transporter.sendMail(memberMailOptions, mail.callback)
       })
     })
   } else {
