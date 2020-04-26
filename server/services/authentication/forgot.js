@@ -3,8 +3,8 @@ const ResetPassword = require('../../models/ResetPassword')
 const httpResponses = require('./')
 const crypto = require('crypto')
 const bcrypt = require('bcrypt')
-const config = require('../../../config/config')
 const mail = require('../../../config/mail')
+const emails = require('../../utils/emails')
 
 function forgotPassword(request, response) {
   const { email } = request.body
@@ -45,27 +45,16 @@ function forgotPassword(request, response) {
 
             // Send generated link to email
 
+            let forgotMail = emails.forgotMail(user._id, token)
+
             let mailOptions = {
               from: mail.mailSender,
               to: user.email,
-              subject: 'Jäsenrekisterin salasanan palautus',
-              text:
-                'Sinun sähköpostiosoitteellasi on pyydetty salasanan palautusta Asteriski ry:n jäsenrekisterissä.\n\n' +
-                'Voit nollata jäsenrekisterin salasanan seuraavasta linkistä:\n' +
-                config.clientUrl +
-                '/reset/' +
-                user._id +
-                '/' +
-                token +
-                '\n\n' +
-                'Tähän sähköpostiin ei voi vastata. Kysymyksissä ota yhteyttä osoitteeseen asteriski@utu.fi.',
+              subject: forgotMail.subject,
+              text: forgotMail.text,
             }
-            let mailSent = mail.transporter.sendMail(mailOptions)
-            if (mailSent) {
-              return response.json(httpResponses.onMailSent)
-            } else {
-              return response.json(httpResponses.onMailFail)
-            }
+            mail.transporter.sendMail(mailOptions, mail.callback)
+            return response.json(httpResponses.onMailSent)
           })
         })
       })

@@ -1,7 +1,5 @@
 'use strict'
 
-require('dotenv').config()
-
 const CheckoutFinland = require('checkout-finland')
 const uuidv1 = require('uuid/v1')
 const moment = require('moment')
@@ -10,15 +8,16 @@ const generator = require('generate-password')
 const httpResponses = require('./')
 const cryptoRandomString = require('crypto-random-string')
 const mail = require('../../../config/mail')
-const config = require('../../../config/config')
+const emails = require('../../utils/emails')
 
 const Member = require('../../models/Member')
 const TempMember = require('../../models/TempMember')
 const Payment = require('../../models/Payment')
 const Product = require('../../models/Product')
+const log = require('../../utils/logger').log
 
 // Initialize Checkout API
-const client = new CheckoutFinland(process.env.MERCHANT_ID, process.env.MERCHANT_SECRET)
+const client = new CheckoutFinland(process.env.MERCHANT_ID, process.env.MERCHANT_SECRET + 'asd')
 
 // Create payment
 async function createPayment(request, response) {
@@ -98,10 +97,13 @@ async function createPayment(request, response) {
       }
 
       // Create paymnet request to Checkout API
-      const checkoutResponse = await client.createPayment(payment)
-
-      // Return banks to frontend
-      return response.json(checkoutResponse.providers)
+      try {
+        const checkoutResponse = await client.createPayment(payment)
+        return response.json(checkoutResponse.providers)
+      } catch(error) {
+        log.error('Create payment error: ' + error)
+        return response.json(httpResponses.onError)
+      }
     })
   })
 }
@@ -222,114 +224,52 @@ function paymentReturn(request, response) {
               if (error) return response.json(httpResponses.onPaymentError)
 
               // Email to new member
+
+              let newMemberMemberMail = emails.newMemberMemberMail(
+                newMember.firstName,
+                newMember.lastName,
+                newMember.email,
+                newMember.utuAccount,
+                newMember.hometown,
+                newMember.tyyMember ? 'Kyllä' : 'Ei',
+                newMember.tiviaMember ? 'Kyllä' : 'Ei',
+                password,
+                payment.productName,
+                payment.amountSnt / 100,
+                moment(payment.timestamp).format('DD.MM.YYYY HH:mm:ss'),
+                moment(newMember.membershipEnds).format('DD.MM.YYYY')
+              )
+
               let newMemberMailOptions = {
                 from: mail.mailSender,
                 to: newMember.email,
-                subject: 'Vahvistus Asteriski ry:n jäseneksi liittymisestä ja kuitti',
-                text:
-                  'Onneksi olkoon Asteriski ry:n jäseneksi liittymisestä.\n' +
-                  'Asteriski ry:n hallitus hyväksyy jäsenyytesi mahdollisimman pian.\n\n' +
-                  'Jäsentiedot:\n\n' +
-                  'Etunimi: ' +
-                  newMember.firstName +
-                  '\n' +
-                  'Sukunimi: ' +
-                  newMember.lastName +
-                  '\n' +
-                  'UTU-tunnus: ' +
-                  newMember.utuAccount +
-                  '\n' +
-                  'Sähköposti: ' +
-                  newMember.email +
-                  '\n' +
-                  'Kotikunta: ' +
-                  newMember.hometown +
-                  '\n' +
-                  'TYYn jäsen: ' +
-                  (newMember.tyyMember ? 'Kyllä' : 'Ei') +
-                  '\n' +
-                  'TIVIAn jäsen: ' +
-                  (newMember.tiviaMember ? 'Kyllä' : 'Ei') +
-                  '\n\n' +
-                  'Olet maksanut tuotteesta: ' +
-                  payment.productName +
-                  '\n\n' +
-                  'Sinulle generoitu salasana (suositeltua olisi vaihtaa): ' +
-                  password +
-                  '\n\n' +
-                  'Pääset tarkastelemaan jäsentietojasi ja vaihtamaan salasanasi osoitteessa ' +
-                  config.clientUrl +
-                  '\n\n' +
-                  '-----------------------------------------' +
-                  '\n\n' +
-                  'Kuitti Asteriski ry jäsenmaksusta:\n\n' +
-                  'Jäsenen nimi: ' +
-                  newMember.firstName +
-                  ' ' +
-                  newMember.lastName +
-                  '\n' +
-                  'Jäsenen UTU-tunnus: ' +
-                  newMember.utuAccount +
-                  '\n' +
-                  'Jäsenen sähköpostiosoite: ' +
-                  newMember.email +
-                  '\n' +
-                  'Tuote: ' +
-                  payment.productName +
-                  '\n' +
-                  'Maksun määrä: ' +
-                  payment.amountSnt / 100 +
-                  ' €\n' +
-                  'Maksun aikaleima: ' +
-                  moment(payment.timestamp).format('DD.MM.YYYY HH:mm:ss') +
-                  '\n' +
-                  'Uusi jäsenyyden päättymispäivä: ' +
-                  moment(newMember.membershipEnds).format('DD.MM.YYYY') +
-                  '\n\n' +
-                  'Maksajan tiedot ovat samat kuin jäsenen. Kiitos maksustasi.' +
-                  '\n\n' +
-                  'Tähän sähköpostiin ei voi vastata. Kysymyksissä ota yhteyttä osoitteeseen asteriski@utu.fi.',
+                subject: newMemberMemberMail.subject,
+                text: newMemberMemberMail.text,
               }
-              mail.transporter.sendMail(newMemberMailOptions)
+
+              mail.transporter.sendMail(newMemberMailOptions, mail.callback)
 
               // Inform board of new member by email
+
+              let newMemberBoardMail = emails.newMemberBoardMail(
+                newMember.firstName,
+                newMember.lastName,
+                newMember.email,
+                newMember.utuAccount,
+                newMember.hometown,
+                newMember.tyyMember ? 'Kyllä' : 'Ei',
+                newMember.tiviaMember ? 'Kyllä' : 'Ei',
+                payment.productName
+              )
+
               let boardMailOptions = {
                 from: mail.mailSender,
                 to: mail.boardMailAddress,
-                subject: 'Asteriski ry:n uusi jäsen',
-                text:
-                  'Uusi jäsen liittynyt.\n\n' +
-                  'Jäsentiedot:\n\n' +
-                  'Etunimi: ' +
-                  newMember.firstName +
-                  '\n' +
-                  'Sukunimi: ' +
-                  newMember.lastName +
-                  '\n' +
-                  'UTU-tunnus: ' +
-                  newMember.utuAccount +
-                  '\n' +
-                  'Sähköposti: ' +
-                  newMember.email +
-                  '\n' +
-                  'Kotikunta: ' +
-                  newMember.hometown +
-                  '\n' +
-                  'TYYn jäsen: ' +
-                  (newMember.tyyMember ? 'Kyllä' : 'Ei') +
-                  '\n' +
-                  'TIVIAn jäsen: ' +
-                  (newMember.tiviaMember ? 'Kyllä' : 'Ei') +
-                  '\n\n' +
-                  'Jäsen on maksanut tuotteesta: ' +
-                  payment.productName +
-                  '\n\n' +
-                  'Voitte hyväksyä jäsenen osoitteessa ' +
-                  config.clientUrl +
-                  '\n\n' +
-                  'Tähän sähköpostiin ei voi vastata.',
+                subject: newMemberBoardMail.subject,
+                text: newMemberBoardMail.text,
               }
-              mail.transporter.sendMail(boardMailOptions)
+
+              mail.transporter.sendMail(boardMailOptions, mail.callback)
 
               // Payment response body
               const responseBody = {
@@ -351,7 +291,7 @@ function paymentReturn(request, response) {
             })
           })
 
-          // If member founds its has to be current member who paying membership
+          // If member found
         } else {
           let currentEndYear = moment(member.membershipEnds).year()
 
@@ -392,42 +332,29 @@ function paymentReturn(request, response) {
             if (error || !updatedMember) return response.json(httpResponses.onPaymentError)
 
             // Email receipt to member
+
+            let receiptMail = emails.receiptMail(
+              updatedMember.firstName,
+              updatedMember.lastName,
+              updatedMember.utuAccount,
+              updatedMember.email,
+              payment.productName,
+              payment.amountSnt / 100,
+              moment(payment.timestamp).format('DD.MM.YYYY HH:mm:ss'),
+              moment(updatedMember.membershipEnds).format('DD.MM.YYYY')
+            )
+
             let receiptMailOptions = {
               from: mail.mailSender,
               to: updatedMember.email,
-              subject: 'Kuitti Asteriski ry jäsenmaksusta',
-              text:
-                'Kuitti Asteriski ry jäsenmaksusta:\n\n' +
-                'Jäsenen nimi: ' +
-                updatedMember.firstName +
-                ' ' +
-                updatedMember.lastName +
-                '\n' +
-                'Jäsenen UTU-tunnus: ' +
-                updatedMember.utuAccount +
-                '\n' +
-                'Jäsenen sähköpostiosoite: ' +
-                updatedMember.email +
-                '\n' +
-                'Tuote: ' +
-                payment.productName +
-                '\n' +
-                'Maksun määrä: ' +
-                payment.amountSnt / 100 +
-                ' €\n' +
-                'Maksun aikaleima: ' +
-                moment(payment.timestamp).format('DD.MM.YYYY HH:mm:ss') +
-                '\n' +
-                'Uusi jäsenyyden päättymispäivä: ' +
-                moment(updatedMember.membershipEnds).format('DD.MM.YYYY') +
-                '\n\n' +
-                'Maksajan tiedot ovat samat kuin jäsenen. Kiitos maksustasi.' +
-                '\n\n' +
-                'Tähän sähköpostiin ei voi vastata. Kysymyksissä ota yhteyttä osoitteeseen asteriski@utu.fi.',
+              subject: receiptMail.subject,
+              text: receiptMail.text,
             }
-            mail.transporter.sendMail(receiptMailOptions)
+
+            mail.transporter.sendMail(receiptMailOptions, mail.callback)
 
             // Payment response body
+
             const responseBody = {
               success: true,
               message: 'Maksun käsittely onnistui.',

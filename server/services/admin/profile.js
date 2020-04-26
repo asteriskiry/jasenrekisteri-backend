@@ -3,9 +3,9 @@ const Member = require('../../models/Member')
 const utils = require('../../utils')
 const httpResponses = require('./')
 const mail = require('../../../config/mail')
-const config = require('../../../config/config')
 const formatters = require('../../utils/formatters')
 const validator = require('validator')
+const emails = require('../../utils/emails')
 
 // Get member details
 
@@ -107,18 +107,14 @@ function update(request, response) {
           .exec((error, doc) => {
             if (error) return response.json(error)
             if (!doc.accepted && adminProfile.accepted) {
+              let email = emails.membershipApprovedMail()
               let mailOptions = {
                 from: mail.mailSender,
                 to: adminProfile.email,
-                subject: 'Jäsenyytesi Asteriski ry:lle hyväksytty',
-                text:
-                  'Jäsenyytesi Asteriski ry:lle hyväksytty.\n\n' +
-                  'Pääset tarkastelemaan jäsentietojasi osoitteessa ' +
-                  config.clientUrl +
-                  '\n\n' +
-                  'Tähän sähköpostiin ei voi vastata. Kysymyksissä ota yhteyttä osoitteeseen asteriski@utu.fi.',
+                subject: email.subject,
+                text: email.text,
               }
-              mail.transporter.sendMail(mailOptions)
+              mail.transporter.sendMail(mailOptions, mail.callback)
             }
           })
       })

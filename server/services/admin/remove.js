@@ -3,6 +3,7 @@ const Member = require('../../models/Member')
 const utils = require('../../utils')
 const httpResponses = require('./')
 const mail = require('../../../config/mail')
+const emails = require('../../utils/emails')
 
 // Remove member
 
@@ -16,17 +17,15 @@ function remove(request, response) {
 
         response.json({ success: true, message: 'Jäsen poistettu.' })
 
+        let email = emails.memberDeletedMail()
         let memberMailOptions = {
           from: mail.mailSender,
           to: request.body.email,
-          subject: 'Asteriski ry:n jäsenyys päättynyt.',
-          text:
-            'Asteriski ry:n jäsentietosi on poistettu. Tämän myötä jäsenyytesi on päättynyt.' +
-            '\n\n' +
-            'Tähän sähköpostiin ei voi vastata. Kysymyksissä ota yhteyttä osoitteeseen asteriski@utu.fi.',
+          subject: email.subject,
+          text: email.text,
         }
 
-        mail.transporter.sendMail(memberMailOptions)
+        mail.transporter.sendMail(memberMailOptions, mail.callback)
       })
     })
   } else {

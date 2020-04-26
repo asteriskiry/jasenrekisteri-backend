@@ -4,10 +4,10 @@ const moment = require('moment')
 
 const Member = require('../models/Member')
 const EndedMembership = require('../models/EndedMembership')
-const ResetPassword = require('../models/ResetPassword')
 
 const config = require('../../config/config')
 const mail = require('../../config/mail')
+const emails = require('../utils/emails')
 
 function startCronJobs() {
   // Check every day for ended memberships and send email
@@ -16,34 +16,39 @@ function startCronJobs() {
     const currentDate = new Date()
     Member.find({ membershipEnds: { $lte: currentDate } }, function(err, members) {
       if (err) console.log(err)
-      members.map(user => {
-        // Check if mail alredy sent
+      if (members) {
+        members.map(user => {
+          // Check if mail alredy sent within two months
 
-        EndedMembership.findOne({ userID: user._id }, function(err, ended) {
-          if (err) console.log(err)
-          if (!ended) {
-            EndedMembership.create({ userID: user._id }).then(function() {
-              let endingMailOptions = {
-                from: mail.mailSender,
-                to: user.email,
-                subject: 'Asteriski ry:n jäsenyytesi päättynyt',
-                text:
-                  'Jäsenyytesi Asteriski ry:lle on päättynyt.\n\n' +
-                  'Maksa jäsenmaksusi osoitteessa ' +
-                  config.clientUrl +
-                  ' tai käteisenä Asteriski ry:n hallitukselle.' +
-                  '\n\n' +
-                  'Tähän sähköpostiin ei voi vastata. Kysymyksissä ota yhteyttä osoitteeseen asteriski@utu.fi.',
+          EndedMembership.findOne({ userID: user._id }, function(err, ended) {
+            if (err) console.log(err)
+            let email = emails.endedMembershipMail()
+            let endingMailOptions = {
+              from: mail.mailSender,
+              to: user.email,
+              subject: email.subject,
+              text: email.text,
+            }
+            if (!ended) {
+              EndedMembership.create({ userID: user._id, mailSent: currentDate }).then(function() {
+                mail.transporter.sendMail(endingMailOptions, mail.callback)
+              })
+            } else {
+              let twoMonthsAgo = moment()
+                .subtract(2, 'months')
+                .toDate()
+              if (ended.mailSent.getTime() < twoMonthsAgo.getTime()) {
+                EndedMembership.updateOne({ userID: user._id }, { mailSent: currentDate }).then(function() {})
+                mail.transporter.sendMail(endingMailOptions, mail.callback)
               }
-              mail.transporter.sendMail(endingMailOptions)
-            })
-          }
+            }
+          })
         })
-      })
+      }
     })
   })
 
-  // Export member list to CSV every day
+  // Export member list to CSV every hour
 
   const exportToCSV = cron.job('0 0 * * * *', function() {
     const filePath = config.CSVFilePath
@@ -80,16 +85,8 @@ function startCronJobs() {
     })
   })
 
-  // Clean temporary databases every 3rd month
-
-  const cleanDatabases = cron.job('0 4 5 */3 * *', function() {
-    EndedMembership.deleteMany({}, function() {})
-    ResetPassword.deleteMany({}, function() {})
-  })
-
   // Start jobs
 
-  // cleanDatabases.start();
   checkMembershipEnding.start()
   exportToCSV.start()
 }

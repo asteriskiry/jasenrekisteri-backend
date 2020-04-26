@@ -9,6 +9,8 @@ services:
       - jasenrekisteri
     volumes:
       - db-data:/data/db
+    ports:
+      - 27017:27017
   node:
     build:
       context: .
@@ -16,9 +18,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-    command: bash -c "/usr/local/wait-for-it.sh mongo:27017 && npm run create-defaults && npm run watch"
-    env_file:
-      - .env
+    command: bash -c "/usr/local/wait-for-it.sh mongo:27017 && npm run create-defaults && npm start && npm run log"
     ports:
       - 3001:3001
     networks:
@@ -26,7 +26,7 @@ services:
     depends_on:
       - mongo
     environment:
-      - MONGOURL='mongodb://mongo:27017/jasenrekisteri'
+      - MONGOURL=mongodb://mongo:27017/jasenrekisteri
 
 volumes:
   db-data:

@@ -3,6 +3,7 @@ node_modules/
 requests/
 csv/
 ecosystem.config.js
+data/
 
 # vim stuff
 tags
