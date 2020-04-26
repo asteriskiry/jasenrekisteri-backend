@@ -17,7 +17,7 @@ const Product = require('../../models/Product')
 const log = require('../../utils/logger').log
 
 // Initialize Checkout API
-const client = new CheckoutFinland(process.env.MERCHANT_ID, process.env.MERCHANT_SECRET + 'asd')
+const client = new CheckoutFinland(process.env.MERCHANT_ID, process.env.MERCHANT_SECRET)
 
 // Create payment
 async function createPayment(request, response) {
