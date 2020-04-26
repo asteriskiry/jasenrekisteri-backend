@@ -18,9 +18,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-    command: bash -c "/usr/local/wait-for-it.sh mongo:27017 && npm run create-defaults && npm run watch"
-    env_file:
-      - .env
+    command: bash -c "/usr/local/wait-for-it.sh mongo:27017 && npm run create-defaults && npm start && npm run log"
     ports:
       - 3001:3001
     networks:

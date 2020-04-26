@@ -1,7 +1,5 @@
 'use strict'
 
-require('dotenv').config()
-
 const CheckoutFinland = require('checkout-finland')
 const uuidv1 = require('uuid/v1')
 const moment = require('moment')
@@ -11,15 +9,15 @@ const httpResponses = require('./')
 const cryptoRandomString = require('crypto-random-string')
 const mail = require('../../../config/mail')
 const emails = require('../../utils/emails')
-const config = require('../../../config/config')
 
 const Member = require('../../models/Member')
 const TempMember = require('../../models/TempMember')
 const Payment = require('../../models/Payment')
 const Product = require('../../models/Product')
+const log = require('../../utils/logger').log
 
 // Initialize Checkout API
-const client = new CheckoutFinland(process.env.MERCHANT_ID, process.env.MERCHANT_SECRET)
+const client = new CheckoutFinland(process.env.MERCHANT_ID, process.env.MERCHANT_SECRET + 'asd')
 
 // Create payment
 async function createPayment(request, response) {
@@ -99,10 +97,13 @@ async function createPayment(request, response) {
       }
 
       // Create paymnet request to Checkout API
-      const checkoutResponse = await client.createPayment(payment)
-
-      // Return banks to frontend
-      return response.json(checkoutResponse.providers)
+      try {
+        const checkoutResponse = await client.createPayment(payment)
+        return response.json(checkoutResponse.providers)
+      } catch(error) {
+        log.error('Create payment error: ' + error)
+        return response.json(httpResponses.onError)
+      }
     })
   })
 }

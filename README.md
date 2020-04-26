@@ -15,9 +15,9 @@ Minimal [API documentation](./API.md).
 
 ### Start
 
-First copy .env-sample to .env (and configure it if needed):
+First copy ecosystem.config.js-sample to ecosystem.config.js (and configure it if needed):
 ```bash
-cp .env-sample .env
+cp ecosystem.config.js-sample ecosystem.config.js
 ```
 
 Install Docker and Docker-compose. Start Docker and run:
@@ -34,13 +34,11 @@ Install node.js, npm and MongoDB.
 
 Start MongoDB with `systemctl start mongodb` or `mongod`.
 ```bash
-git clone https://github.com/asteriskiry/jasenrekisteri-backend.git
-cd jasenrekisteri-backend
-cp .env-sample .env
+cp ecosystem.config.js-sample ecosystem.config.js
 npm install
 npm start
 ```
-Configure `.env`-file if needed. You can use `npm run watch` instead of `npm start` to watch file changes with nodemon.
+Configure `ecosystem.config.js`-file if needed.
 
 Create default database entries with:
 ```bash
