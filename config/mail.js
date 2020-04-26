@@ -19,9 +19,8 @@ const gmailTransporter = nodemailer.createTransport({
 })
 
 const sendmailTransporter = nodemailer.createTransport({
-  sendmail: true,
-  newline: 'unix',
-  path: '/usr/sbin/sendmail',
+  host: config.smtpUrl,
+  port: config.smtpPort,
 })
 
 const transporter = useGmail === '1' ? gmailTransporter : sendmailTransporter

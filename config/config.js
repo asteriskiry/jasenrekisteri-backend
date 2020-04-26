@@ -13,7 +13,9 @@ const logPath = process.env.LOGPATH || '/var/log/jasenrekisteri'
 // Email Stuff
 const adminMailAddress = process.env.ADMINMAILADDRESS || 'mjturt@utu.fi'
 const boardMailAddress = process.env.BOARDMAILADDRESS || 'asteriski@utu.fi'
-const mailSender = process.env.MAILSENDER || 'jasenrekisteri@asteriski.fi'
+const mailSender = process.env.MAILSENDER || 'asteriski@utu.fi'
+const smtpUrl = process.env.SMTPURL || 'smtp.utu.fi'
+const smtpPort = process.env.SMTPPORT || 25
 // Gmail stuff for testing purposes only
 const useGmail = process.env.USEGMAIL || false
 const gmailUser = process.env.GMAILUSER
@@ -33,6 +35,8 @@ module.exports = {
   adminMailAddress,
   boardMailAddress,
   mailSender,
+  smtpUrl,
+  smtpPort,
   useGmail,
   gmailUser,
   gmailPassword,

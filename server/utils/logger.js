@@ -39,7 +39,13 @@ function loggerInit() {
         sender: config.mailSender,
         recipients: config.adminMailAddress,
         subject: 'Jäsenrekisteri error',
-        sendInterval: 3600,
+        transport: {
+          plugin: 'smtp',
+          options: {
+            host: config.smtpUrl,
+            port: config.smtpPort,
+          },
+        },
       },
     },
     categories: {
