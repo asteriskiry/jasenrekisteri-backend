@@ -8,6 +8,7 @@ const EndedMembership = require('../models/EndedMembership')
 const config = require('../../config/config')
 const mail = require('../../config/mail')
 const emails = require('../utils/emails')
+const log = require('./logger').log
 
 function startCronJobs() {
   // Check every day for ended memberships and send email
@@ -51,38 +52,42 @@ function startCronJobs() {
   // Export member list to CSV every hour
 
   const exportToCSV = cron.job('0 0 * * * *', function() {
-    const filePath = config.CSVFilePath
-    fs.writeFileSync(filePath, 'PersonId;Company;Role;RoleValidity;ValidityStart;ValidityEnd;SpecialCondition\n')
-    Member.find({}, function(err, members) {
-      if (err) console.log(err)
-      members.map(user => {
-        if (user.accepted && user.membershipStarts && user.membershipEnds) {
-          if (user.accessRights) {
-            fs.appendFileSync(
-              filePath,
-              'U_' +
-                user.utuAccount +
-                ';0245896-3;A_AJ_Asteriski_hallitus;R;' +
-                moment(user.membershipStarts).format('YYYYMMDD') +
-                ';' +
-                moment(user.membershipEnds).format('YYYYMMDD') +
-                ';\n'
-            )
-          } else {
-            fs.appendFileSync(
-              filePath,
-              'U_' +
-                user.utuAccount +
-                ';0245896-3;A_AJ_Asteriski_jäsen;R;' +
-                moment(user.membershipStarts).format('YYYYMMDD') +
-                ';' +
-                moment(user.membershipEnds).format('YYYYMMDD') +
-                ';\n'
-            )
+    try {
+      const filePath = config.CSVFilePath
+      fs.writeFileSync(filePath, 'PersonId;Company;Role;RoleValidity;ValidityStart;ValidityEnd;SpecialCondition\n')
+      Member.find({}, function(err, members) {
+        if (err) console.log(err)
+        members.map(user => {
+          if (user.accepted && user.membershipStarts && user.membershipEnds) {
+            if (user.accessRights) {
+              fs.appendFileSync(
+                filePath,
+                'U_' +
+                  user.utuAccount +
+                  ';0245896-3;A_AJ_Asteriski_hallitus;R;' +
+                  moment(user.membershipStarts).format('YYYYMMDD') +
+                  ';' +
+                  moment(user.membershipEnds).format('YYYYMMDD') +
+                  ';\n'
+              )
+            } else {
+              fs.appendFileSync(
+                filePath,
+                'U_' +
+                  user.utuAccount +
+                  ';0245896-3;A_AJ_Asteriski_jäsen;R;' +
+                  moment(user.membershipStarts).format('YYYYMMDD') +
+                  ';' +
+                  moment(user.membershipEnds).format('YYYYMMDD') +
+                  ';\n'
+              )
+            }
           }
-        }
+        })
       })
-    })
+    } catch (error) {
+      log.error('CSV update error: ' + error)
+    }
   })
 
   // Start jobs
