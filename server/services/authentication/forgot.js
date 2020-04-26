@@ -53,12 +53,8 @@ function forgotPassword(request, response) {
               subject: forgotMail.subject,
               text: forgotMail.text,
             }
-            let mailSent = mail.transporter.sendMail(mailOptions, mail.callback)
-            if (mailSent) {
-              return response.json(httpResponses.onMailSent)
-            } else {
-              return response.json(httpResponses.onMailFail)
-            }
+            mail.transporter.sendMail(mailOptions, mail.callback)
+            return response.json(httpResponses.onMailSent)
           })
         })
       })

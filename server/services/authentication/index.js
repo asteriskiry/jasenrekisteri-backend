@@ -47,7 +47,7 @@ module.exports = {
   },
   onMailSent: {
     success: true,
-    message: 'Salasanan palautuslinkki lähetetty sähköpostiisi.',
+    message: 'Salasanan palautuslinkki lähetetty jos sellainen sähköpostiosoite löytyi järjestelmästä.',
   },
   onMailFail: {
     success: false,
