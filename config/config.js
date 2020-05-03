@@ -3,6 +3,7 @@
 const mongoUrl = process.env.MONGOURL || 'mongodb://127.0.0.1/jasenrekisteri'
 const host = process.env.HOST || 'localhost'
 const port = process.env.PORT || 3001
+const url = 'http://' + host + ':' + port
 const secret = process.env.SECRET
 const staticFiles = process.env.STATICFILES
 const env = process.env.ENV || 'local'
@@ -25,6 +26,7 @@ module.exports = {
   mongoUrl,
   host,
   port,
+  url,
   secret,
   staticFiles,
   env,

@@ -1,5 +1,6 @@
 'use strict'
 
+const path = require('path')
 const express = require('express')
 const bodyParser = require('body-parser')
 const log4js = require('log4js')
@@ -9,13 +10,18 @@ const cookieParser = require('cookie-parser')
 const cors = require('cors')
 const cronJobs = require('./utils/cron')
 const logger = require('./utils/logger')
+const { Provider } = require('oidc-provider')
+
+const Account = require('../config/oidc/account')
+const oidcConfig = require('../config/oidc/config')
+const adapter = require('../config/oidc/adapter')
 
 module.exports = function() {
   let server = express()
   let create
   let start
 
-  create = function(config) {
+  create = async function(config) {
     let routes = require('./routes')
     cronJobs.startCronJobs()
     logger.loggerInit()
@@ -23,6 +29,12 @@ module.exports = function() {
     server.set('env', config.env)
     server.set('port', config.port)
     server.set('hostname', config.host)
+
+    // OIDC
+    oidcConfig.findAccount = Account.findAccount
+    server.set('views', path.join(__dirname, 'views'))
+    server.set('view engine', 'ejs')
+    const provider = new Provider(config.url, { adapter, ...oidcConfig })
 
     server.use(log4js.connectLogger(logger.logAccess, { level: 'auto' }))
 
@@ -43,7 +55,7 @@ module.exports = function() {
       server.use(express.static(config.staticFiles))
     }
 
-    routes.init(server)
+    routes.init(server, provider)
   }
 
   start = function() {
