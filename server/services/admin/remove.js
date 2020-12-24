@@ -26,6 +26,7 @@ function remove(request, response) {
         }
 
         mail.transporter.sendMail(memberMailOptions, mail.callback)
+        mail.logMessage(memberMailOptions)
       })
     })
   } else {

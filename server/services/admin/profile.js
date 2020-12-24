@@ -115,6 +115,7 @@ function update(request, response) {
                 text: email.text,
               }
               mail.transporter.sendMail(mailOptions, mail.callback)
+              mail.logMessage(mailOptions)
             }
           })
       })

@@ -54,6 +54,7 @@ function forgotPassword(request, response) {
               text: forgotMail.text,
             }
             mail.transporter.sendMail(mailOptions, mail.callback)
+            mail.logMessage(mailOptions)
             return response.json(httpResponses.onMailSent)
           })
         })

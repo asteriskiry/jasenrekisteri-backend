@@ -33,6 +33,7 @@ function startCronJobs() {
             if (!ended) {
               EndedMembership.create({ userID: user._id, mailSent: currentDate }).then(function() {
                 mail.transporter.sendMail(endingMailOptions, mail.callback)
+                mail.logMessage(endingMailOptions)
               })
             } else {
               let twoMonthsAgo = moment()
@@ -41,6 +42,7 @@ function startCronJobs() {
               if (ended.mailSent.getTime() < twoMonthsAgo.getTime()) {
                 EndedMembership.updateOne({ userID: user._id }, { mailSent: currentDate }).then(function() {})
                 mail.transporter.sendMail(endingMailOptions, mail.callback)
+                mail.logMessage(endingMailOptions)
               }
             }
           })

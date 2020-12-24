@@ -154,9 +154,12 @@ function save(request, response) {
 
           if (config.importMode === '1') {
             mail.transporter.sendMail(importMailOptions, mail.callback)
+            mail.logMessage(importMailOptions)
           } else {
             mail.transporter.sendMail(boardMailOptions, mail.callback)
+            mail.logMessage(boardMailOptions)
             mail.transporter.sendMail(memberMailOptions, mail.callback)
+            mail.logMessage(memberMailOptions)
           }
 
           return response.json(httpResponses.memberAddedSuccessfully)

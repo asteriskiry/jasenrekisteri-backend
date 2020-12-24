@@ -9,6 +9,7 @@ const boardMailAddress = config.boardMailAddress
 const mailSender = config.mailSender
 const useGmail = config.useGmail
 const emailLogPath = path.join(config.logPath, 'emails.log')
+const messagesLogPath = path.join(config.logPath, 'emails-messages.log')
 
 const gmailTransporter = nodemailer.createTransport({
   service: 'gmail',
@@ -37,4 +38,11 @@ function callback(error, info) {
   })
 }
 
-module.exports = { boardMailAddress, mailSender, transporter, callback }
+function logMessage(data) {
+  let logEntry = 'Tried send message at ' + new Date() + ' with data: ' + JSON.stringify(data) + '\n'
+  fs.appendFileSync(messagesLogPath, logEntry, function(err) {
+    if (err) console.log(err)
+  })
+}
+
+module.exports = { boardMailAddress, mailSender, transporter, callback, logMessage }
