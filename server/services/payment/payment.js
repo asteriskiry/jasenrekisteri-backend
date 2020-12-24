@@ -1,6 +1,6 @@
 'use strict'
 
-const CheckoutFinland = require('checkout-finland')
+const CheckoutFinland = require('checkout-finland').default
 const { v1: uuidv1 } = require('uuid')
 const moment = require('moment')
 const generator = require('generate-password')
