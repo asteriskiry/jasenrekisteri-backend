@@ -4,6 +4,7 @@ requests/
 csv/
 ecosystem.config.js
 data/
+.pm2
 
 # vim stuff
 tags
