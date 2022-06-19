@@ -12,7 +12,6 @@ module.exports = {
         MONGOURL: 'mongodb://127.0.0.1/jasenrekisteri',
         HOST: 'localhost',
         PORT: 3001,
-        STATICFILES: '/staticfiles/',
         SECRET: 'secret123',
         ENV: 'development',
         CLIENTURL: 'https://localhost:3000',

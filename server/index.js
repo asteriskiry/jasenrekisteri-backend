@@ -39,10 +39,6 @@ module.exports = function() {
     })
     require('../config/passport')(passport)
 
-    if (config.env === 'production') {
-      server.use(express.static(config.staticFiles))
-    }
-
     routes.init(server)
   }
 
