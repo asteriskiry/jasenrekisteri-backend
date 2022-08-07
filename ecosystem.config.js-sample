@@ -28,6 +28,7 @@ module.exports = {
         GMAILPASSWORD: 'password',
         MERCHANT_ID: 375917,
         MERCHANT_SECRET: 'SAIPPUAKAUPPIAS',
+        SENDGRID_API_KEY: 'key',
       },
       env_production: {
         NODE_ENV: 'development',

@@ -19,6 +19,7 @@ const smtpPort = process.env.SMTPPORT || 25
 const useGmail = process.env.USEGMAIL || false
 const gmailUser = process.env.GMAILUSER
 const gmailPassword = process.env.GMAILPASSWORD
+const sendgridApiKey = process.env.SENDGRID_API_KEY
 
 module.exports = {
   mongoUrl,
@@ -38,4 +39,5 @@ module.exports = {
   useGmail,
   gmailUser,
   gmailPassword,
+  sendgridApiKey,
 }

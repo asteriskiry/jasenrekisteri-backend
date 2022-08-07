@@ -10,6 +10,7 @@ const mailSender = config.mailSender
 const useGmail = config.useGmail
 const emailLogPath = path.join(config.logPath, 'emails.log')
 const messagesLogPath = path.join(config.logPath, 'emails-messages.log')
+const sgTransport = require('nodemailer-sendgrid-transport')
 
 const gmailTransporter = nodemailer.createTransport({
   service: 'gmail',
@@ -24,7 +25,16 @@ const sendmailTransporter = nodemailer.createTransport({
   port: config.smtpPort,
 })
 
-const transporter = useGmail === '1' ? gmailTransporter : sendmailTransporter
+let options = {
+  auth: {
+    api_key: config.sendgridApiKey,
+  },
+}
+
+const sendgridTransporter = nodemailer.createTransport(sgTransport(options))
+
+// const transporter = useGmail === '1' ? gmailTransporter : sendmailTransporter
+const transporter = sendgridTransporter
 
 function callback(error, info) {
   let logEntry
@@ -33,14 +43,14 @@ function callback(error, info) {
   } else {
     logEntry = 'Success: Date: ' + new Date() + ', ' + 'Info: ' + JSON.stringify(info) + '\n'
   }
-  fs.appendFileSync(emailLogPath, logEntry, function(err) {
+  fs.appendFileSync(emailLogPath, logEntry, function (err) {
     if (err) console.log(err)
   })
 }
 
 function logMessage(data) {
   let logEntry = 'Tried send message at ' + new Date() + ' with data: ' + JSON.stringify(data) + '\n'
-  fs.appendFileSync(messagesLogPath, logEntry, function(err) {
+  fs.appendFileSync(messagesLogPath, logEntry, function (err) {
     if (err) console.log(err)
   })
 }
