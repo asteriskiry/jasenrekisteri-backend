@@ -10,7 +10,7 @@ const CSVFilePath = process.env.CSVFILEPATH || '/tmp/kulkuoikeudet_asteriski.csv
 const importMode = process.env.IMPORT_MODE || '0'
 const logPath = process.env.LOGPATH || '/var/log/jasenrekisteri'
 // Email Stuff
-const adminMailAddress = process.env.ADMINMAILADDRESS || 'mjturt@utu.fi'
+const adminMailAddress = process.env.ADMINMAILADDRESS || 'palvelinvastaava@asteriski.fi'
 const boardMailAddress = process.env.BOARDMAILADDRESS || 'asteriski@utu.fi'
 const mailSender = process.env.MAILSENDER || 'asteriski@utu.fi'
 const smtpUrl = process.env.SMTPURL || 'smtp.utu.fi'
