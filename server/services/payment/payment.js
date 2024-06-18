@@ -173,6 +173,8 @@ function paymentReturn(request, response) {
         if (error) return response.json(httpResponses.onPaymentError)
 
         const currentYear = moment().year()
+        const nextYear = currentYear + 1
+        const currentMonth = moment().month()
 
         // If member not found (==new member) find temporary record and create new member based on it
         if (!member) {
@@ -181,19 +183,24 @@ function paymentReturn(request, response) {
             let membershipEnds = null
 
             // Figure out new membership ending date
-            // 1 year mebership (5€)
+            // 1 year membership (5€)
             if (payment.productId === '1111') {
-              membershipEnds = moment(currentYear + '-12-31').toDate()
-              // 5 year mebership (20€)
+              if (currentMonth < 7) {
+                membershipEnds = moment(currentYear + '-07-31').toDate()
+              } else {
+                membershipEnds = moment(nextYear + '-07-31').toDate()
+              }
+              // 5 year membership (20€)
             } else if (payment.productId === '1555') {
-              membershipEnds = moment(currentYear + '-12-31')
-                .add(4, 'y')
-                .toDate()
-              // "Piltti"-offer: to the end of current year + 1 year (7€)
-            } else if (payment.productId === '1222') {
-              membershipEnds = moment(currentYear + '-12-31')
-                .add(1, 'y')
-                .toDate()
+              if (currentMonth < 7) {
+                membershipEnds = moment(currentYear + '-07-31')
+                  .add(4, 'y')
+                  .toDate()
+              } else {
+                membershipEnds = moment(nextYear + '-07-31')
+                  .add(4, 'y')
+                  .toDate()
+              }
             } else {
               return response.json(httpResponses.onPaymentError)
             }
@@ -300,30 +307,20 @@ function paymentReturn(request, response) {
           let memberUpdate = null
 
           // Figure out membership ending date
-          // 1 year mebership (5€)
+          // 1 year membership (5€)
           if (payment.productId === '1111') {
-            let endYear = currentYear
+            let endYear = currentEndYear + 1
             console.log('currentendyear: ' + currentEndYear)
             console.log('currentyear: ' + currentYear)
-            if (currentEndYear < currentYear) {
-              endYear = currentYear
-            } else {
-              endYear = currentEndYear + 1
-            }
             console.log('endyear: ' + endYear)
             memberUpdate = {
-              membershipEnds: moment(endYear + '-12-31').toDate(),
+              membershipEnds: moment(endYear + '-07-31').toDate(),
             }
-            // 5 year mebership (20€)
+            // 5 year membership (20€)
           } else if (payment.productId === '1555') {
-            let endYear = currentYear
-            if (currentEndYear < currentYear) {
-              endYear = currentYear + 4
-            } else {
-              endYear = currentEndYear + 5
-            }
+            let endYear = currentEndYear + 5
             memberUpdate = {
-              membershipEnds: moment(endYear + '-12-31').toDate(),
+              membershipEnds: moment(endYear + '-07-31').toDate(),
             }
           } else {
             return response.json(httpResponses.onPaymentError)

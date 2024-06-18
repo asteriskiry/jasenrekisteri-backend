@@ -51,13 +51,6 @@ db.once('open', async function() {
   membership5.priceSnt = 2000
   membership5.membershipDuration = 5
 
-  let membership2 = new Product()
-  membership2.productId = '1222'
-  membership2.name = 'Jäsenyys 1,5 vuotta (pilttitarjous)'
-  membership2.category = 'Membership'
-  membership2.priceSnt = 700
-  membership2.membershipDuration = 1.5
-
   await adminUser
     .save()
     .then(() =>
@@ -75,10 +68,6 @@ db.once('open', async function() {
     .then(() =>
       console.log('\x1b[32m%s\x1b[0m', '    5 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1555).')
     )
-    .catch(err => console.warn(err.message))
-  await membership2
-    .save()
-    .then(() => console.log('\x1b[32m%s\x1b[0m', '    Pilttitarjous -tuotteen tallennus onnistui. (tuotekoodi: 1222)'))
     .catch(err => console.warn(err.message))
   db.close(() => {
     console.log(('\x1b[32m%s\x1b[0m', '    Skripti valmistui!'))
