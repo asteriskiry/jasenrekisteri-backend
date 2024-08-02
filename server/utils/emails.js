@@ -111,9 +111,9 @@ function importMail(
       'Heti ensimmäisenä kannattaa käydä tarkistamassa jäsentietosi ja vaihtamassa salasana osoitteessa ' +
       config.clientUrl +
       '\n\n' +
-      'Jäsenasioissa voit ottaa yhteyttä Asteriski ry:n hallitukseen (asteriski@utu.fi)' +
+      'Jäsenasioissa voit ottaa yhteyttä Asteriski ry:n varapuheenjohtajaan (vpj@asteriski.fi)' +
       '\n' +
-      'Teknisissä asioissa voit ottaa yhteyttä WWW-toimikuntaan (www-asteriski@utu.fi) tai suoraan kehittäjään Maks Turtiaiseen (mjturt@utu.fi)' +
+      'Teknisissä asioissa voit ottaa yhteyttä palvelinvastaavaan (palvelinvastaava@asteriski.fi)' +
       memberFooter,
   }
 }
