@@ -6,6 +6,8 @@ const config = require('../../../config/config')
 const Member = require('../../models/Member')
 const httpResponses = require('./')
 
+const validator = require('validator')
+
 let http, userPassword
 
 function loginUser(request, response) {
@@ -15,6 +17,10 @@ function loginUser(request, response) {
 
   if (!email || !password) {
     return response.json(httpResponses.onEmailOrPasswordEmpty)
+  } else if (
+    !validator.isEmail(request.body.email)
+  ){
+    return response.json(httpResponses.onValidationError)
   }
 
   // Find member
