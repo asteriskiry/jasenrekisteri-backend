@@ -62,7 +62,7 @@ var schema = {
 
 prompt.start()
 
-prompt.get(schema, function(err, result) {
+prompt.get(schema, function (err, result) {
   if (err) {
     throw err
   }
@@ -78,10 +78,10 @@ prompt.get(schema, function(err, result) {
   console.log('  Kulkuoikeudet: ' + result.accessRights)
   console.log('  Hyväksytty: ' + result.accepted)
 
-  mongoose.connect(config.mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
+  mongoose.connect(config.mongoUrl)
   var db = mongoose.connection
 
-  db.once('open', function() {
+  db.once('open', function () {
     var newUser = new Member()
 
     newUser.firstName = result.firstName
@@ -98,9 +98,9 @@ prompt.get(schema, function(err, result) {
     newUser.password = result.password
     newUser.accepted = result.accepted
 
-    newUser.save(function(err) {
-      if (err) return console.error(err)
-      console.log('Tallennus tietokantaan onnistui. Voit sulkea yhteyden (Ctrl-c).')
-    })
+    newUser
+      .save()
+      .then(() => console.log('Tallennus tietokantaan onnistui. Voit sulkea yhteyden (Ctrl-c).'))
+      .catch((err) => console.error(err))
   })
 })

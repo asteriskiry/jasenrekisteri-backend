@@ -25,22 +25,22 @@ function forgotPassword(request, response) {
 
       // If alredy asked for new password, delete last temporary record
 
-      ResetPassword.findOneAndDelete({ userID: user._id }, function(err) {
+      ResetPassword.findOneAndDelete({ userID: user._id }, function (err) {
         if (err) console.log(err)
       })
 
       // Generate token and expire date and save to temporary database
 
       const token = crypto.randomBytes(32).toString('hex')
-      bcrypt.genSalt(5, function(err, salt) {
+      bcrypt.genSalt(5, function (err, salt) {
         if (err) console.log(err)
-        bcrypt.hash(token, salt, function(err, hash) {
+        bcrypt.hash(token, salt, function (err, hash) {
           if (err) console.log(err)
           ResetPassword.create({
             userID: user._id,
             resetPasswordToken: hash,
             expire: Date.now() + 3600000,
-          }).then(function(item) {
+          }).then(function (item) {
             if (!item) return response.json(httpResponses.onResetFail)
 
             // Send generated link to email

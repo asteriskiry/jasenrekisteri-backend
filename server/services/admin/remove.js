@@ -7,28 +7,28 @@ const emails = require('../../utils/emails')
 
 // Remove member
 
-function remove(request, response) {
+async function remove(request, response) {
   const accessTo = request.body.access.toLowerCase()
 
   if (accessTo === 'admin' || accessTo === 'board') {
-    utils.checkUserControl(request.body.id).then(admin => {
-      Member.deleteOne({ _id: request.body.memberID }, function(err) {
-        if (err) response.json(err)
+    try {
+      await utils.checkUserControl(request.body.id)
+      await Member.deleteOne({ _id: request.body.memberID })
+      response.json({ success: true, message: 'Jäsen poistettu.' })
 
-        response.json({ success: true, message: 'Jäsen poistettu.' })
+      let email = emails.memberDeletedMail()
+      let memberMailOptions = {
+        from: mail.mailSender,
+        to: request.body.email,
+        subject: email.subject,
+        text: email.text,
+      }
 
-        let email = emails.memberDeletedMail()
-        let memberMailOptions = {
-          from: mail.mailSender,
-          to: request.body.email,
-          subject: email.subject,
-          text: email.text,
-        }
-
-        mail.transporter.sendMail(memberMailOptions, mail.callback)
-        mail.logMessage(memberMailOptions)
-      })
-    })
+      mail.transporter.sendMail(memberMailOptions, mail.callback)
+      mail.logMessage(memberMailOptions)
+    } catch (error) {
+      return response.json(error)
+    }
   } else {
     return response.json(httpResponses.clientAdminFailed)
   }

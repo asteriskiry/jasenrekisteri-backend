@@ -62,7 +62,7 @@ async function createPayment(request, response) {
     newPayment.processed = false
 
     // Save new payment record
-    newPayment.save(async function(error) {
+    newPayment.save(async function (error) {
       if (error) return response.json(httpResponses.onError)
 
       // Payment request data
@@ -100,7 +100,7 @@ async function createPayment(request, response) {
       try {
         const checkoutResponse = await client.createPayment(payment)
         return response.json(checkoutResponse.providers)
-      } catch(error) {
+      } catch (error) {
         log.error('Create payment error: ' + error)
         return response.json(httpResponses.onError)
       }
@@ -227,7 +227,7 @@ function paymentReturn(request, response) {
             newMember.accountCreated = new Date()
             newMember.accepted = false
             newMember.password = password
-            newMember.save(error => {
+            newMember.save((error) => {
               if (error) return response.json(httpResponses.onPaymentError)
 
               // Email to new member

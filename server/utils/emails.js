@@ -36,9 +36,9 @@ function membershipApprovedMail() {
       'Jäsenyytesi Asteriski ry:lle on hyväksytty.\n\n' +
       'Pääset tarkastelemaan jäsentietojasi osoitteessa ' +
       config.clientUrl +
-	  '\n\nYhdistyksen virallisena tiedotuskanavana toimii Riski-info -sähköpostilista. Sähköpostilistalle pääset liittymään ' +
-	  'osoitteesta: https://lists.utu.fi/mailman/listinfo/riski-info. Muita tiedotuskanavia ovat yhdistyksen ' +
-	  'Telegram -kanava (https://t.me/asteriski), sekä Instagram @asteriski_ry (https://www.instagram.com/asteriski_ry/).' +
+      '\n\nYhdistyksen virallisena tiedotuskanavana toimii Riski-info -sähköpostilista. Sähköpostilistalle pääset liittymään ' +
+      'osoitteesta: https://lists.utu.fi/mailman/listinfo/riski-info. Muita tiedotuskanavia ovat yhdistyksen ' +
+      'Telegram -kanava (https://t.me/asteriski), sekä Instagram @asteriski_ry (https://www.instagram.com/asteriski_ry/).' +
       memberFooter,
   }
 }
