@@ -1,4 +1,4 @@
-const cron = require('cron')
+const { CronJob } = require('cron')
 const fs = require('fs')
 const moment = require('moment')
 
@@ -13,7 +13,7 @@ const log = require('./logger').log
 function startCronJobs() {
   // Check every day for ended memberships and send email
 
-  const checkMembershipEnding = cron.job('0 0 0 * * *', function() {
+  const checkMembershipEnding = new CronJob('0 0 0 * * *', function() {
     const currentDate = new Date()
     Member.find({ membershipEnds: { $lte: currentDate } }, function(err, members) {
       if (err) console.log(err)
@@ -36,9 +36,7 @@ function startCronJobs() {
                 mail.logMessage(endingMailOptions)
               })
             } else {
-              let twoMonthsAgo = moment()
-                .subtract(2, 'months')
-                .toDate()
+              let twoMonthsAgo = moment().subtract(2, 'months').toDate()
               if (ended.mailSent.getTime() < twoMonthsAgo.getTime()) {
                 EndedMembership.updateOne({ userID: user._id }, { mailSent: currentDate }).then(function() {})
                 mail.transporter.sendMail(endingMailOptions, mail.callback)
@@ -53,7 +51,7 @@ function startCronJobs() {
 
   // Export member list to CSV every hour
 
-  const exportToCSV = cron.job('0 0 * * * *', function() {
+  const exportToCSV = new CronJob('0 0 * * * *', function() {
     try {
       const filePath = config.CSVFilePath
       fs.writeFileSync(filePath, 'PersonId;Company;Role;RoleValidity;ValidityStart;ValidityEnd;SpecialCondition\n')
@@ -64,24 +62,16 @@ function startCronJobs() {
             if (user.accessRights) {
               fs.appendFileSync(
                 filePath,
-                'U_' +
-                  user.utuAccount +
-                  ';0245896-3;A_AJ_Asteriski_hallitus;R;' +
-                  moment(user.membershipStarts).format('YYYYMMDD') +
-                  ';' +
-                  moment(user.membershipEnds).format('YYYYMMDD') +
-                  ';\n'
+                'U_' + user.utuAccount + ';0245896-3;A_AJ_Asteriski_hallitus;R;' +
+                  moment(user.membershipStarts).format('YYYYMMDD') + ';' +
+                  moment(user.membershipEnds).format('YYYYMMDD') + ';\n'
               )
             } else {
               fs.appendFileSync(
                 filePath,
-                'U_' +
-                  user.utuAccount +
-                  ';0245896-3;A_AJ_Asteriski_jäsen;R;' +
-                  moment(user.membershipStarts).format('YYYYMMDD') +
-                  ';' +
-                  moment(user.membershipEnds).format('YYYYMMDD') +
-                  ';\n'
+                'U_' + user.utuAccount + ';0245896-3;A_AJ_Asteriski_jäsen;R;' +
+                  moment(user.membershipStarts).format('YYYYMMDD') + ';' +
+                  moment(user.membershipEnds).format('YYYYMMDD') + ';\n'
               )
             }
           }

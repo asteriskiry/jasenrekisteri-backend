@@ -5,32 +5,27 @@ const httpResponses = require('./')
 
 // Member list
 
-function list(request, response) {
+async function list(request, response) {
   const accessTo = request.query.access.toLowerCase()
 
   if (accessTo === 'admin' || accessTo === 'board') {
-    utils
-      .checkUserControl(request.query.id)
-      .then(user => {
-        Member.find({}, null).exec((error, docs) => {
-          if (error) return response.json(error)
-          if (!docs) return response.json({ memberNotFound: true })
+    try {
+      await utils.checkUserControl(request.query.id)
 
-          let updatedDocument = docs.map(doc => {
-            let documentToObject = doc.toObject()
+      const docs = await Member.find({})
+      if (!docs) return response.json({ memberNotFound: true })
 
-            delete documentToObject.password
-
-            return documentToObject
-          })
-
-          return response.json(updatedDocument)
-        })
+      const updatedDocument = docs.map(doc => {
+        let documentToObject = doc.toObject()
+        delete documentToObject.password
+        return documentToObject
       })
-      .catch(error => {
-        console.log(error)
-        return response.json(httpResponses.onServerAdminFail)
-      })
+
+      return response.json(updatedDocument)
+    } catch (error) {
+      console.error(error)
+      return response.json(httpResponses.onServerAdminFail)
+    }
   } else {
     return response.json(httpResponses.clientAdminFailed)
   }

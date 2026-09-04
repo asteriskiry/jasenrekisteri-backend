@@ -1,7 +1,6 @@
 'use strict'
 
 const express = require('express')
-const bodyParser = require('body-parser')
 const log4js = require('log4js')
 const mongoose = require('mongoose')
 const passport = require('passport')
@@ -27,8 +26,8 @@ module.exports = function() {
     server.use(log4js.connectLogger(logger.logAccess, { level: 'auto' }))
 
     server.use(cors())
-    server.use(bodyParser.json())
-    server.use(bodyParser.urlencoded({ extended: false }))
+    server.use(express.json())
+    server.use(express.urlencoded({ extended: false }))
     server.use(cookieParser())
     server.use(passport.initialize())
     mongoose.connect(config.mongoUrl, {
@@ -46,7 +45,8 @@ module.exports = function() {
     let hostname = server.get('hostname')
     let port = server.get('port')
 
-    server.listen(port, function() {
+    server.listen(port, function(err) {
+      if (err) console.log('Error in server setup')
       console.log('Jäsenrekisteri backend listening on http://' + hostname + ':' + port)
     })
   }
