@@ -34,8 +34,11 @@ async function loginUser(request, response) {
       id: user._id,
       token: 'JWT ' + token,
     })
-  } catch (error) {
-    return response.json(error)
+  } catch {
+    return response.status(503).json({
+      success: false,
+      message: 'Kirjautumispalvelu ei ole tällä hetkellä käytettävissä.',
+    })
   }
 }
 

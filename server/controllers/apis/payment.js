@@ -7,6 +7,7 @@ const paymentService = require('../../services/payment/payment')
 let router = express.Router()
 
 router.post('/', passport.authenticate('jwt', { session: false }), paymentService.createPayment)
-router.post('/payment-return', paymentService.paymentReturn)
+router.post('/webhook', paymentService.stripeWebhook)
+router.get('/session-status', paymentService.getPaymentStatus)
 
 module.exports = router
