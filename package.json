@@ -19,6 +19,7 @@
     "build": "tsc",
     "prestart": "npm run build",
     "start": "node dist/index.js",
+    "predev": "npm run swagger",
     "dev": "npm run build && nodemon --watch server --watch config --watch index.ts --exec \"npm run build && node dist/index.js\"",
     "nodemon:start": "npm run dev",
     "pm2:start": "pm2 start ecosystem.config.cjs",
@@ -29,7 +30,8 @@
     "create-user": "npm run build && node dist/scripts/create-user.js",
     "create-product": "npm run build && node dist/scripts/create-product.js",
     "create-defaults": "npm run build && node dist/scripts/create-defaults.js",
-    "mass-mailer": "npm run build && node dist/scripts/mass-mailer.js"
+    "mass-mailer": "npm run build && node dist/scripts/mass-mailer.js",
+    "swagger": "npm run build && node dist/scripts/swagger.js"
   },
   "dependencies": {
     "@log4js-node/smtp": "^2.0.8",
@@ -56,12 +58,15 @@
     "prompt": "^1.3.0",
     "shelljs": "^0.10.0",
     "stripe": "^22.6.1",
+    "swagger-autogen": "^2.23.7",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^13.0.2",
     "validator": "^13.15.35"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "@types/node": "^24.10.1",
+    "@types/swagger-ui-express": "^4.1.8",
     "debug": "^4.4.3",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",

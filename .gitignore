@@ -5,6 +5,7 @@ csv/
 ecosystem.config.js
 ecosystem.config.cjs
 dist/
+swagger.json
 data/
 .pm2
 
