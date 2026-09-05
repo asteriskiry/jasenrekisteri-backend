@@ -17,10 +17,10 @@ Minimal [API documentation](./API.md).
 
 ### Start
 
-First copy ecosystem.config.js-sample to ecosystem.config.js (and configure it if needed):
+First copy ecosystem.config.cjs-sample to ecosystem.config.cjs (and configure it if needed):
 
 ```bash
-cp ecosystem.config.js-sample ecosystem.config.js
+cp ecosystem.config.cjs-sample ecosystem.config.cjs
 ```
 
 Install Docker and Docker-compose. Start Docker and run:
@@ -40,12 +40,12 @@ Install node.js, npm and MongoDB.
 Start MongoDB with `systemctl start mongodb` or `mongod`.
 
 ```bash
-cp ecosystem.config.js-sample ecosystem.config.js
+cp ecosystem.config.cjs-sample ecosystem.config.cjs
 npm install
 npm start
 ```
 
-Configure `ecosystem.config.js`-file if needed.
+Configure `ecosystem.config.cjs`-file if needed.
 
 Create default database entries with:
 
