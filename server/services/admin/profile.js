@@ -16,7 +16,7 @@ async function get(request, response) {
 
   // Check access and return member details
 
-  if (accessTo !== 'admin' && accessTo !== 'board') {
+  if (userRole !== 'admin' && userRole !== 'board') {
     return response.json(httpResponses.clientAdminFailed)
   }
 
