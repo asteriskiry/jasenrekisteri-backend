@@ -8,7 +8,7 @@ const emails = require('../../utils/emails')
 // Remove member
 
 async function remove(request, response) {
-  const accessTo = request.body.access.toLowerCase()
+  const accessTo = request.user.role.toLowerCase()
 
   if (accessTo === 'admin' || accessTo === 'board') {
     try {

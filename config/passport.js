@@ -11,7 +11,7 @@ function setPassortConfigs(passport) {
   passport.use(
     new JwtStrategy(opts, async (jwt_payload, done) => {
       try {
-        const user = await Member.findOne({ id: jwt_payload._id })
+        const user = await Member.findOne({ _id: jwt_payload._id })
         return done(null, user || false)
       } catch (error) {
         return done(error, false)
