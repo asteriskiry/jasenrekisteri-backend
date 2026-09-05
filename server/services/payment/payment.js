@@ -71,16 +71,37 @@ async function createPayment(request, response) {
     newPayment.reference = reference
     newPayment.processed = false
 
-    if (!product.stripeProductId || !product.stripePriceId) {
+    let stripePrice
+    if (product.stripePriceId) {
+      stripePrice = await stripe.prices.retrieve(product.stripePriceId)
+    }
+
+    if (!product.stripeProductId) {
       const stripeProduct = await stripe.products.create({
         name: productObj.name,
         default_price_data: {
-          currency: 'usd',
+          currency: 'eur',
           unit_amount: productObj.priceSnt,
         },
       })
       product.stripeProductId = stripeProduct.id
       product.stripePriceId = stripeProduct.default_price
+      await product.save()
+      productObj = product.toObject()
+    } else if (
+      !stripePrice ||
+      stripePrice.currency !== 'eur' ||
+      stripePrice.unit_amount !== productObj.priceSnt
+    ) {
+      stripePrice = await stripe.prices.create({
+        currency: 'eur',
+        unit_amount: productObj.priceSnt,
+        product: product.stripeProductId,
+      })
+      await stripe.products.update(product.stripeProductId, {
+        default_price: stripePrice.id,
+      })
+      product.stripePriceId = stripePrice.id
       await product.save()
       productObj = product.toObject()
     }
