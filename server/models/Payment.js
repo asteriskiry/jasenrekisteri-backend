@@ -56,6 +56,19 @@ const PaymentSchema = new mongoose.Schema({
     required: true,
     default: false,
   },
+  // Snapshot of Product.membershipDuration at the time of payment, so a later
+  // edit to the Product can't retroactively change what an already-completed
+  // payment grants. Absent for non-membership ('Other' category) products.
+  membershipDuration: {
+    type: Number,
+  },
+  // Set when payment completion couldn't automatically resolve a membership
+  // outcome (e.g. membershipDuration missing) even though Stripe collected
+  // the money - needs a human to reconcile it.
+  needsManualReview: {
+    type: Boolean,
+    default: false,
+  },
   stripeCheckoutSessionId: {
     type: String,
     unique: true,
