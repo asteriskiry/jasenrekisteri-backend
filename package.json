@@ -51,6 +51,7 @@
     "passport-jwt": "^4.0.1",
     "prompt": "^1.3.0",
     "shelljs": "^0.10.0",
+    "stripe": "^22.6.1",
     "validator": "^13.15.35"
   },
   "devDependencies": {
