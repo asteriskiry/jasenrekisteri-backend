@@ -1,6 +1,6 @@
 'use strict'
 
-import checkoutFinlandModule from 'checkout-finland'
+import Stripe from 'stripe'
 import { v1 as uuidv1 } from 'uuid'
 import moment from 'moment'
 import generator from 'generate-password'
@@ -16,13 +16,19 @@ import Payment from '../../models/Payment.js'
 import Product from '../../models/Product.js'
 import { log } from '../../utils/logger.js'
 
-// Initialize Checkout API
-const CheckoutFinland: any = checkoutFinlandModule.default ?? checkoutFinlandModule
-const client = new CheckoutFinland(process.env.MERCHANT_ID, process.env.MERCHANT_SECRET)
+function runQuery(query, callback) {
+  query.exec().then((result) => callback(null, result)).catch((error) => callback(error))
+}
+
+function runSave(document, callback) {
+  document.save().then(() => callback(null)).catch((error) => callback(error))
+}
+
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null
 
 // Create payment
 async function createPayment(request, response) {
-  let memberId = request.body.memberId
+  let memberId = request.user._id
   let productId = request.body.productId
 
   // Find the member whose payment it is
@@ -33,12 +39,15 @@ async function createPayment(request, response) {
     const tempMemberQuery = TempMember.findOne({ _id: memberId })
     member = await tempMemberQuery.exec()
   }
+  if (!member) return response.json(httpResponses.onError)
   const memberObj = member.toObject()
 
   // Find product
-  Product.findOne({ productId: productId }, (error, product) => {
-    if (error || !product) return response.json(httpResponses.onError)
-    const productObj = product.toObject()
+  try {
+    if (!stripe) return response.json(httpResponses.onError)
+    const product = await Product.findOne({ productId: productId }).exec()
+    if (!product) return response.json(httpResponses.onError)
+    let productObj = product.toObject()
 
     // Generate stamp (this is how payment is identified)
     const stamp = cryptoRandomString({ length: 30 })
@@ -62,51 +71,149 @@ async function createPayment(request, response) {
     newPayment.reference = reference
     newPayment.processed = false
 
-    // Save new payment record
-    newPayment.save(async function (error) {
-      if (error) return response.json(httpResponses.onError)
+    let stripePrice
+    if (product.stripePriceId) {
+      stripePrice = await stripe.prices.retrieve(product.stripePriceId)
+    }
 
-      // Payment request data
-      const payment = {
-        stamp: stamp,
-        reference: reference,
-        amount: productObj.priceSnt,
-        currency: 'EUR',
-        language: 'FI',
-        items: [
-          {
-            unitPrice: productObj.priceSnt,
-            units: 1,
-            vatPercentage: 0,
-            productCode: productObj.productId,
-            deliveryDate: moment(productObj.timestamp).format('YYYY-MM-DD'),
-            merchant: process.env.MERCHANT_ID,
-            reference: reference,
-            description: productObj.name,
-            category: productObj.category,
-          },
-        ],
-        customer: {
-          email: memberObj.email,
-          firstName: memberObj.firstName,
-          lastName: memberObj.lastName,
+    if (!product.stripeProductId) {
+      const stripeProduct = await stripe.products.create({
+        name: productObj.name,
+        default_price_data: {
+          currency: 'eur',
+          unit_amount: productObj.priceSnt,
         },
-        redirectUrls: {
-          success: process.env.CLIENTURL + '/member/pay/return',
-          cancel: process.env.CLIENTURL + '/member/pay/return',
-        },
-      }
+      })
+      product.stripeProductId = stripeProduct.id
+      product.stripePriceId = stripeProduct.default_price
+      await product.save()
+      productObj = product.toObject()
+    } else if (
+      !stripePrice ||
+      stripePrice.currency !== 'eur' ||
+      stripePrice.unit_amount !== productObj.priceSnt
+    ) {
+      stripePrice = await stripe.prices.create({
+        currency: 'eur',
+        unit_amount: productObj.priceSnt,
+        product: product.stripeProductId,
+      })
+      await stripe.products.update(product.stripeProductId, {
+        default_price: stripePrice.id,
+      })
+      product.stripePriceId = stripePrice.id
+      await product.save()
+      productObj = product.toObject()
+    }
 
-      // Create paymnet request to Checkout API
-      try {
-        const checkoutResponse = await client.createPayment(payment)
-        return response.json(checkoutResponse.providers)
-      } catch (error) {
-        log.error('Create payment error: ' + error)
-        return response.json(httpResponses.onError)
-      }
+    const savedPayment = await newPayment.save()
+    const session = await stripe.checkout.sessions.create({
+      line_items: [{ price: productObj.stripePriceId, quantity: 1 }],
+      mode: 'payment',
+      customer_email: memberObj.email,
+      success_url: process.env.CLIENTURL + '/member/pay/return?session_id={CHECKOUT_SESSION_ID}',
+      cancel_url: process.env.CLIENTURL + '/member/pay/return?canceled=true',
+      metadata: { paymentId: savedPayment._id.toString() },
     })
+    savedPayment.stripeCheckoutSessionId = session.id
+    await savedPayment.save()
+    return response.json({ url: session.url })
+  } catch (error) {
+    log.error('Create Stripe Checkout Session error: ' + error)
+    return response.json(httpResponses.onError)
+  }
+}
+
+async function stripeWebhook(request, response) {
+  if (!stripe) return response.sendStatus(500)
+  let event
+  try {
+    event = stripe.webhooks.constructEvent(
+      request.body,
+      request.headers['stripe-signature'],
+      process.env.STRIPE_WEBHOOK_SECRET
+    )
+  } catch (error) {
+    log.error('Stripe webhook signature verification failed: ' + error)
+    return response.sendStatus(400)
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object
+    let payment = await Payment.findOne({ stripeCheckoutSessionId: session.id }).exec()
+    if (!payment && session.metadata && session.metadata.paymentId) {
+      payment = await Payment.findById(session.metadata.paymentId).exec()
+    }
+    if (!payment) return response.sendStatus(404)
+    payment.stripePaymentIntentId = session.payment_intent
+    await payment.save()
+    request.body = {
+      stripeVerified: true,
+      status: 'ok',
+      stamp: payment.stamp,
+      account: 'stripe',
+      algorithm: 'stripe',
+      amount: payment.amountSnt,
+      reference: payment.reference,
+      transactionId: session.payment_intent || session.id,
+      provider: 'stripe',
+      signature: 'stripe',
+    }
+    return paymentReturn(request, response)
+  }
+  return response.sendStatus(200)
+}
+
+async function getPaymentStatus(request, response) {
+  const sessionId = request.query.session_id
+  if (!sessionId) return response.json(httpResponses.onPaymentError)
+
+  try {
+    let payment = await Payment.findOne({ stripeCheckoutSessionId: sessionId }).exec()
+    if (!payment) return response.json(httpResponses.onPaymentNotFoundOrAlredyProcessed)
+
+    if (!payment.processed && stripe) {
+      const session = await stripe.checkout.sessions.retrieve(sessionId)
+      if (session.payment_status === 'paid') {
+        request.body = {
+          stripeVerified: true,
+          status: 'ok',
+          stamp: payment.stamp,
+          account: 'stripe',
+          algorithm: 'stripe',
+          amount: payment.amountSnt,
+          reference: payment.reference,
+          transactionId: session.payment_intent || session.id,
+          provider: 'stripe',
+          signature: 'stripe',
+        }
+        return paymentReturn(request, response)
+      }
+    }
+
+  if (!payment.processed || payment.status !== 'Success') {
+    return response.json({ success: false, message: 'Maksua käsitellään.' })
+  }
+
+  const member = await Member.findById(payment.memberId).exec()
+  if (!member) return response.json(httpResponses.onPaymentError)
+  return response.json({
+    success: true,
+    message: 'Maksun käsittely onnistui.',
+    paymentData: {
+      firstName: member.firstName,
+      lastName: member.lastName,
+      email: member.email,
+      membershipEnds: member.membershipEnds,
+      amount: payment.amountSnt,
+      timestamp: payment.timestamp,
+      product: payment.productName,
+    },
   })
+  } catch (error) {
+    log.error('Get Stripe payment status error: ' + error)
+    return response.json(httpResponses.onPaymentError)
+  }
 }
 
 // When payment is made frontend calls this endpoint
@@ -121,37 +228,30 @@ function paymentReturn(request, response) {
   const provider = request.body.provider
   const signature = request.body.signature
 
+  const stripeVerified = request.body.stripeVerified === true
+
   // Validations
 
   // Check if all needed parameters are provided
   if (
-    !account ||
-    !algorithm ||
-    !amount ||
-    !stamp ||
-    !reference ||
-    !transactionId ||
-    !status ||
-    !provider ||
-    !signature
+    !stripeVerified &&
+    (!account ||
+      !algorithm ||
+      !amount ||
+      !stamp ||
+      !reference ||
+      !transactionId ||
+      !status ||
+      !provider ||
+      !signature)
   ) {
     return response.json(httpResponses.onPaymentError)
   }
 
   // Validate signature
-  const sigValidationData = {
-    'checkout-account': account,
-    'checkout-algorithm': algorithm,
-    'checkout-amount': amount,
-    'checkout-stamp': stamp,
-    'checkout-reference': reference,
-    'checkout-transaction-id': transactionId,
-    'checkout-status': status,
-    'checkout-provider': provider,
-  }
-  const calculatedSignature = client.calculateHmac(sigValidationData, '')
+  const calculatedSignature = stripeVerified ? signature : null
 
-  if (calculatedSignature !== signature) {
+  if (!stripeVerified && calculatedSignature !== signature) {
     return response.json(httpResponses.onPaymentError)
   }
 
@@ -163,14 +263,14 @@ function paymentReturn(request, response) {
     const paymentFilter = { stamp: stamp, processed: false }
     const paymentUpdate = { status: 'Success', processed: true }
 
-    Payment.findOneAndUpdate(paymentFilter, paymentUpdate, { new: true }, (error, payment) => {
+    runQuery(Payment.findOneAndUpdate(paymentFilter, paymentUpdate, { new: true }), (error, payment) => {
       if (error) return response.json(httpResponses.onPaymentError)
       if (!payment) return response.json(httpResponses.onPaymentNotFoundOrAlredyProcessed)
       const memberId = payment.memberId
       const memberFilter = { _id: memberId }
 
       // Find member whose payment it is and take current membership ending date
-      Member.findOne(memberFilter, (error, member) => {
+      runQuery(Member.findOne(memberFilter), (error, member) => {
         if (error) return response.json(httpResponses.onPaymentError)
 
         const currentYear = moment().year()
@@ -179,7 +279,7 @@ function paymentReturn(request, response) {
 
         // If member not found (==new member) find temporary record and create new member based on it
         if (!member) {
-          TempMember.findOne(memberFilter, (error, tempMember) => {
+          runQuery(TempMember.findOne(memberFilter), (error, tempMember) => {
             if (error || !tempMember) return response.json(httpResponses.onPaymentError)
             let membershipEnds = null
 
@@ -228,7 +328,7 @@ function paymentReturn(request, response) {
             newMember.accountCreated = new Date()
             newMember.accepted = false
             newMember.password = password
-            newMember.save((error) => {
+            runSave(newMember, (error) => {
               if (error) return response.json(httpResponses.onPaymentError)
 
               // Email to new member
@@ -328,7 +428,7 @@ function paymentReturn(request, response) {
           }
 
           // Update the new membership ending date
-          Member.findOneAndUpdate(memberFilter, memberUpdate, { new: true }, (error, updatedMember) => {
+          runQuery(Member.findOneAndUpdate(memberFilter, memberUpdate, { new: true }), (error, updatedMember) => {
             if (error || !updatedMember) return response.json(httpResponses.onPaymentError)
 
             // Email receipt to member
@@ -383,7 +483,7 @@ function paymentReturn(request, response) {
     const paymentFilter = { stamp: stamp, processed: false }
     const paymentUpdate = { status: 'Canceled', processed: true }
 
-    Payment.findOneAndUpdate(paymentFilter, paymentUpdate, { new: true }, (error, payment) => {
+    runQuery(Payment.findOneAndUpdate(paymentFilter, paymentUpdate, { new: true }), (error, payment) => {
       if (error) return response.json(httpResponses.onPaymentError)
       if (!payment) return response.json(httpResponses.onPaymentNotFoundOrAlredyProcessed)
       return response.json(httpResponses.onPaymentCancel)
@@ -397,5 +497,7 @@ function paymentReturn(request, response) {
 
 export default {
   createPayment: createPayment,
+  stripeWebhook: stripeWebhook,
+  getPaymentStatus: getPaymentStatus,
   paymentReturn: paymentReturn,
 }

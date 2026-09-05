@@ -27,6 +27,7 @@ export default function () {
     server.use(log4js.connectLogger(logger.logAccess, { level: 'auto' }))
 
     server.use(cors())
+    server.use('/api/pay/webhook', express.raw({ type: 'application/json' }))
     server.use(express.json())
     server.use(express.urlencoded({ extended: false }))
     server.use(cookieParser())

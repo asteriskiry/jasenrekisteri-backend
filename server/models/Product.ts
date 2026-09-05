@@ -23,6 +23,12 @@ const ProductSchema = new mongoose.Schema<any>({
   membershipDuration: {
     type: Number,
   },
+  stripeProductId: {
+    type: String,
+  },
+  stripePriceId: {
+    type: String,
+  },
 })
 
 export default mongoose.model<any>('Product', ProductSchema) as any

@@ -4,7 +4,7 @@ import httpResponses from './index.js'
 import bcrypt from 'bcrypt'
 
 function resetPassword(request, response) {
-  const { userID } = request.body
+  const userID = request.user._id
   const { token } = request.body
   const { password } = request.body
   const { passwordAgain } = request.body

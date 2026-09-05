@@ -56,6 +56,14 @@ const PaymentSchema = new mongoose.Schema<any>({
     required: true,
     default: false,
   },
+  stripeCheckoutSessionId: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
+  stripePaymentIntentId: {
+    type: String,
+  },
 })
 
 export default mongoose.model<any>('Payment', PaymentSchema) as any

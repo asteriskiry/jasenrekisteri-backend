@@ -9,38 +9,32 @@ import * as emails from '../../utils/emails.js'
 
 // Get member details
 
-function get(request, response) {
+async function get(request, response) {
   const memberID = request.query.memberID
 
-  const accessTo = request.query.access.toLowerCase()
+  const userRole = request.user.role.toLowerCase()
 
   // Check access and return member details
 
-  if (accessTo === 'admin' || accessTo === 'board') {
-    utils
-      .checkUserControl(request.query.id)
-      .then((admin) => {
-        Member.findOne({ _id: memberID })
-          .lean()
-          .exec((error, doc) => {
-            if (error) return response.json(error)
-            if (!doc) return response.json({ memberNotFound: true })
-            delete doc.password
-            return response.json(doc)
-          })
-      })
-      .catch((error) => {
-        console.log(error)
-        return response.json(httpResponses.onServerAdminFail)
-      })
-  } else {
+  if (userRole !== 'admin' && userRole !== 'board') {
     return response.json(httpResponses.clientAdminFailed)
+  }
+
+  try {
+    await utils.checkUserControl(request.query.id)
+    const doc = await Member.findOne({ _id: memberID }).lean().exec()
+    if (!doc) return response.json({ memberNotFound: true })
+    delete doc.password
+    return response.json(doc)
+  } catch (error) {
+    console.log(error)
+    return response.json(httpResponses.onServerAdminFail)
   }
 }
 
 // Update member details
 
-function update(request, response) {
+async function update(request, response) {
   const memberID = request.body.memberID
 
   // Validations
@@ -88,7 +82,7 @@ function update(request, response) {
 
   // Check client side access
 
-  const accessTo = request.body.access.toLowerCase()
+  const accessTo = request.user.role.toLowerCase()
 
   if (accessTo === 'admin') {
     if (request.body.password === '' || request.body.password === null) {
@@ -99,47 +93,34 @@ function update(request, response) {
 
     // Send mail to member if member is just accepted
 
-    utils
-      .checkAdminControl(request.body.id)
-      .then((admin) => {
-        Member.findOne({ _id: memberID })
-          .lean()
-          .exec((error, doc) => {
-            if (error) return response.json(error)
-            if (!doc.accepted && adminProfile.accepted) {
-              let email = emails.membershipApprovedMail()
-              let mailOptions = {
-                from: mail.mailSender,
-                to: adminProfile.email,
-                subject: email.subject,
-                text: email.text,
-              }
-              mail.transporter.sendMail(mailOptions, mail.callback)
-              mail.logMessage(mailOptions)
-            }
-          })
-      })
-      .catch((error) => {
-        console.log(error)
-        return response.json(httpResponses.onServerAdminFail)
-      })
+    try {
+      await utils.checkAdminControl(request.body.id)
+      const existingMember = await Member.findOne({ _id: memberID }).lean().exec()
+      if (existingMember && !existingMember.accepted && adminProfile.accepted) {
+        let email = emails.membershipApprovedMail()
+        let mailOptions = {
+          from: mail.mailSender,
+          to: adminProfile.email,
+          subject: email.subject,
+          text: email.text,
+        }
+        mail.transporter.sendMail(mailOptions, mail.callback)
+        mail.logMessage(mailOptions)
+      }
+    } catch (error) {
+      console.log(error)
+      return response.json(httpResponses.onServerAdminFail)
+    }
 
     // Save member details
-
-    utils
-      .checkUserControl(request.body.id)
-      .then((admin) => {
-        Member.findOneAndUpdate({ _id: memberID }, adminProfile)
-          .lean()
-          .exec((error, doc) => {
-            if (error) return response.json(httpResponses.onMustBeUnique)
-            return response.json(httpResponses.onProfileUpdateSuccess)
-          })
-      })
-      .catch((error) => {
-        console.log(error)
-        return response.json(httpResponses.onServerAdminFail)
-      })
+    try {
+      await utils.checkUserControl(request.body.id)
+      await Member.findOneAndUpdate({ _id: memberID }, adminProfile).exec()
+      return response.json(httpResponses.onProfileUpdateSuccess)
+    } catch (error) {
+      console.log(error)
+      return response.json(httpResponses.onMustBeUnique)
+    }
   } else {
     return response.json(httpResponses.clientAdminFailed)
   }
