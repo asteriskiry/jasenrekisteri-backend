@@ -19,8 +19,8 @@ function forgotPassword(request, response) {
 
   Member.findOne({ email: email })
     .lean()
-    .exec((error, user) => {
-      if (error) return response.json({ success: false, message: error })
+    .exec()
+    .then((user) => {
       if (!user) return response.json(httpResponses.onUserNotFound)
 
       // If alredy asked for new password, delete last temporary record
@@ -60,6 +60,7 @@ function forgotPassword(request, response) {
         })
       })
     })
+    .catch((error) => response.json({ success: false, message: error }))
 }
 
 export default {

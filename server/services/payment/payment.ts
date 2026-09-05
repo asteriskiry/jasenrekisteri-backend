@@ -17,11 +17,17 @@ import Product from '../../models/Product.js'
 import { log } from '../../utils/logger.js'
 
 function runQuery(query, callback) {
-  query.exec().then((result) => callback(null, result)).catch((error) => callback(error))
+  query
+    .exec()
+    .then((result) => callback(null, result))
+    .catch((error) => callback(error))
 }
 
 function runSave(document, callback) {
-  document.save().then(() => callback(null)).catch((error) => callback(error))
+  document
+    .save()
+    .then(() => callback(null))
+    .catch((error) => callback(error))
 }
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null
@@ -33,14 +39,11 @@ async function createPayment(request, response) {
 
   // Find the member whose payment it is
   const memberQuery = Member.findOne({ _id: memberId })
-  let member = await memberQuery.exec()
+  const member = await memberQuery.exec()
   // If not found try tempMembers (just joined)
-  if (!member) {
-    const tempMemberQuery = TempMember.findOne({ _id: memberId })
-    member = await tempMemberQuery.exec()
-  }
-  if (!member) return response.json(httpResponses.onError)
-  const memberObj = member.toObject()
+  const tempMember = member ? null : await TempMember.findOne({ _id: memberId }).exec()
+  if (!member && !tempMember) return response.json(httpResponses.onError)
+  const memberObj = (member ?? tempMember).toObject()
 
   // Find product
   try {
@@ -85,14 +88,11 @@ async function createPayment(request, response) {
         },
       })
       product.stripeProductId = stripeProduct.id
-      product.stripePriceId = stripeProduct.default_price
+      product.stripePriceId =
+        typeof stripeProduct.default_price === 'string' ? stripeProduct.default_price : stripeProduct.default_price?.id
       await product.save()
       productObj = product.toObject()
-    } else if (
-      !stripePrice ||
-      stripePrice.currency !== 'eur' ||
-      stripePrice.unit_amount !== productObj.priceSnt
-    ) {
+    } else if (!stripePrice || stripePrice.currency !== 'eur' || stripePrice.unit_amount !== productObj.priceSnt) {
       stripePrice = await stripe.prices.create({
         currency: 'eur',
         unit_amount: productObj.priceSnt,
@@ -191,25 +191,25 @@ async function getPaymentStatus(request, response) {
       }
     }
 
-  if (!payment.processed || payment.status !== 'Success') {
-    return response.json({ success: false, message: 'Maksua käsitellään.' })
-  }
+    if (!payment.processed || payment.status !== 'Success') {
+      return response.json({ success: false, message: 'Maksua käsitellään.' })
+    }
 
-  const member = await Member.findById(payment.memberId).exec()
-  if (!member) return response.json(httpResponses.onPaymentError)
-  return response.json({
-    success: true,
-    message: 'Maksun käsittely onnistui.',
-    paymentData: {
-      firstName: member.firstName,
-      lastName: member.lastName,
-      email: member.email,
-      membershipEnds: member.membershipEnds,
-      amount: payment.amountSnt,
-      timestamp: payment.timestamp,
-      product: payment.productName,
-    },
-  })
+    const member = await Member.findById(payment.memberId).exec()
+    if (!member) return response.json(httpResponses.onPaymentError)
+    return response.json({
+      success: true,
+      message: 'Maksun käsittely onnistui.',
+      paymentData: {
+        firstName: member.firstName,
+        lastName: member.lastName,
+        email: member.email,
+        membershipEnds: member.membershipEnds,
+        amount: payment.amountSnt,
+        timestamp: payment.timestamp,
+        product: payment.productName,
+      },
+    })
   } catch (error) {
     log.error('Get Stripe payment status error: ' + error)
     return response.json(httpResponses.onPaymentError)
@@ -235,15 +235,7 @@ function paymentReturn(request, response) {
   // Check if all needed parameters are provided
   if (
     !stripeVerified &&
-    (!account ||
-      !algorithm ||
-      !amount ||
-      !stamp ||
-      !reference ||
-      !transactionId ||
-      !status ||
-      !provider ||
-      !signature)
+    (!account || !algorithm || !amount || !stamp || !reference || !transactionId || !status || !provider || !signature)
   ) {
     return response.json(httpResponses.onPaymentError)
   }

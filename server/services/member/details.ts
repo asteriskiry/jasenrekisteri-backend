@@ -37,7 +37,7 @@ function updateDetails(request, response) {
     !validator.matches(request.body.lastName, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
     !validator.isEmail(request.body.email) ||
     !validator.matches(request.body.hometown, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-    ((!typeof request.body.tyyMember) as any) === 'boolean'
+    (!typeof request.body.tyyMember as any) === 'boolean'
   ) {
     return response.json(httpResponses.onValidationError)
   }
@@ -64,10 +64,9 @@ function updateDetails(request, response) {
 
   // Update member details
 
-  Member.findOneAndUpdate(query, record, { new: true }, (error, doc) => {
-    if (error) return response.json(httpResponses.onMustBeUnique)
-    return response.json(httpResponses.onUpdateSuccess)
-  })
+  Member.findOneAndUpdate(query, record, { new: true })
+    .then(() => response.json(httpResponses.onUpdateSuccess))
+    .catch(() => response.json(httpResponses.onMustBeUnique))
 }
 
 export default {

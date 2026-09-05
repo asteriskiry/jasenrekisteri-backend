@@ -1,6 +1,16 @@
 import mongoose from 'mongoose'
 
-const ProductSchema = new mongoose.Schema<any>({
+export interface Product {
+  productId: string
+  name: string
+  category: 'Membership' | 'Other'
+  priceSnt: number
+  membershipDuration?: number
+  stripeProductId?: string
+  stripePriceId?: string
+}
+
+const ProductSchema = new mongoose.Schema<Product>({
   productId: {
     type: String,
     required: true,
@@ -31,4 +41,4 @@ const ProductSchema = new mongoose.Schema<any>({
   },
 })
 
-export default mongoose.model<any>('Product', ProductSchema) as any
+export default mongoose.model<Product>('Product', ProductSchema)

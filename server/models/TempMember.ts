@@ -1,8 +1,18 @@
 import mongoose from 'mongoose'
 
+export interface TempMember {
+  firstName: string
+  lastName: string
+  utuAccount?: string
+  email: string
+  hometown: string
+  tyyMember: boolean
+  tiviaMember: boolean
+}
+
 // This is just for saving temporarily member data when member registers but has not been paid yet
 
-const TempMemberSchema = new mongoose.Schema<any>({
+const TempMemberSchema = new mongoose.Schema<TempMember>({
   firstName: {
     type: String,
     required: true,
@@ -33,4 +43,4 @@ const TempMemberSchema = new mongoose.Schema<any>({
   },
 })
 
-export default mongoose.model<any>('TempMember', TempMemberSchema) as any
+export default mongoose.model<TempMember>('TempMember', TempMemberSchema)

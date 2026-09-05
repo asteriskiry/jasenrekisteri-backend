@@ -1,6 +1,24 @@
 import mongoose from 'mongoose'
 
-const PaymentSchema = new mongoose.Schema<any>({
+export interface Payment {
+  memberId: string | mongoose.Types.ObjectId
+  firstName: string
+  lastName: string
+  email: string
+  hometown: string
+  timestamp: Date
+  productId: string
+  productName: string
+  amountSnt: number
+  stamp: string
+  status: 'Canceled' | 'Pending' | 'Success'
+  reference?: string
+  processed: boolean
+  stripeCheckoutSessionId?: string
+  stripePaymentIntentId?: string
+}
+
+const PaymentSchema = new mongoose.Schema<Payment>({
   memberId: {
     type: String,
     required: true,
@@ -66,4 +84,4 @@ const PaymentSchema = new mongoose.Schema<any>({
   },
 })
 
-export default mongoose.model<any>('Payment', PaymentSchema) as any
+export default mongoose.model<Payment>('Payment', PaymentSchema)

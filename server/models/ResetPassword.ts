@@ -1,6 +1,12 @@
 import mongoose from 'mongoose'
 
-const ResetPasswordSchema = new mongoose.Schema<any>({
+export interface ResetPassword {
+  userID?: string | mongoose.Types.ObjectId
+  resetPasswordToken?: string
+  expire?: Date
+}
+
+const ResetPasswordSchema = new mongoose.Schema<ResetPassword>({
   userID: {
     type: String,
   },
@@ -12,4 +18,4 @@ const ResetPasswordSchema = new mongoose.Schema<any>({
   },
 })
 
-export default mongoose.model<any>('ResetPassword', ResetPasswordSchema) as any
+export default mongoose.model<ResetPassword>('ResetPassword', ResetPasswordSchema)

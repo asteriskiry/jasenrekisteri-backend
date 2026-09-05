@@ -1,6 +1,11 @@
 import mongoose from 'mongoose'
 
-const EndedMembershipSchema = new mongoose.Schema<any>({
+export interface EndedMembership {
+  userID?: string | mongoose.Types.ObjectId
+  mailSent?: Date
+}
+
+const EndedMembershipSchema = new mongoose.Schema<EndedMembership>({
   userID: {
     type: String,
   },
@@ -9,4 +14,4 @@ const EndedMembershipSchema = new mongoose.Schema<any>({
   },
 })
 
-export default mongoose.model<any>('EndedMembership', EndedMembershipSchema) as any
+export default mongoose.model<EndedMembership>('EndedMembership', EndedMembershipSchema)
