@@ -4,8 +4,11 @@ require('dotenv').config()
 
 import prompt from 'prompt'
 import mongoose from 'mongoose'
+import Stripe from 'stripe'
 import Product from '../server/models/Product.js'
 import config from '../config/config.js'
+
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null
 
 var schema = {
   properties: {
@@ -74,7 +77,8 @@ prompt.get(schema, async function (err, result) {
           },
         })
         newProduct.stripeProductId = stripeProduct.id
-        newProduct.stripePriceId = stripeProduct.default_price
+        newProduct.stripePriceId =
+          typeof stripeProduct.default_price === 'string' ? stripeProduct.default_price : stripeProduct.default_price?.id
         console.log('Stripe-tuote luotu (id: ' + stripeProduct.id + ').')
       } catch (stripeErr) {
         console.warn(

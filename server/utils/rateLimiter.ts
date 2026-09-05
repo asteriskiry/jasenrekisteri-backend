@@ -31,4 +31,4 @@ function rateLimiter({ windowMs, max }) {
   }
 }
 
-module.exports = rateLimiter
+export default rateLimiter

@@ -3,6 +3,7 @@
 import passport from 'passport'
 import express from 'express'
 import paymentService from '../../services/payment/payment.js'
+import rateLimiter from '../../utils/rateLimiter.js'
 
 let router = express.Router()
 

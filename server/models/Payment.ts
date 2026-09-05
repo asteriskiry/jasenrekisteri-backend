@@ -14,6 +14,11 @@ export interface Payment {
   status: 'Canceled' | 'Pending' | 'Success'
   reference?: string
   processed: boolean
+  // Snapshot of Product.membershipDuration at payment time. Absent for
+  // non-membership ('Other' category) products.
+  membershipDuration?: number
+  // Money was collected but membership couldn't be resolved automatically.
+  needsManualReview?: boolean
   stripeCheckoutSessionId?: string
   stripePaymentIntentId?: string
 }

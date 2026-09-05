@@ -21,7 +21,7 @@ async function get(request, response) {
   }
 
   try {
-    await utils.checkUserControl(request.query.id)
+    await utils.checkUserControl(memberID)
     const doc = await Member.findOne({ _id: memberID }).lean().exec()
     if (!doc) return response.json({ memberNotFound: true })
     delete doc.password
@@ -94,7 +94,7 @@ async function update(request, response) {
     // Send mail to member if member is just accepted
 
     try {
-      await utils.checkAdminControl(request.body.id)
+      await utils.checkAdminControl(request.user._id)
       const existingMember = await Member.findOne({ _id: memberID }).lean().exec()
       if (existingMember && !existingMember.accepted && adminProfile.accepted) {
         let email = emails.membershipApprovedMail()
@@ -114,7 +114,7 @@ async function update(request, response) {
 
     // Save member details
     try {
-      await utils.checkUserControl(request.body.id)
+      await utils.checkUserControl(request.user._id)
       await Member.findOneAndUpdate({ _id: memberID }, adminProfile).exec()
       return response.json(httpResponses.onProfileUpdateSuccess)
     } catch (error) {

@@ -67,7 +67,6 @@ db.once('open', async function () {
       console.log('\x1b[32m%s\x1b[0m', '    5 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1555).')
     )
     .catch((err) => console.warn(err.message))
-  db.close().then(() => {
-    console.log('\x1b[32m%s\x1b[0m', '    Skripti valmistui!')
-  })
+  await db.close()
+  console.log('\x1b[32m%s\x1b[0m', '    Skripti valmistui!')
 })
