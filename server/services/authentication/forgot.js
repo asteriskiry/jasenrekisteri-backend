@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt')
 const mail = require('../../../config/mail')
 const emails = require('../../utils/emails')
 
-function forgotPassword(request, response) {
+async function forgotPassword(request, response) {
   const { email } = request.body
 
   // Validations
@@ -17,49 +17,56 @@ function forgotPassword(request, response) {
 
   // Find member by email
 
-  Member.findOne({ email: email })
-    .lean()
-    .exec((error, user) => {
-      if (error) return response.json({ success: false, message: error })
-      if (!user) return response.json(httpResponses.onUserNotFound)
+  try {
+    const user = await Member.findOne({ email: email }).lean()
+    if (!user) return response.json(httpResponses.onUserNotFound)
 
-      // If alredy asked for new password, delete last temporary record
+    // If alredy asked for new password, delete last temporary record
 
-      ResetPassword.findOneAndDelete({ userID: user._id }, function (err) {
+    await ResetPassword.findOneAndDelete({ userID: user._id })
+
+    // Generate token and expire date and save to temporary database
+
+    const token = crypto.randomBytes(32).toString('hex')
+    bcrypt.genSalt(5, function (err, salt) {
+      if (err) console.log(err)
+      bcrypt.hash(token, salt, function (err, hash) {
         if (err) console.log(err)
-      })
+        ResetPassword.create({
+          userID: user._id,
+          resetPasswordToken: hash,
+          expire: Date.now() + 3600000,
+        }).then(function (item) {
+          if (!item) return response.json(httpResponses.onResetFail)
 
-      // Generate token and expire date and save to temporary database
+          // Send generated link to email
 
-      const token = crypto.randomBytes(32).toString('hex')
-      bcrypt.genSalt(5, function (err, salt) {
-        if (err) console.log(err)
-        bcrypt.hash(token, salt, function (err, hash) {
-          if (err) console.log(err)
-          ResetPassword.create({
-            userID: user._id,
-            resetPasswordToken: hash,
-            expire: Date.now() + 3600000,
-          }).then(function (item) {
-            if (!item) return response.json(httpResponses.onResetFail)
+          let forgotMail = emails.forgotMail(user._id, token)
 
-            // Send generated link to email
+          let mailOptions = {
+            from: mail.mailSender,
+            to: user.email,
+            subject: forgotMail.subject,
+            text: forgotMail.text,
+          }
 
-            let forgotMail = emails.forgotMail(user._id, token)
-
-            let mailOptions = {
-              from: mail.mailSender,
-              to: user.email,
-              subject: forgotMail.subject,
-              text: forgotMail.text,
-            }
-            mail.transporter.sendMail(mailOptions, mail.callback)
-            mail.logMessage(mailOptions)
-            return response.json(httpResponses.onMailSent)
-          })
+          mail
+            .sendMailWithLogging(mailOptions, 'forgot-password-mail')
+            .then(() => {
+              mail.logMessage(mailOptions)
+              return response.json(httpResponses.onMailSent)
+            })
+            .catch((error) => {
+              console.error('[FORGOT_PASSWORD_MAIL_ERROR]', error && error.message)
+              mail.logMessage(mailOptions)
+              return response.json(httpResponses.onMailFail)
+            })
         })
       })
     })
+  } catch (error) {
+    return response.json({ success: false, message: error.message || String(error) })
+  }
 }
 
 module.exports = {

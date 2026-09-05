@@ -30,6 +30,17 @@ function save(request, response) {
     accepted,
   } = request.body
 
+  const toIsoString = (value) => {
+    if (!value) return value
+    if (typeof value === 'string') return value
+    if (value instanceof Date) return value.toISOString()
+    if (value && typeof value.toISOString === 'function') return value.toISOString()
+    return value
+  }
+
+  const normalizedMembershipStarts = toIsoString(membershipStarts)
+  const normalizedMembershipEnds = toIsoString(membershipEnds)
+
   const accessTo = request.body.access.toLowerCase()
 
   // Client side access check and validations
@@ -42,13 +53,13 @@ function save(request, response) {
       !validator.matches(lastName, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
       !validator.isEmail(email) ||
       !validator.matches(hometown, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-      !typeof tyyMember === 'boolean' ||
-      !typeof tiviaMember === 'boolean' ||
-      !typeof accessRights === 'boolean' ||
-      !typeof accepted === 'boolean' ||
+      typeof tyyMember !== 'boolean' ||
+      typeof tiviaMember !== 'boolean' ||
+      typeof accessRights !== 'boolean' ||
+      typeof accepted !== 'boolean' ||
       !validator.isIn(role, ['Admin', 'Board', 'Member', 'Functionary']) ||
-      !validator.isISO8601(membershipStarts) ||
-      !validator.isISO8601(membershipEnds)
+      !validator.isISO8601(normalizedMembershipStarts) ||
+      !validator.isISO8601(normalizedMembershipEnds)
     ) {
       return response.json(httpResponses.onValidationError)
     }
@@ -73,8 +84,8 @@ function save(request, response) {
         newMember.tiviaMember = !!tiviaMember
         newMember.role = role
         newMember.accessRights = !!accessRights
-        newMember.membershipStarts = membershipStarts
-        newMember.membershipEnds = membershipEnds
+        newMember.membershipStarts = normalizedMembershipStarts
+        newMember.membershipEnds = normalizedMembershipEnds
         newMember.accountCreated = new Date()
         newMember.accepted = !!accepted
         newMember.password = password
@@ -153,12 +164,18 @@ function save(request, response) {
             }
 
             if (config.importMode === '1') {
-              mail.transporter.sendMail(importMailOptions, mail.callback)
+              mail
+                .sendMailWithLogging(importMailOptions, 'member-import-mail')
+                .catch((error) => console.error('[ADMIN_NEW_MEMBER_MAIL]', error && error.message))
               mail.logMessage(importMailOptions)
             } else {
-              mail.transporter.sendMail(boardMailOptions, mail.callback)
+              mail
+                .sendMailWithLogging(boardMailOptions, 'member-board-mail')
+                .catch((error) => console.error('[ADMIN_NEW_MEMBER_MAIL]', error && error.message))
               mail.logMessage(boardMailOptions)
-              mail.transporter.sendMail(memberMailOptions, mail.callback)
+              mail
+                .sendMailWithLogging(memberMailOptions, 'member-user-mail')
+                .catch((error) => console.error('[ADMIN_NEW_MEMBER_MAIL]', error && error.message))
               mail.logMessage(memberMailOptions)
             }
 
