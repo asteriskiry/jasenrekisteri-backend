@@ -22,9 +22,7 @@ const ProductSchema = new mongoose.Schema({
   },
   membershipDuration: {
     type: Number,
-    // A Membership product must declare its length so payment completion can
-    // compute a new membershipEnds date - see computeMembershipEndDate in
-    // server/services/payment/payment.js.
+    // Required so payment completion can compute a membershipEnds date.
     required: function () {
       return this.category === 'Membership'
     },

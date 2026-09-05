@@ -1,8 +1,7 @@
 'use strict'
 
-// Minimal in-memory, per-IP sliding-window rate limiter. No external
-// dependency - this only needs to cap abuse of a single unauthenticated
-// endpoint, not distributed/production-scale rate limiting.
+// In-memory, per-IP sliding-window limiter - no external dependency needed
+// for capping abuse of a single endpoint.
 function rateLimiter({ windowMs, max }) {
   const hits = new Map()
 

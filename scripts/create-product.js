@@ -67,10 +67,6 @@ prompt.get(schema, async function (err, result) {
       newProduct.membershipDuration = Number(result.membershipDuration)
     }
 
-    // Provision the Stripe Product/Price up front so a member's first
-    // checkout doesn't have to do it inline (see ensureStripeProduct in
-    // server/services/payment/payment.js, which still exists there as a
-    // fallback for products created before this script did this).
     if (stripe) {
       try {
         var stripeProduct = await stripe.products.create({

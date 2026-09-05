@@ -16,11 +16,8 @@ const Payment = require('../../models/Payment')
 const Product = require('../../models/Product')
 const log = require('../../utils/logger').log
 
-// Pinned to the installed stripe SDK's own default so behavior doesn't
-// change today, but a future SDK upgrade (which can bump its default) or a
-// Stripe account-level API version change can no longer silently alter
-// request/response shapes underneath us. Update deliberately, after testing,
-// alongside a `stripe` package upgrade.
+// Pinned so a future SDK upgrade or Stripe account-level default change can't
+// silently alter request/response shapes. Update deliberately.
 const STRIPE_API_VERSION = '2026-08-26.dahlia'
 
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -32,19 +29,15 @@ function sendMail(options) {
   mail.logMessage(options)
 }
 
-// Membership year runs Aug 1 - Jul 31. If we're still before August, this
-// year's Jul 31 is the relevant anchor; from August onward it's next year's.
+// Membership year runs Aug 1 - Jul 31.
 function anchorMembershipYear() {
   const now = moment()
   return now.month() < 7 ? now.year() : now.year() + 1
 }
 
-// Shared by both the "existing member renews" and "new member joins" paths so
-// they can't diverge again. If the member has no currently-active membership
-// (new member, or an existing one that already lapsed) the new membership is
-// anchored to today instead of to a stale/expired stored date - otherwise a
-// lapsed member renewing today could still end up with a membershipEnds date
-// in the past.
+// Anchors to today instead of a stale stored date when there's no
+// currently-active membership, so a lapsed member renewing today can't end
+// up with a membershipEnds date still in the past.
 function computeMembershipEndDate(membershipDuration, currentMembershipEnds) {
   const now = moment()
   const hasActiveMembership =
@@ -57,9 +50,7 @@ function computeMembershipEndDate(membershipDuration, currentMembershipEnds) {
   return moment(endYear + '-07-31').toDate()
 }
 
-// Payment succeeded in Stripe but we couldn't automatically resolve what it
-// should grant (e.g. a product missing membershipDuration slipped through).
-// The money is real, so this must never silently disappear - flag it and
+// The money is real even if we can't tell what it should grant - flag it and
 // alert the board instead of returning an error that discards the payment.
 async function flagForManualReview(payment, reason) {
   payment.needsManualReview = true
@@ -114,12 +105,10 @@ function sendReceiptAndRespond(member, payment) {
   }
 }
 
-// Ensures product has a usable Stripe Product/Price, creating or refreshing
-// them if missing/stale. Ideally this is already done up front by
-// `npm run create-product`; this is a fallback for products provisioned
-// before that, or edited without updating Stripe. Guarded with an atomic
-// findOneAndUpdate so two concurrent checkouts for the same stale product
-// can't both create a new Stripe Price and race to write it back.
+// Fallback for products not yet provisioned by `npm run create-product`, or
+// edited without updating Stripe. Guarded with an atomic findOneAndUpdate so
+// two concurrent checkouts for the same stale product can't both create a
+// new Stripe Price and race to write it back.
 async function ensureStripeProduct(product, productObj) {
   if (product.stripeProductId && product.stripePriceId) {
     const stripePrice = await stripe.prices.retrieve(product.stripePriceId)
@@ -154,22 +143,18 @@ async function ensureStripeProduct(product, productObj) {
     { new: true }
   ).exec()
 
-  // Someone else won the race and already updated this product first - use
-  // their (already-saved) values instead of the ones we just created, so we
-  // don't write over a newer price with a now-orphaned one.
+  // If someone else won the race, use their saved values instead of the
+  // (now-orphaned) ones we just created.
   const finalProduct = updated || (await Product.findById(product._id).exec())
   return finalProduct.toObject()
 }
 
-// Create payment
 async function createPayment(request, response) {
   let memberId = request.user._id
   let productId = request.body.productId
 
-  // Find the member whose payment it is
   const memberQuery = Member.findOne({ _id: memberId })
   let member = await memberQuery.exec()
-  // If not found try tempMembers (just joined)
   if (!member) {
     const tempMemberQuery = TempMember.findOne({ _id: memberId })
     member = await tempMemberQuery.exec()
@@ -182,17 +167,15 @@ async function createPayment(request, response) {
     const product = await Product.findOne({ productId: productId }).exec()
     if (!product) return response.json(httpResponses.onError)
 
-    // A Membership product must declare how long it grants access for -
-    // otherwise a successful Stripe payment could leave us unable to compute
-    // a membership end date once the money has already been collected.
+    // Fail before charging, not after - once Stripe has the money we can no
+    // longer just reject the request.
     if (product.category === 'Membership' && !product.membershipDuration) {
       log.error('Product ' + product.productId + ' is a Membership product with no membershipDuration set')
       return response.json(httpResponses.onError)
     }
 
-    // Reuse an existing open checkout for this exact (member, product) pair
-    // instead of creating a duplicate Payment row and Stripe Checkout Session
-    // on a double-submitted request.
+    // Reuse an open checkout instead of creating a duplicate on a
+    // double-submitted request.
     const recentPending = await Payment.findOne({
       memberId: memberObj._id,
       productId: productId,
@@ -210,16 +193,13 @@ async function createPayment(request, response) {
 
     let productObj = await ensureStripeProduct(product, product.toObject())
 
-    // Generate stamp (this is how payment is identified). It's also the only
-    // value - besides the Stripe session id - that ties a browser to its own
-    // payment: see getPaymentStatus, which requires a matching stamp before
-    // returning member details for a session_id.
+    // Also the only value besides the Stripe session id that ties a browser
+    // to its own payment - see getPaymentStatus, which requires a matching
+    // stamp before returning member details for a session_id.
     const stamp = cryptoRandomString({ length: 30 })
 
-    // Generate order reference
     const reference = uuidv1()
 
-    // Create payment record
     let newPayment = new Payment()
     newPayment.memberId = memberObj._id
     newPayment.firstName = memberObj.firstName
@@ -230,8 +210,7 @@ async function createPayment(request, response) {
     newPayment.productId = productObj.productId
     newPayment.productName = productObj.name
     newPayment.amountSnt = productObj.priceSnt
-    // Snapshot now so a later edit to the Product can't retroactively change
-    // what this payment grants.
+    // Snapshot so a later Product edit can't retroactively change this grant.
     newPayment.membershipDuration = productObj.membershipDuration
     newPayment.stamp = stamp
     newPayment.status = 'Pending'
@@ -256,10 +235,9 @@ async function createPayment(request, response) {
   }
 }
 
-// Finalizes a payment: marks it Success/Canceled, extends membership or
-// creates the member, sends receipt emails. Returns a plain result object
-// rather than writing to a response - callers (webhook, status poll) decide
-// separately what to expose to whoever they're responding to.
+// Returns a plain result object rather than writing to a response - callers
+// (webhook, status poll) decide separately what to expose to whoever they're
+// responding to.
 async function processPaymentReturn(status, stamp) {
   if (!stamp) return httpResponses.onPaymentError
 
@@ -282,108 +260,112 @@ async function processPaymentReturn(status, stamp) {
   ).exec()
   if (!payment) return httpResponses.onPaymentNotFoundOrAlredyProcessed
 
-  const member = await Member.findOne({ _id: payment.memberId }).exec()
+  try {
+    const member = await Member.findOne({ _id: payment.memberId }).exec()
 
-  // Existing member renewing, or buying a non-membership ('Other') product
-  if (member) {
-    if (!payment.membershipDuration) {
-      return sendReceiptAndRespond(member, payment)
+    if (member) {
+      if (!payment.membershipDuration) {
+        return sendReceiptAndRespond(member, payment)
+      }
+
+      const membershipEnds = computeMembershipEndDate(payment.membershipDuration, member.membershipEnds)
+      const updatedMember = await Member.findOneAndUpdate(
+        { _id: member._id },
+        { membershipEnds: membershipEnds },
+        { new: true }
+      ).exec()
+      if (!updatedMember) return httpResponses.onPaymentError
+      return sendReceiptAndRespond(updatedMember, payment)
     }
 
-    const membershipEnds = computeMembershipEndDate(payment.membershipDuration, member.membershipEnds)
-    const updatedMember = await Member.findOneAndUpdate(
-      { _id: member._id },
-      { membershipEnds: membershipEnds },
-      { new: true }
-    ).exec()
-    if (!updatedMember) return httpResponses.onPaymentError
-    return sendReceiptAndRespond(updatedMember, payment)
-  }
+    const tempMember = await TempMember.findOne({ _id: payment.memberId }).exec()
+    if (!tempMember) return httpResponses.onPaymentError
 
-  // New member joining - resolve the pending TempMember record
-  const tempMember = await TempMember.findOne({ _id: payment.memberId }).exec()
-  if (!tempMember) return httpResponses.onPaymentError
+    if (!payment.membershipDuration) {
+      await flagForManualReview(
+        payment,
+        'Uusi jäsen maksoi tuotteesta (' + payment.productId + '), jolle ei ole määritelty jäsenyyden pituutta.'
+      )
+      return httpResponses.onPaymentSuccess
+    }
 
-  if (!payment.membershipDuration) {
-    await flagForManualReview(
-      payment,
-      'Uusi jäsen maksoi tuotteesta (' + payment.productId + '), jolle ei ole määritelty jäsenyyden pituutta.'
+    const membershipEnds = computeMembershipEndDate(payment.membershipDuration, null)
+    const password = generator.generate({ length: 8, numbers: true })
+
+    const newMember = new Member()
+    newMember._id = tempMember._id
+    newMember.firstName = tempMember.firstName
+    newMember.lastName = tempMember.lastName
+    newMember.utuAccount = tempMember.utuAccount
+    newMember.email = tempMember.email
+    newMember.hometown = tempMember.hometown
+    newMember.tyyMember = !!tempMember.tyyMember
+    newMember.tiviaMember = !!tempMember.tiviaMember
+    newMember.accessRights = false
+    newMember.role = 'Member'
+    newMember.membershipStarts = new Date()
+    newMember.membershipEnds = membershipEnds
+    newMember.accountCreated = new Date()
+    newMember.accepted = false
+    newMember.password = password
+
+    await newMember.save()
+
+    const newMemberMemberMail = emails.newMemberMemberMail(
+      newMember.firstName,
+      newMember.lastName,
+      newMember.email,
+      newMember.utuAccount,
+      newMember.hometown,
+      newMember.tyyMember ? 'Kyllä' : 'Ei',
+      newMember.tiviaMember ? 'Kyllä' : 'Ei',
+      password,
+      payment.productName,
+      payment.amountSnt / 100,
+      moment(payment.timestamp).format('DD.MM.YYYY HH:mm:ss'),
+      moment(newMember.membershipEnds).format('DD.MM.YYYY')
     )
+    sendMail({
+      from: mail.mailSender,
+      to: newMember.email,
+      subject: newMemberMemberMail.subject,
+      text: newMemberMemberMail.text,
+    })
+
+    const newMemberBoardMail = emails.newMemberBoardMail(
+      newMember.firstName,
+      newMember.lastName,
+      newMember.email,
+      newMember.utuAccount,
+      newMember.hometown,
+      newMember.tyyMember ? 'Kyllä' : 'Ei',
+      newMember.tiviaMember ? 'Kyllä' : 'Ei',
+      payment.productName
+    )
+    sendMail({
+      from: mail.mailSender,
+      to: mail.boardMailAddress,
+      subject: newMemberBoardMail.subject,
+      text: newMemberBoardMail.text,
+    })
+
+    return {
+      success: true,
+      message: 'Maksun käsittely onnistui.',
+      paymentData: {
+        firstName: newMember.firstName,
+        lastName: newMember.lastName,
+        email: newMember.email,
+        membershipEnds: newMember.membershipEnds,
+        amount: payment.amountSnt,
+        timestamp: payment.timestamp,
+        product: payment.productName,
+      },
+    }
+  } catch (error) {
+    log.error('Payment ' + payment._id + ' fulfillment failed after being marked processed: ' + error)
+    await flagForManualReview(payment, 'Jäsenyyden käsittely epäonnistui maksun jälkeen: ' + error.message)
     return httpResponses.onPaymentSuccess
-  }
-
-  const membershipEnds = computeMembershipEndDate(payment.membershipDuration, null)
-  const password = generator.generate({ length: 8, numbers: true })
-
-  const newMember = new Member()
-  newMember._id = tempMember._id
-  newMember.firstName = tempMember.firstName
-  newMember.lastName = tempMember.lastName
-  newMember.utuAccount = tempMember.utuAccount
-  newMember.email = tempMember.email
-  newMember.hometown = tempMember.hometown
-  newMember.tyyMember = !!tempMember.tyyMember
-  newMember.tiviaMember = !!tempMember.tiviaMember
-  newMember.accessRights = false
-  newMember.role = 'Member'
-  newMember.membershipStarts = new Date()
-  newMember.membershipEnds = membershipEnds
-  newMember.accountCreated = new Date()
-  newMember.accepted = false
-  newMember.password = password
-
-  await newMember.save()
-
-  const newMemberMemberMail = emails.newMemberMemberMail(
-    newMember.firstName,
-    newMember.lastName,
-    newMember.email,
-    newMember.utuAccount,
-    newMember.hometown,
-    newMember.tyyMember ? 'Kyllä' : 'Ei',
-    newMember.tiviaMember ? 'Kyllä' : 'Ei',
-    password,
-    payment.productName,
-    payment.amountSnt / 100,
-    moment(payment.timestamp).format('DD.MM.YYYY HH:mm:ss'),
-    moment(newMember.membershipEnds).format('DD.MM.YYYY')
-  )
-  sendMail({
-    from: mail.mailSender,
-    to: newMember.email,
-    subject: newMemberMemberMail.subject,
-    text: newMemberMemberMail.text,
-  })
-
-  const newMemberBoardMail = emails.newMemberBoardMail(
-    newMember.firstName,
-    newMember.lastName,
-    newMember.email,
-    newMember.utuAccount,
-    newMember.hometown,
-    newMember.tyyMember ? 'Kyllä' : 'Ei',
-    newMember.tiviaMember ? 'Kyllä' : 'Ei',
-    payment.productName
-  )
-  sendMail({
-    from: mail.mailSender,
-    to: mail.boardMailAddress,
-    subject: newMemberBoardMail.subject,
-    text: newMemberBoardMail.text,
-  })
-
-  return {
-    success: true,
-    message: 'Maksun käsittely onnistui.',
-    paymentData: {
-      firstName: newMember.firstName,
-      lastName: newMember.lastName,
-      email: newMember.email,
-      membershipEnds: newMember.membershipEnds,
-      amount: payment.amountSnt,
-      timestamp: payment.timestamp,
-      product: payment.productName,
-    },
   }
 }
 
@@ -457,14 +439,9 @@ async function getPaymentStatus(request, response) {
       result = { success: false, message: 'Maksua käsitellään.' }
     }
 
-    // This endpoint has no auth - a session_id alone could otherwise let
-    // anyone who obtains one (e.g. via a leaked Referer header or browser
-    // history) read another member's name/email/receipt. `stamp` is
-    // generated server-side and returned to the browser only once, directly
-    // in the createPayment response - never embedded in the Stripe redirect
-    // URL - so it isn't exposed by whatever channel might leak the session
-    // id. The payment itself is still processed either way; only the
-    // response's PII is gated on it.
+    // This endpoint has no auth, so gate PII on `stamp` - it's never embedded
+    // in the Stripe redirect URL, unlike session_id, which can leak via a
+    // Referer header or browser history.
     if (stamp !== payment.stamp) {
       return response.json({ success: result.success, message: result.message })
     }
