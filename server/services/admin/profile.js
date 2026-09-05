@@ -19,7 +19,7 @@ function get(request, response) {
   if (accessTo === 'admin' || accessTo === 'board') {
     utils
       .checkUserControl(request.query.id)
-      .then(admin => {
+      .then((admin) => {
         Member.findOne({ _id: memberID })
           .lean()
           .exec((error, doc) => {
@@ -29,7 +29,7 @@ function get(request, response) {
             return response.json(doc)
           })
       })
-      .catch(error => {
+      .catch((error) => {
         console.log(error)
         return response.json(httpResponses.onServerAdminFail)
       })
@@ -101,7 +101,7 @@ function update(request, response) {
 
     utils
       .checkAdminControl(request.body.id)
-      .then(admin => {
+      .then((admin) => {
         Member.findOne({ _id: memberID })
           .lean()
           .exec((error, doc) => {
@@ -119,7 +119,7 @@ function update(request, response) {
             }
           })
       })
-      .catch(error => {
+      .catch((error) => {
         console.log(error)
         return response.json(httpResponses.onServerAdminFail)
       })
@@ -128,7 +128,7 @@ function update(request, response) {
 
     utils
       .checkUserControl(request.body.id)
-      .then(admin => {
+      .then((admin) => {
         Member.findOneAndUpdate({ _id: memberID }, adminProfile)
           .lean()
           .exec((error, doc) => {
@@ -136,7 +136,7 @@ function update(request, response) {
             return response.json(httpResponses.onProfileUpdateSuccess)
           })
       })
-      .catch(error => {
+      .catch((error) => {
         console.log(error)
         return response.json(httpResponses.onServerAdminFail)
       })

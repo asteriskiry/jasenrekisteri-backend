@@ -2,11 +2,11 @@ const Member = require('../../models/Member')
 
 // Check if membership valid
 
-function isMembershipValid(request, response) {
+async function isMembershipValid(request, response) {
   const memberID = request.query.memberID
 
-  Member.findOne({ _id: memberID }, (error, member) => {
-    if (error) response.json(error)
+  try {
+    const member = await Member.findOne({ _id: memberID })
     if (!member) return response.json({ memberNotFound: true })
     let currentDate = new Date()
     let memberData = {
@@ -34,7 +34,9 @@ function isMembershipValid(request, response) {
       isValid: false,
       memberData,
     })
-  })
+  } catch (error) {
+    return response.json(error)
+  }
 }
 
 module.exports = {

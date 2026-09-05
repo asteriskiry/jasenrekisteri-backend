@@ -1,4 +1,4 @@
-FROM node:latest
+FROM node:24.16.0-bookworm-slim
 
 WORKDIR /app
 COPY . /app

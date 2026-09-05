@@ -15,10 +15,10 @@ console.log(
 )
 console.log('')
 
-mongoose.connect(config.mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(config.mongoUrl)
 let db = mongoose.connection
 
-db.once('open', async function() {
+db.once('open', async function () {
   let adminUser = new Member()
   adminUser.firstName = 'Admin'
   adminUser.lastName = 'Riski'
@@ -30,9 +30,7 @@ db.once('open', async function() {
   adminUser.role = 'Admin'
   adminUser.accessRights = true
   adminUser.membershipStarts = new Date()
-  adminUser.membershipEnds = moment()
-    .add(1, 'y')
-    .toDate()
+  adminUser.membershipEnds = moment().add(1, 'y').toDate()
   adminUser.accountCreated = new Date()
   adminUser.password = 'password'
   adminUser.accepted = true
@@ -56,20 +54,20 @@ db.once('open', async function() {
     .then(() =>
       console.log('\x1b[32m%s\x1b[0m', '    admin@example.com -käyttäjän tallennus onnistui (salasana: password).')
     )
-    .catch(err => console.warn(err.message))
+    .catch((err) => console.warn(err.message))
   await membership1
     .save()
     .then(() =>
       console.log('\x1b[32m%s\x1b[0m', '    1 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1111).')
     )
-    .catch(err => console.warn(err.message))
+    .catch((err) => console.warn(err.message))
   await membership5
     .save()
     .then(() =>
       console.log('\x1b[32m%s\x1b[0m', '    5 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1555).')
     )
-    .catch(err => console.warn(err.message))
-  db.close(() => {
+    .catch((err) => console.warn(err.message))
+  db.close().then(() => {
     console.log(('\x1b[32m%s\x1b[0m', '    Skripti valmistui!'))
   })
 })

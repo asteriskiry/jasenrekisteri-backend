@@ -28,11 +28,11 @@ function resetPassword(request, response) {
   ResetPassword.findOne({
     userID: userID,
     expire: { $gt: Date.now() },
-  }).then(resetPasswordRecord => {
+  }).then((resetPasswordRecord) => {
     if (!resetPasswordRecord) return response.json(httpResponses.onInvalidToken)
-    bcrypt.compare(token, resetPassword.token, function(errBcrypt, resBcrypt) {
+    bcrypt.compare(token, resetPassword.token, function (errBcrypt, resBcrypt) {
       Member.findOneAndUpdate({ _id: userID }, { password: password }).then(() => {
-        ResetPassword.findOneAndDelete({ userID: userID }, function(err) {
+        ResetPassword.findOneAndDelete({ userID: userID }, function (err) {
           if (err) console.log(err)
           return response.json(httpResponses.onPasswordUpdateSuccess)
         })

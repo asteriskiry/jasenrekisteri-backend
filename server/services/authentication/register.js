@@ -8,7 +8,7 @@ const validator = require('validator')
 
 // Here we only make temporary member record. We create real one when the payment is made.
 
-function registerUser(request, response) {
+async function registerUser(request, response) {
   let { firstName, lastName, utuAccount, email, hometown, tyyMember } = request.body
 
   // Validations
@@ -26,10 +26,10 @@ function registerUser(request, response) {
   } else {
     // Check that email is unique
 
-    Member.findOne({ email: email }).exec(function(err, member) {
-      if (err) response.json(httpResponses.onError)
+    try {
+      const member = await Member.findOne({ email: email })
       if (member) {
-        response.json(httpResponses.onUserSaveError)
+        return response.json(httpResponses.onUserSaveError)
       } else {
         // New temp member record
 
@@ -44,19 +44,16 @@ function registerUser(request, response) {
 
         // Save new member
 
-        newTempMember.save(error => {
-          if (error) {
-            return response.json(httpResponses.onUserSaveError)
-          }
-
-          response.json({
-            success: true,
-            message: 'Käyttäjätunnus luotu onnistuneesti.',
-            memberId: newTempMember._id,
-          })
+        await newTempMember.save()
+        response.json({
+          success: true,
+          message: 'Käyttäjätunnus luotu onnistuneesti.',
+          memberId: newTempMember._id,
         })
       }
-    })
+    } catch (error) {
+      return response.json(httpResponses.onError)
+    }
   }
 }
 

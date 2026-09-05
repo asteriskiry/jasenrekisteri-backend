@@ -2,41 +2,27 @@ const Member = require('../models/Member')
 
 // Access control utils
 
-function checkUserControl(id) {
-  return new Promise((resolve, reject) => {
-    Member.findOne({ _id: id }, (error, doc) => {
-      if (error) reject(error)
-      let role = doc.role.toLowerCase()
-      if (role === 'admin' || role === 'board') resolve(true)
-      reject({
-        success: false,
-        message: 'Tämä alue on vain hallituslaisille.',
-      })
-    })
-  })
+async function checkUserControl(id) {
+  const doc = await Member.findOne({ _id: id })
+  if (doc && ['admin', 'board'].includes(doc.role.toLowerCase())) return true
+  throw {
+    success: false,
+    message: 'Tämä alue on vain hallituslaisille.',
+  }
 }
 
-function checkAdminControl(id) {
-  return new Promise((resolve, reject) => {
-    Member.findOne({ _id: id }, (error, doc) => {
-      if (error) reject(error)
-      let role = doc.role.toLowerCase()
-      if (role === 'admin') resolve(true)
-      reject({
-        success: false,
-        message: 'Tämä alue on vain ylläpitäjille.',
-      })
-    })
-  })
+async function checkAdminControl(id) {
+  const doc = await Member.findOne({ _id: id })
+  if (doc && doc.role.toLowerCase() === 'admin') return true
+  throw {
+    success: false,
+    message: 'Tämä alue on vain ylläpitäjille.',
+  }
 }
 
-function getUser(id) {
-  return new Promise((resolve, reject) => {
-    Member.findOne({ _id: id }, (error, user) => {
-      if (error) reject(error)
-      resolve(user.firstName)
-    })
-  })
+async function getUser(id) {
+  const user = await Member.findOne({ _id: id })
+  return user.firstName
 }
 
 module.exports = {
