@@ -1,5 +1,7 @@
 // Script for creating products
 
+require('dotenv').config()
+
 var prompt = require('prompt')
 var mongoose = require('mongoose')
 var Stripe = require('stripe')
