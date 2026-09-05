@@ -12,13 +12,13 @@ const emails = require('../../utils/emails')
 function get(request, response) {
   const memberID = request.query.memberID
 
-  const accessTo = request.query.access.toLowerCase()
+  const userRole = request.user.role.toLowerCase()
 
   // Check access and return member details
 
-  if (accessTo === 'admin' || accessTo === 'board') {
+  if (userRole === 'admin' || userRole === 'board') {
     utils
-      .checkUserControl(request.query.id)
+      .checkUserControl(request.user._id)
       .then(admin => {
         Member.findOne({ _id: memberID })
           .lean()
@@ -88,7 +88,7 @@ function update(request, response) {
 
   // Check client side access
 
-  const accessTo = request.body.access.toLowerCase()
+  const accessTo = request.user.role.toLowerCase()
 
   if (accessTo === 'admin') {
     if (request.body.password === '' || request.body.password === null) {
@@ -100,7 +100,7 @@ function update(request, response) {
     // Send mail to member if member is just accepted
 
     utils
-      .checkAdminControl(request.body.id)
+      .checkAdminControl(request.user._id)
       .then(admin => {
         Member.findOne({ _id: memberID })
           .lean()
@@ -127,7 +127,7 @@ function update(request, response) {
     // Save member details
 
     utils
-      .checkUserControl(request.body.id)
+      .checkUserControl(request.user._id)
       .then(admin => {
         Member.findOneAndUpdate({ _id: memberID }, adminProfile)
           .lean()

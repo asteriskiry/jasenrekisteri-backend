@@ -8,11 +8,11 @@ const emails = require('../../utils/emails')
 // Remove member
 
 function remove(request, response) {
-  const accessTo = request.body.access.toLowerCase()
+  const userRole = request.user.role.toLowerCase()
 
-  if (accessTo === 'admin' || accessTo === 'board') {
-    utils.checkUserControl(request.body.id).then(admin => {
-      Member.deleteOne({ _id: request.body.memberID }, function(err) {
+  if (userRole === 'admin' || userRole === 'board') {
+    utils.checkUserControl(request.user._id).then(admin => {
+      Member.deleteOne({ _id: request.body.memberID }, function (err) {
         if (err) response.json(err)
 
         response.json({ success: true, message: 'Jäsen poistettu.' })

@@ -3,7 +3,7 @@ const Member = require('../../models/Member')
 // Check if membership valid
 
 function isMembershipValid(request, response) {
-  const memberID = request.query.memberID
+  const memberID = request.user._id
 
   Member.findOne({ _id: memberID }, (error, member) => {
     if (error) response.json(error)

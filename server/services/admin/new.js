@@ -30,11 +30,12 @@ function save(request, response) {
     accepted,
   } = request.body
 
-  const accessTo = request.body.access.toLowerCase()
+  const userRole = request.user.role.toLowerCase()
+
 
   // Client side access check and validations
 
-  if (accessTo === 'admin') {
+  if (userRole === 'admin') {
     if (!firstName || !lastName || !email || !hometown || !role || !membershipStarts || !membershipEnds) {
       return response.json(httpResponses.onAllFieldEmpty)
     } else if (
@@ -61,7 +62,7 @@ function save(request, response) {
     // Server side access check and save new member
 
     utils
-      .checkAdminControl(request.body.id)
+      .checkAdminControl(request.user._id)
       .then(user => {
         let newMember = new Member()
         newMember.firstName = formatters.capitalizeFirstLetter(firstName)

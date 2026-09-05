@@ -7,7 +7,7 @@ const validator = require('validator')
 // Get member details
 
 function fetchDetails(request, response) {
-  const memberID = request.query.memberID
+  const memberID = request.user._id
 
   Member.findOne({ _id: memberID }, (error, doc) => {
     if (error) response.json(error)
@@ -25,10 +25,10 @@ function fetchDetails(request, response) {
 
 function updateDetails(request, response) {
   utils
-    .getUser(request.body.id)
+    .getUser(request.user._id)
     .then(user => {
       let query = {
-        _id: request.body.id,
+        _id: request.user._id,
       }
 
       // Validations

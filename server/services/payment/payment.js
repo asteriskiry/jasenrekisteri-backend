@@ -21,7 +21,7 @@ const client = new CheckoutFinland(process.env.MERCHANT_ID, process.env.MERCHANT
 
 // Create payment
 async function createPayment(request, response) {
-  let memberId = request.body.memberId
+  let memberId = request.user._id
   let productId = request.body.productId
 
   // Find the member whose payment it is
@@ -62,7 +62,7 @@ async function createPayment(request, response) {
     newPayment.processed = false
 
     // Save new payment record
-    newPayment.save(async function(error) {
+    newPayment.save(async function (error) {
       if (error) return response.json(httpResponses.onError)
 
       // Payment request data
@@ -100,7 +100,7 @@ async function createPayment(request, response) {
       try {
         const checkoutResponse = await client.createPayment(payment)
         return response.json(checkoutResponse.providers)
-      } catch(error) {
+      } catch (error) {
         log.error('Create payment error: ' + error)
         return response.json(httpResponses.onError)
       }
