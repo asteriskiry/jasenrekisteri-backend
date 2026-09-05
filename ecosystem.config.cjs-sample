@@ -1,0 +1,38 @@
+module.exports = {
+  apps: [
+    {
+      name: 'jasenrekisteri',
+      script: 'dist/index.js',
+
+      instances: 1,
+      autorestart: true,
+      watch: ['dist'],
+      max_memory_restart: '1G',
+      env: {
+        MONGOURL: 'mongodb://127.0.0.1/jasenrekisteri',
+        HOST: 'localhost',
+        PORT: 3001,
+        SECRET: 'secret123',
+        ENV: 'development',
+        CLIENTURL: 'https://localhost:3000',
+        CSVFILEPATH: '/app/data/kulkuoikeudet_asteriski.csv',
+        LOGPATH: '/app/data/logs',
+        IMPORT_MODE: 0,
+        ADMINMAILADDRESS: 'example@utu.fi',
+        BOARDMAILADDRESS: 'asteriski@utu.fi',
+        MAILSENDER: 'Asteriski jäsenrekisteri <asteriski@utu.fi>',
+        SMTPURL: 'smtp.utu.fi',
+        SMTPPORT: 25,
+        USEGMAIL: 0,
+        GMAILUSER: 'example@gmail.com',
+        GMAILPASSWORD: 'password',
+        MERCHANT_ID: 375917,
+        MERCHANT_SECRET: 'SAIPPUAKAUPPIAS',
+        SENDGRID_API_KEY: 'key',
+      },
+      env_production: {
+        NODE_ENV: 'development',
+      },
+    },
+  ],
+}
