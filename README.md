@@ -47,6 +47,15 @@ npm start
 
 Configure `ecosystem.config.cjs`-file if needed.
 
+When running the backend in development mode (`ENV=local` or
+`ENV=development`), Swagger UI is available at
+<http://localhost:3001/api-docs>. The development command generates the
+Swagger specification automatically:
+
+```bash
+npm run dev
+```
+
 Create default database entries with:
 
 ```bash
