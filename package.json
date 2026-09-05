@@ -6,7 +6,8 @@
     "node": ">=24 <25",
     "npm": ">=11.7.0"
   },
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/index.js",
   "repository": "https://github.com/asteriskiry/jasenrekisteri-backend",
   "author": "Maks Turtiainen",
   "license": "MIT",
@@ -15,17 +16,20 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky",
-    "start": "node index.js",
-    "nodemon:start": "nodemon index.js",
-    "pm2:start": "pm2 start ecosystem.config.js",
+    "build": "tsc",
+    "prestart": "npm run build",
+    "start": "node dist/index.js",
+    "dev": "npm run build && nodemon --watch server --watch config --watch index.ts --exec \"npm run build && node dist/index.js\"",
+    "nodemon:start": "npm run dev",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
     "pm2:stop": "pm2 stop all",
     "pm2:log": "pm2 logs",
     "pm2:restart": "pm2 restart all --update-env",
-    "import": "node scripts/import.js",
-    "create-user": "node scripts/create-user.js",
-    "create-product": "node scripts/create-product.js",
-    "create-defaults": "node scripts/create-defaults.js",
-    "mass-mailer": "node scripts/mass-mailer.js"
+    "import": "npm run build && node dist/scripts/import.js",
+    "create-user": "npm run build && node dist/scripts/create-user.js",
+    "create-product": "npm run build && node dist/scripts/create-product.js",
+    "create-defaults": "npm run build && node dist/scripts/create-defaults.js",
+    "mass-mailer": "npm run build && node dist/scripts/mass-mailer.js"
   },
   "dependencies": {
     "@log4js-node/smtp": "^2.0.8",
@@ -51,10 +55,12 @@
     "passport-jwt": "^4.0.1",
     "prompt": "^1.3.0",
     "shelljs": "^0.10.0",
+    "uuid": "^13.0.2",
     "validator": "^13.15.35"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@types/node": "^24.10.1",
     "debug": "^4.4.3",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
@@ -63,10 +69,12 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.4.1",
     "nodemon": "^3.1.14",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.3"
   },
   "lint-staged": {
-    "*.{js,cjs,mjs}": [
+    "*.{js,cjs,mjs,ts}": [
       "prettier --write",
       "eslint --fix"
     ],

@@ -3,6 +3,8 @@ node_modules/
 requests/
 csv/
 ecosystem.config.js
+ecosystem.config.cjs
+dist/
 data/
 .pm2
 
