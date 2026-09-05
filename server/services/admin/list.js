@@ -6,11 +6,11 @@ const httpResponses = require('./')
 // Member list
 
 async function list(request, response) {
-  const accessTo = request.query.access.toLowerCase()
+  const userRole = request.user.role.toLowerCase()
 
-  if (accessTo === 'admin' || accessTo === 'board') {
+  if (userRole === 'admin' || userRole === 'board') {
     try {
-      await utils.checkUserControl(request.query.id)
+      await utils.checkUserControl(request.user._id)
 
       const docs = await Member.find({})
       if (!docs) return response.json({ memberNotFound: true })

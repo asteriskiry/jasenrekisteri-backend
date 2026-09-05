@@ -3,7 +3,7 @@ const Member = require('../../models/Member')
 // Check if membership valid
 
 async function isMembershipValid(request, response) {
-  const memberID = request.query.memberID
+  const memberID = request.user._id
 
   try {
     const member = await Member.findOne({ _id: memberID })

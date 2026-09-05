@@ -1,5 +1,6 @@
 'use strict'
 
+const passport = require('passport')
 const express = require('express')
 const paymentService = require('../../services/payment/payment')
 

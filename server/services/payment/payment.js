@@ -28,7 +28,7 @@ const stripe = process.env.STRIPE_SECRET_KEY ? Stripe(process.env.STRIPE_SECRET_
 
 // Create payment
 async function createPayment(request, response) {
-  let memberId = request.body.memberId
+  let memberId = request.user._id
   let productId = request.body.productId
 
   // Find the member whose payment it is

@@ -12,7 +12,7 @@ const emails = require('../../utils/emails')
 async function get(request, response) {
   const memberID = request.query.memberID
 
-  const accessTo = request.query.access.toLowerCase()
+  const userRole = request.user.role.toLowerCase()
 
   // Check access and return member details
 
@@ -82,7 +82,7 @@ async function update(request, response) {
 
   // Check client side access
 
-  const accessTo = request.body.access.toLowerCase()
+  const accessTo = request.user.role.toLowerCase()
 
   if (accessTo === 'admin') {
     if (request.body.password === '' || request.body.password === null) {
