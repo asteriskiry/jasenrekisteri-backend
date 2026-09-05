@@ -9,12 +9,12 @@ const cors = require('cors')
 const cronJobs = require('./utils/cron')
 const logger = require('./utils/logger')
 
-module.exports = function() {
+module.exports = function () {
   let server = express()
   let create
   let start
 
-  create = function(config) {
+  create = function (config) {
     let routes = require('./routes')
     cronJobs.startCronJobs()
     logger.loggerInit()
@@ -30,22 +30,17 @@ module.exports = function() {
     server.use(express.urlencoded({ extended: false }))
     server.use(cookieParser())
     server.use(passport.initialize())
-    mongoose.connect(config.mongoUrl, {
-      useNewUrlParser: true,
-      useCreateIndex: true,
-      useFindAndModify: false,
-      useUnifiedTopology: true,
-    })
+    mongoose.connect(config.mongoUrl)
     require('../config/passport')(passport)
 
     routes.init(server)
   }
 
-  start = function() {
+  start = function () {
     let hostname = server.get('hostname')
     let port = server.get('port')
 
-    server.listen(port, function(err) {
+    server.listen(port, function (err) {
       if (err) console.log('Error in server setup')
       console.log('Jäsenrekisteri backend listening on http://' + hostname + ':' + port)
     })

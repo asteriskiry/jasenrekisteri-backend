@@ -29,7 +29,7 @@ function get(request, response) {
             return response.json(doc)
           })
       })
-      .catch(error => {
+      .catch((error) => {
         console.log(error)
         return response.json(httpResponses.onServerAdminFail)
       })
@@ -119,7 +119,7 @@ function update(request, response) {
             }
           })
       })
-      .catch(error => {
+      .catch((error) => {
         console.log(error)
         return response.json(httpResponses.onServerAdminFail)
       })
@@ -136,7 +136,7 @@ function update(request, response) {
             return response.json(httpResponses.onProfileUpdateSuccess)
           })
       })
-      .catch(error => {
+      .catch((error) => {
         console.log(error)
         return response.json(httpResponses.onServerAdminFail)
       })

@@ -6,27 +6,28 @@ const validator = require('validator')
 
 // Get member details
 
-function fetchDetails(request, response) {
-  const memberID = request.user._id
+async function fetchDetails(request, response) {
+  const memberID = request.query.memberID
 
-  Member.findOne({ _id: memberID }, (error, doc) => {
-    if (error) response.json(error)
-
+  try {
+    const doc = await Member.findOne({ _id: memberID })
     if (!doc) return response.json({ memberNotFound: true })
     const member = doc.toObject()
 
     delete member.password
 
-    response.json(member)
-  })
+    return response.json(member)
+  } catch (error) {
+    return response.json(error)
+  }
 }
 
 // Update member details
 
 function updateDetails(request, response) {
   utils
-    .getUser(request.user._id)
-    .then(user => {
+    .getUser(request.body.id)
+    .then((user) => {
       let query = {
         _id: request.user._id,
       }
@@ -72,7 +73,7 @@ function updateDetails(request, response) {
         return response.json(httpResponses.onUpdateSuccess)
       })
     })
-    .catch(error => {
+    .catch((error) => {
       return response.json(error)
     })
 }

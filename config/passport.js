@@ -9,18 +9,13 @@ function setPassortConfigs(passport) {
   opts.jwtFromRequest = ExtractJwt.fromAuthHeaderWithScheme('jwt')
   opts.secretOrKey = config.secret
   passport.use(
-    new JwtStrategy(opts, (jwt_payload, done) => {
-      Member.findOne({ _id: jwt_payload._id }, (err, user) => {
-        if (err) {
-          return done(err, false)
-        }
-
-        if (user) {
-          done(null, user)
-        } else {
-          done(null, false)
-        }
-      })
+    new JwtStrategy(opts, async (jwt_payload, done) => {
+      try {
+        const user = await Member.findOne({ id: jwt_payload._id })
+        return done(null, user || false)
+      } catch (error) {
+        return done(error, false)
+      }
     })
   )
 }

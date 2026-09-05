@@ -15,7 +15,7 @@ async function list(request, response) {
       const docs = await Member.find({})
       if (!docs) return response.json({ memberNotFound: true })
 
-      const updatedDocument = docs.map(doc => {
+      const updatedDocument = docs.map((doc) => {
         let documentToObject = doc.toObject()
         delete documentToObject.password
         return documentToObject

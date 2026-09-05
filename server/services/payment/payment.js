@@ -227,7 +227,7 @@ function paymentReturn(request, response) {
             newMember.accountCreated = new Date()
             newMember.accepted = false
             newMember.password = password
-            newMember.save(error => {
+            newMember.save((error) => {
               if (error) return response.json(httpResponses.onPaymentError)
 
               // Email to new member

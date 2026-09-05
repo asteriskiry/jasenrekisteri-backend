@@ -64,55 +64,23 @@ const MemberSchema = new mongoose.Schema({
 })
 
 // Hash passwords
-MemberSchema.pre('save', function(next) {
-  let user = this
-
+MemberSchema.pre('save', async function () {
   if (this.isModified('password') || this.isNew) {
-    bcrypt.genSalt(10, (err, salt) => {
-      if (err) {
-        console.log(err)
-        return next(err)
-      }
-
-      bcrypt.hash(user.password, salt, (err, hash) => {
-        if (err) {
-          console.log(err)
-          return next(err)
-        }
-
-        user.password = hash
-        next()
-      })
-    })
-  } else {
-    return next()
+    this.password = await bcrypt.hash(this.password, 10)
   }
 })
 
 // Update password and hash it if it is not empty
-MemberSchema.pre('findOneAndUpdate', function(next) {
+MemberSchema.pre('findOneAndUpdate', async function () {
   const update = this.getUpdate()
   if (update.password !== '' && update.password !== undefined) {
-    bcrypt.genSalt(10, (err, salt) => {
-      bcrypt.hash(update.password, salt, (err, hash) => {
-        this.getUpdate().password = hash
-        next()
-      })
-    })
-  } else {
-    next()
+    this.getUpdate().password = await bcrypt.hash(update.password, 10)
   }
 })
 
 // Password comparing
-MemberSchema.methods.comparePassword = function(pw, cb) {
-  bcrypt.compare(pw, this.password, function(err, isMatch) {
-    if (err) {
-      return cb(err)
-    }
-
-    cb(null, isMatch)
-  })
+MemberSchema.methods.comparePassword = function (pw) {
+  return bcrypt.compare(pw, this.password)
 }
 
 module.exports = mongoose.model('Member', MemberSchema)

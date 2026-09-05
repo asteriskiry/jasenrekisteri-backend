@@ -8,64 +8,38 @@ const httpResponses = require('./')
 
 const validator = require('validator')
 
-let http, userPassword
-
-function loginUser(request, response) {
+async function loginUser(request, response) {
   let { email, password } = request.body
 
   // Validations
 
   if (!email || !password) {
     return response.json(httpResponses.onEmailOrPasswordEmpty)
-  } else if (
-    !validator.isEmail(request.body.email)
-  ){
+  } else if (!validator.isEmail(request.body.email)) {
     return response.json(httpResponses.onValidationError)
   }
 
   // Find member
 
-  Member.findOne(
-    {
-      email: email,
-    },
-    function(error, user) {
-      if (error) return response.json(error)
-      if (!user) return response.json(httpResponses.onUserNotFound)
-      userPassword = password
-      http = response
-      comparePassword(user)
-    }
-  )
+  try {
+    const user = await Member.findOne({ email: email })
+    if (!user) return response.json(httpResponses.onUserNotFound)
+    const isMatch = await user.comparePassword(password)
+    if (!isMatch) return response.json(httpResponses.onAuthenticationFail)
+
+    const token = jwt.sign(user.toJSON(), config.secret, { expiresIn: '180d' })
+    return response.json({
+      success: true,
+      role: user.role,
+      id: user._id,
+      token: 'JWT ' + token,
+    })
+  } catch (error) {
+    return response.json(error)
+  }
 }
 
 // Compare passwords and send token
-
-function comparePassword(user) {
-  let responseToken
-
-  user.comparePassword(userPassword, function(error, isMatch) {
-    if (error) return http.json(error)
-    if (isMatch && !error) {
-      var token = jwt.sign(user.toJSON(), config.secret, {
-        expiresIn: '180d',
-      })
-
-      if (user != null) {
-        responseToken = {
-          success: true,
-          role: user.role,
-          id: user._id,
-          token: 'JWT ' + token,
-        }
-      }
-
-      return http.json(responseToken)
-    }
-
-    return http.json(httpResponses.onAuthenticationFail)
-  })
-}
 
 module.exports = {
   loginUser: loginUser,

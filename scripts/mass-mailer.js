@@ -29,20 +29,20 @@ if (args.h) {
 let subject = args.s
 let emailFilePath = args.e
 
-mongoose.connect(config.mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(config.mongoUrl)
 let db = mongoose.connection
 
-db.once('open', async function() {
-  await Member.find({}, function(err, members) {
-    if (err) console.log(err)
-    members.map(user => {
+db.once('open', async function () {
+  const members = await Member.find({})
+  await Promise.all(
+    members.map((user) => {
       let mailOptions = {
         from: mail.mailSender,
         to: user.email,
         subject: subject,
         text: { path: emailFilePath },
       }
-      return new Promise(function(resolve, reject) {
+      return new Promise(function (resolve, reject) {
         mail.transporter.sendMail(mailOptions, (err, info) => {
           if (err) {
             console.log('error: ', err)
@@ -54,6 +54,6 @@ db.once('open', async function() {
         })
       })
     })
-  })
-  db.close(() => {})
+  )
+  await db.close()
 })

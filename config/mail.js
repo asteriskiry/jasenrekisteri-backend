@@ -7,11 +7,12 @@ const path = require('path')
 
 const boardMailAddress = config.boardMailAddress
 const mailSender = config.mailSender
-const useGmail = config.useGmail
+// const useGmail = config.useGmail
 const emailLogPath = path.join(config.logPath, 'emails.log')
 const messagesLogPath = path.join(config.logPath, 'emails-messages.log')
 const sgTransport = require('nodemailer-sendgrid-transport')
 
+/*
 const gmailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -24,6 +25,7 @@ const sendmailTransporter = nodemailer.createTransport({
   host: config.smtpUrl,
   port: config.smtpPort,
 })
+  */
 
 let options = {
   auth: {

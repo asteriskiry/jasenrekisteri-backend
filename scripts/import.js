@@ -13,7 +13,7 @@ let stream = fs.createReadStream(filePath)
 
 csv
   .fromStream(stream, { headers: false, delimiter: ';' })
-  .on('data', function(data) {
+  .on('data', function (data) {
     const newData = {
       firstName: data[0],
       lastName: data[1],
@@ -37,6 +37,6 @@ csv
       },
     })
   })
-  .on('end', function() {
+  .on('end', function () {
     console.log('Done')
   })
