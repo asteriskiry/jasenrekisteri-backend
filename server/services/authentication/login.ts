@@ -9,7 +9,7 @@ import httpResponses from './index.js'
 import { validateEmail } from '../../validators/common.js'
 import { success } from '../../utils/responses.js'
 
-async function loginUser(request, response) {
+async function loginUser(request, response, next) {
   let { email, password } = request.body
 
   if (!email || !password) {
@@ -34,11 +34,8 @@ async function loginUser(request, response) {
         token: 'JWT ' + token,
       })
     )
-  } catch {
-    return response.status(503).json({
-      success: false,
-      message: 'Kirjautumispalvelu ei ole tällä hetkellä käytettävissä.',
-    })
+  } catch (error) {
+    return next(error)
   }
 }
 

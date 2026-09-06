@@ -11,9 +11,6 @@ const mailSender = config.mailSender
 const emailLogPath = path.join(config.logPath, 'emails.log')
 const messagesLogPath = path.join(config.logPath, 'emails-messages.log')
 
-// Keep the SendGrid transport as a rollback option while moving to SMTP/Brevo.
-import sgTransport from 'nodemailer-sendgrid-transport'
-
 /*
 const gmailTransporter = nodemailer.createTransport({
   service: 'gmail',

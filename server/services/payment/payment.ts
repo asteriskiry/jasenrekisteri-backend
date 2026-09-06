@@ -91,9 +91,7 @@ function sendReceiptAndRespond(member, payment) {
     text: receiptMail.text,
   })
 
-  return {
-    success: true,
-    message: 'Maksun käsittely onnistui.',
+  return success('Maksun käsittely onnistui.', {
     paymentData: {
       firstName: member.firstName,
       lastName: member.lastName,
@@ -103,7 +101,7 @@ function sendReceiptAndRespond(member, payment) {
       timestamp: payment.timestamp,
       product: payment.productName,
     },
-  }
+  })
 }
 
 // Fallback for products not yet provisioned by `npm run create-product`, or
@@ -187,7 +185,7 @@ async function createPayment(request, response) {
     if (recentPending && recentPending.stripeCheckoutSessionId) {
       const existingSession = await stripe.checkout.sessions.retrieve(recentPending.stripeCheckoutSessionId)
       if (existingSession.status === 'open') {
-        return response.json({ url: existingSession.url, stamp: recentPending.stamp })
+        return response.json(success('Maksu on jo aloitettu.', { url: existingSession.url, stamp: recentPending.stamp }))
       }
     }
 
@@ -228,7 +226,7 @@ async function createPayment(request, response) {
     })
     savedPayment.stripeCheckoutSessionId = session.id
     await savedPayment.save()
-    return response.json({ url: session.url, stamp: stamp })
+    return response.json(success('Maksu alustettu.', { url: session.url, stamp: stamp }))
   } catch (error) {
     log.error('Create Stripe Checkout Session error: ' + error)
     return response.json(httpResponses.onError)
@@ -418,13 +416,11 @@ async function getPaymentStatus(request, response) {
       result =
         session.payment_status === 'paid'
           ? await processPaymentReturn('ok', payment.stamp)
-          : { success: false, message: 'Maksua käsitellään.' }
+          : failure('PAYMENT_PENDING', 'Maksua käsitellään.')
     } else if (payment.processed && payment.status === 'Success') {
       const member = await Member.findById(payment.memberId).exec()
       if (!member) return response.json(httpResponses.onPaymentError)
-      result = {
-        success: true,
-        message: 'Maksun käsittely onnistui.',
+      result = success('Maksun käsittely onnistui.', {
         paymentData: {
           firstName: member.firstName,
           lastName: member.lastName,
@@ -434,16 +430,17 @@ async function getPaymentStatus(request, response) {
           timestamp: payment.timestamp,
           product: payment.productName,
         },
-      }
+      })
     } else {
-      result = { success: false, message: 'Maksua käsitellään.' }
+      result = failure('PAYMENT_PENDING', 'Maksua käsitellään.')
     }
 
     // This endpoint has no auth, so gate PII on `stamp` - it's never embedded
     // in the Stripe redirect URL, unlike session_id, which can leak via a
     // Referer header or browser history.
     if (stamp !== payment.stamp) {
-      return response.json({ success: result.success, message: result.message })
+      if (!result.success) return response.json(result)
+      return response.json(success(result.message))
     }
     return response.json(result)
   } catch (error) {

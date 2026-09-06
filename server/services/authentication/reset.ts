@@ -2,12 +2,16 @@ import Member from '../../models/Member.js'
 import ResetPassword from '../../models/ResetPassword.js'
 import httpResponses from './index.js'
 import bcrypt from 'bcrypt'
+import { validatePassword } from '../../validators/common.js'
 
-async function resetPassword(request, response) {
-  const { userID, resetToken, password, passwordAgain } = request.body
-  const token = resetToken
+async function resetPassword(request, response, next) {
+  const userID = request.user._id
+  const { resetToken: token, password } = request.body
 
-  const passwordErrors = validatePassword(request.body, true)
+  const passwordErrors = {
+    ...validatePassword(request.body, true),
+    ...(!token || typeof token !== 'string' ? { resetToken: 'Reset token is required.' } : {}),
+  }
   if (Object.keys(passwordErrors).length > 0) {
     return response.status(400).json({ ...httpResponses.onValidationError, error: { ...httpResponses.onValidationError.error, details: passwordErrors } })
   }
@@ -19,12 +23,12 @@ async function resetPassword(request, response) {
     }).lean()
 
     if (!resetPasswordRecord) {
-      return response.json(httpResponses.onInvalidToken)
+      return response.status(410).json(httpResponses.onInvalidToken)
     }
 
     const resBcrypt = await bcrypt.compare(token, resetPasswordRecord.resetPasswordToken)
     if (!resBcrypt) {
-      return response.json(httpResponses.onInvalidToken)
+      return response.status(410).json(httpResponses.onInvalidToken)
     }
 
     await Member.findOneAndUpdate({ _id: userID }, { password: password })
@@ -32,11 +36,7 @@ async function resetPassword(request, response) {
 
     return response.json(httpResponses.onPasswordUpdateSuccess)
   } catch (error) {
-    console.error('[RESET_PASSWORD_ERROR]', error && error.message)
-    return response.json({
-      success: false,
-      message: error.message || String(error),
-    })
+    return next(error)
   }
 }
 
