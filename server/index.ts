@@ -1,11 +1,14 @@
 'use strict'
 
 import express from 'express'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import log4js from 'log4js'
 import mongoose from 'mongoose'
 import passport from 'passport'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
+import swaggerUi from 'swagger-ui-express'
 import cronJobs from './utils/cron.js'
 import logger from './utils/logger.js'
 import routes from './routes/index.js'
@@ -34,6 +37,11 @@ export default function () {
     server.use(passport.initialize())
     mongoose.connect(config.mongoUrl)
     configurePassport(passport)
+
+    if (config.env === 'local' || config.env === 'development') {
+      const swaggerDocument = JSON.parse(readFileSync(join(process.cwd(), 'swagger.json'), 'utf8'))
+      server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
+    }
 
     routes.init(server)
   }

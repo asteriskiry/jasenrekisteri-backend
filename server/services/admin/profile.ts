@@ -39,7 +39,6 @@ async function update(request, response) {
 
   // Validations
 
-  console.log(typeof request.body.membershipEnds)
   if (!request.body.firstName || !request.body.lastName || !request.body.email || !request.body.hometown) {
     return response.json(httpResponses.onFieldEmpty)
   } else if (

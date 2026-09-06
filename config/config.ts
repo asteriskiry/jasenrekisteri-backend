@@ -1,5 +1,7 @@
 'use strict'
 
+import 'dotenv/config'
+
 const mongoUrl = process.env.MONGOURL || 'mongodb://127.0.0.1/jasenrekisteri'
 const host = process.env.HOST || 'localhost'
 const port = process.env.PORT || 3001
