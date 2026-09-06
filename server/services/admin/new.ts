@@ -42,6 +42,10 @@ function save(request, response) {
 
   const normalizedMembershipStarts = toIsoString(membershipStarts)
   const normalizedMembershipEnds = toIsoString(membershipEnds)
+  const normalizedTyyMember = tyyMember ?? false
+  const normalizedTiviaMember = tiviaMember ?? false
+  const normalizedAccessRights = accessRights ?? false
+  const normalizedAccepted = accepted ?? false
 
   // Client side access check and validations
 
@@ -53,10 +57,10 @@ function save(request, response) {
       !validator.matches(lastName, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
       !validator.isEmail(email) ||
       !validator.matches(hometown, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-      typeof tyyMember !== 'boolean' ||
-      typeof tiviaMember !== 'boolean' ||
-      typeof accessRights !== 'boolean' ||
-      typeof accepted !== 'boolean' ||
+      typeof normalizedTyyMember !== 'boolean' ||
+      typeof normalizedTiviaMember !== 'boolean' ||
+      typeof normalizedAccessRights !== 'boolean' ||
+      typeof normalizedAccepted !== 'boolean' ||
       !validator.isIn(role, ['Admin', 'Board', 'Member', 'Functionary']) ||
       !validator.isISO8601(normalizedMembershipStarts) ||
       !validator.isISO8601(normalizedMembershipEnds)
@@ -80,14 +84,14 @@ function save(request, response) {
         newMember.utuAccount = utuAccount.toLowerCase()
         newMember.email = email.toLowerCase()
         newMember.hometown = formatters.capitalizeFirstLetter(hometown)
-        newMember.tyyMember = !!tyyMember
-        newMember.tiviaMember = !!tiviaMember
+        newMember.tyyMember = normalizedTyyMember
+        newMember.tiviaMember = normalizedTiviaMember
         newMember.role = role
-        newMember.accessRights = !!accessRights
+        newMember.accessRights = normalizedAccessRights
         newMember.membershipStarts = normalizedMembershipStarts
         newMember.membershipEnds = normalizedMembershipEnds
         newMember.accountCreated = new Date()
-        newMember.accepted = !!accepted
+        newMember.accepted = normalizedAccepted
         newMember.password = password
 
         newMember

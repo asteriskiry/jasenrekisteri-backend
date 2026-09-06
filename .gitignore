@@ -4,6 +4,7 @@ requests/
 csv/
 ecosystem.config.js
 ecosystem.config.cjs
+docker-compose.override.yml
 dist/
 swagger.json
 data/
