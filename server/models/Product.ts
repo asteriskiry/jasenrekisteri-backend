@@ -36,6 +36,10 @@ const ProductSchema = new mongoose.Schema<Product>({
   membershipDuration: {
     type: Number,
     min: 1,
+    // Required so payment completion can compute a membershipEnds date.
+    required: function () {
+      return this.category === 'Membership'
+    },
   },
   stripeProductId: {
     type: String,

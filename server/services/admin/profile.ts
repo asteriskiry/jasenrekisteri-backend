@@ -21,7 +21,7 @@ async function get(request, response) {
   }
 
   try {
-    await utils.checkUserControl(request.user._id)
+    await utils.checkUserControl(memberID)
     const doc = await Member.findOne({ _id: memberID }).lean().exec()
     if (!doc) return response.json({ memberNotFound: true })
     delete doc.password

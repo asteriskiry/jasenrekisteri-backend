@@ -10,6 +10,8 @@ const mailSender = config.mailSender
 // const useGmail = config.useGmail
 const emailLogPath = path.join(config.logPath, 'emails.log')
 const messagesLogPath = path.join(config.logPath, 'emails-messages.log')
+
+// Keep the SendGrid transport as a rollback option while moving to SMTP/Brevo.
 import sgTransport from 'nodemailer-sendgrid-transport'
 
 /*
@@ -27,16 +29,30 @@ const sendmailTransporter = nodemailer.createTransport({
 })
   */
 
-let options = {
+const smtpHost = process.env.SMTP_HOST
+const smtpPort = Number(process.env.SMTP_PORT || 587)
+const smtpUser = process.env.SMTP_USER
+const smtpPass = process.env.SMTP_PASS
+
+// Rollback-friendly legacy config
+// let options = {
+//   auth: {
+//     api_key: config.sendgridApiKey,
+//   },
+// }
+// const sendgridTransporter = nodemailer.createTransport(sgTransport(options))
+
+const smtpTransporter = nodemailer.createTransport({
+  host: smtpHost,
+  port: smtpPort,
+  secure: smtpPort === 465,
   auth: {
-    api_key: config.sendgridApiKey,
+    user: smtpUser,
+    pass: smtpPass,
   },
-}
+})
 
-const sendgridTransporter = nodemailer.createTransport(sgTransport(options))
-
-// const transporter = useGmail === '1' ? gmailTransporter : sendmailTransporter
-const transporter = sendgridTransporter
+const transporter = smtpTransporter
 
 function callback(error, info) {
   let logEntry
@@ -53,4 +69,31 @@ function logMessage(data) {
   fs.appendFileSync(messagesLogPath, logEntry)
 }
 
-export { boardMailAddress, mailSender, transporter, callback, logMessage }
+function sendMailWithLogging(options, label = 'mail') {
+  return new Promise((resolve, reject) => {
+    transporter.sendMail(options, (error, info) => {
+      const event = {
+        label,
+        to: options && options.to,
+        subject: options && options.subject,
+      }
+
+      if (error) {
+        const errorPayload = {
+          error: error.message || String(error),
+          response: error.response || null,
+          ...event,
+        }
+        console.error('[MAILER_ERROR]', JSON.stringify(errorPayload))
+        callback(error, info)
+        return reject(error)
+      }
+
+      console.log('[MAILER_SUCCESS]', JSON.stringify({ ...event, messageId: info && info.messageId }))
+      callback(null, info)
+      resolve(info)
+    })
+  })
+}
+
+export { boardMailAddress, mailSender, transporter, callback, logMessage, sendMailWithLogging }

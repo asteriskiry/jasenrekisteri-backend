@@ -27,6 +27,11 @@ services:
       - mongo
     environment:
       - MONGOURL=mongodb://mongo:27017/jasenrekisteri
+      - HOST=0.0.0.0
+      - SECRET=development-secret
+      - CLIENTURL=${CLIENTURL:-http://localhost:5173}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
 
 volumes:
   db-data:

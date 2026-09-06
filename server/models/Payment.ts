@@ -14,6 +14,11 @@ export interface Payment {
   status: 'Canceled' | 'Pending' | 'Success'
   reference?: string
   processed: boolean
+  // Snapshot of Product.membershipDuration at payment time. Absent for
+  // non-membership ('Other' category) products.
+  membershipDuration?: number
+  // Money was collected but membership couldn't be resolved automatically.
+  needsManualReview?: boolean
   stripeCheckoutSessionId?: string
   stripePaymentIntentId?: string
 }
@@ -72,6 +77,16 @@ const PaymentSchema = new mongoose.Schema<Payment>({
   processed: {
     type: Boolean,
     required: true,
+    default: false,
+  },
+  // Snapshot of Product.membershipDuration at payment time. Absent for
+  // non-membership ('Other' category) products.
+  membershipDuration: {
+    type: Number,
+  },
+  // Money was collected but membership couldn't be resolved automatically.
+  needsManualReview: {
+    type: Boolean,
     default: false,
   },
   stripeCheckoutSessionId: {
