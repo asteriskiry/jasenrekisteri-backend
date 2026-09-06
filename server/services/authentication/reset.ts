@@ -3,11 +3,9 @@ import ResetPassword from '../../models/ResetPassword.js'
 import httpResponses from './index.js'
 import bcrypt from 'bcrypt'
 
-function resetPassword(request, response) {
-  const userID = request.user._id
-  const { token } = request.body
-  const { password } = request.body
-  const { passwordAgain } = request.body
+async function resetPassword(request, response) {
+  const { userID, resetToken, password, passwordAgain } = request.body
+  const token = resetToken
 
   // Validations
 
@@ -23,22 +21,32 @@ function resetPassword(request, response) {
     return response.json(httpResponses.onTooShortPassword)
   }
 
-  // Check if link is valid and update member record
+  try {
+    const resetPasswordRecord = await ResetPassword.findOne({
+      userID: userID,
+      expire: { $gt: Date.now() },
+    }).lean()
 
-  ResetPassword.findOne({
-    userID: userID,
-    expire: { $gt: Date.now() },
-  }).then((resetPasswordRecord) => {
-    if (!resetPasswordRecord) return response.json(httpResponses.onInvalidToken)
-    bcrypt.compare(token, resetPasswordRecord.resetPasswordToken, function (errBcrypt, resBcrypt) {
-      Member.findOneAndUpdate({ _id: userID }, { password: password }).then(() => {
-        ResetPassword.findOneAndDelete({ userID: userID }, function (err) {
-          if (err) console.log(err)
-          return response.json(httpResponses.onPasswordUpdateSuccess)
-        })
-      })
+    if (!resetPasswordRecord) {
+      return response.json(httpResponses.onInvalidToken)
+    }
+
+    const resBcrypt = await bcrypt.compare(token, resetPasswordRecord.resetPasswordToken)
+    if (!resBcrypt) {
+      return response.json(httpResponses.onInvalidToken)
+    }
+
+    await Member.findOneAndUpdate({ _id: userID }, { password: password })
+    await ResetPassword.findOneAndDelete({ userID: userID })
+
+    return response.json(httpResponses.onPasswordUpdateSuccess)
+  } catch (error) {
+    console.error('[RESET_PASSWORD_ERROR]', error && error.message)
+    return response.json({
+      success: false,
+      message: error.message || String(error),
     })
-  })
+  }
 }
 
 export default {
