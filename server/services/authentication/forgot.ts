@@ -5,14 +5,16 @@ import crypto from 'node:crypto'
 import bcrypt from 'bcrypt'
 import * as mail from '../../../config/mail.js'
 import * as emails from '../../utils/emails.js'
+import { validateEmail } from '../../validators/common.js'
 
-async function forgotPassword(request, response) {
+async function forgotPassword(request, response, next) {
   const { email } = request.body
 
-  // Validations
-
   if (!email) {
-    return response.json(httpResponses.onEmailEmpty)
+    return response.status(400).json(httpResponses.onEmailEmpty)
+  }
+  if (Object.keys(validateEmail(request.body)).length > 0) {
+    return response.status(400).json(httpResponses.onValidationError)
   }
 
   // Find member by email
@@ -28,44 +30,32 @@ async function forgotPassword(request, response) {
     // Generate token and expire date and save to temporary database
 
     const token = crypto.randomBytes(32).toString('hex')
-    bcrypt.genSalt(5, function (err, salt) {
-      if (err) console.log(err)
-      bcrypt.hash(token, salt, function (err, hash) {
-        if (err) console.log(err)
-        ResetPassword.create({
-          userID: user._id,
-          resetPasswordToken: hash,
-          expire: Date.now() + 3600000,
-        }).then(function (item) {
-          if (!item) return response.json(httpResponses.onResetFail)
-
-          // Send generated link to email
-
-          let forgotMail = emails.forgotMail(user._id, token)
-
-          let mailOptions = {
-            from: mail.mailSender,
-            to: user.email,
-            subject: forgotMail.subject,
-            text: forgotMail.text,
-          }
-
-          mail
-            .sendMailWithLogging(mailOptions, 'forgot-password-mail')
-            .then(() => {
-              mail.logMessage(mailOptions)
-              return response.json(httpResponses.onMailSent)
-            })
-            .catch((error) => {
-              console.error('[FORGOT_PASSWORD_MAIL_ERROR]', error && error.message)
-              mail.logMessage(mailOptions)
-              return response.json(httpResponses.onMailFail)
-            })
-        })
-      })
+    const hash = await bcrypt.hash(token, 5)
+    await ResetPassword.create({
+      userID: user._id,
+      resetPasswordToken: hash,
+      expire: Date.now() + 3600000,
     })
+
+    const forgotMail = emails.forgotMail(user._id, token)
+    const mailOptions = {
+      from: mail.mailSender,
+      to: user.email,
+      subject: forgotMail.subject,
+      text: forgotMail.text,
+    }
+
+    try {
+      await mail.sendMailWithLogging(mailOptions, 'forgot-password-mail')
+      mail.logMessage(mailOptions)
+      return response.json(httpResponses.onMailSent)
+    } catch (error) {
+      console.error('[FORGOT_PASSWORD_MAIL_ERROR]', error && error.message)
+      mail.logMessage(mailOptions)
+      return response.status(503).json(httpResponses.onMailFail)
+    }
   } catch (error) {
-    return response.json({ success: false, message: error.message || String(error) })
+    return next(error)
   }
 }
 

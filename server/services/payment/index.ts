@@ -1,24 +1,9 @@
-// Payment responses
+import { failure, success } from '../../utils/responses.js'
 
 export default {
-  onError: {
-    success: false,
-    message: 'Jotain meni vikaan.',
-  },
-  onPaymentError: {
-    success: false,
-    message: 'Jotain meni vikaan. Ota yhteyttä Asteriskin hallitukseen.',
-  },
-  onPaymentSuccess: {
-    success: true,
-    message: 'Maksun käsittely onnistui.',
-  },
-  onPaymentCancel: {
-    success: true,
-    message: 'Maksu peruutettu.',
-  },
-  onPaymentNotFoundOrAlredyProcessed: {
-    success: false,
-    message: 'Kyseinen maksu on jo käsitelty tai sitä ei löytynyt.',
-  },
+  onError: failure('PAYMENT_ERROR', 'Jotain meni vikaan.'),
+  onPaymentError: failure('PAYMENT_ERROR', 'Jotain meni vikaan. Ota yhteyttä Asteriskin hallitukseen.'),
+  onPaymentSuccess: success('Maksun käsittely onnistui.'),
+  onPaymentCancel: success('Maksu peruutettu.'),
+  onPaymentNotFoundOrAlredyProcessed: failure('PAYMENT_NOT_FOUND', 'Kyseinen maksu on jo käsitelty tai sitä ei löytynyt.'),
 }

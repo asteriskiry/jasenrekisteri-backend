@@ -1,5 +1,7 @@
 'use strict'
 
+import { failure } from './responses.js'
+
 // In-memory, per-IP sliding-window limiter - no external dependency needed
 // for capping abuse of a single endpoint.
 function rateLimiter({ windowMs, max }) {
@@ -25,7 +27,7 @@ function rateLimiter({ windowMs, max }) {
 
     entry.count += 1
     if (entry.count > max) {
-      return response.status(429).json({ success: false, message: 'Liikaa pyyntöjä. Yritä myöhemmin uudelleen.' })
+      return response.status(429).json(failure('RATE_LIMIT_EXCEEDED', 'Liikaa pyyntöjä. Yritä myöhemmin uudelleen.'))
     }
     return next()
   }

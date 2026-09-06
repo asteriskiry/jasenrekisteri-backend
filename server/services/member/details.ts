@@ -1,7 +1,7 @@
 import Member from '../../models/Member.js'
 import httpResponses from './index.js'
 import formatters from '../../utils/formatters.js'
-import validator from 'validator'
+import { validatePassword, validatePersonFields } from '../../validators/common.js'
 
 // Get member details
 
@@ -28,28 +28,21 @@ function updateDetails(request, response) {
     _id: request.user._id,
   }
 
-  // Validations
-
-  if (!request.body.firstName || !request.body.lastName || !request.body.email || !request.body.hometown) {
-    return response.json(httpResponses.onFieldEmpty)
-  } else if (
-    !validator.matches(request.body.firstName, /[a-zA-Z\u00c0-\u017e- ]{2,20}$/g) ||
-    !validator.matches(request.body.lastName, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-    !validator.isEmail(request.body.email) ||
-    !validator.matches(request.body.hometown, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-    (!typeof request.body.tyyMember as any) === 'boolean'
-  ) {
-    return response.json(httpResponses.onValidationError)
+  const errors = {
+    ...validatePersonFields(request.body),
+    ...validatePassword(request.body),
   }
-
-  if (request.body.password !== request.body.passwordAgain) {
-    return response.json(httpResponses.onPasswordNotMatch)
+  if (Object.keys(errors).length > 0) {
+    return response.status(400).json({
+      ...httpResponses.onValidationError,
+      error: { ...httpResponses.onValidationError.error, details: errors },
+    })
   }
 
   let record = {
     firstName: formatters.capitalizeFirstLetter(request.body.firstName),
     lastName: formatters.capitalizeFirstLetter(request.body.lastName),
-    utuAccount: request.body.utuAccount.toLowerCase(),
+    utuAccount: request.body.utuAccount ? request.body.utuAccount.toLowerCase() : '',
     email: request.body.email.toLowerCase(),
     hometown: formatters.capitalizeFirstLetter(request.body.hometown),
     tyyMember: request.body.tyyMember,
@@ -66,7 +59,9 @@ function updateDetails(request, response) {
 
   Member.findOneAndUpdate(query, record, { new: true })
     .then(() => response.json(httpResponses.onUpdateSuccess))
-    .catch(() => response.json(httpResponses.onMustBeUnique))
+    .catch((error) => {
+      throw error
+    })
 }
 
 export default {

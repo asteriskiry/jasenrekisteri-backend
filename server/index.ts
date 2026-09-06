@@ -13,6 +13,7 @@ import cronJobs from './utils/cron.js'
 import logger from './utils/logger.js'
 import routes from './routes/index.js'
 import configurePassport from '../config/passport.js'
+import { errorHandler } from './utils/errors.js'
 
 export default function () {
   let server = express()
@@ -44,6 +45,7 @@ export default function () {
     }
 
     routes.init(server)
+    server.use(errorHandler)
   }
 
   start = function () {

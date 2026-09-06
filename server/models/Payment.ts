@@ -50,11 +50,11 @@ const PaymentSchema = new mongoose.Schema<Payment>({
   },
   productId: {
     type: String,
-    requird: true,
+    required: true,
   },
   productName: {
     type: String,
-    requird: true,
+    required: true,
   },
   amountSnt: {
     type: Number,

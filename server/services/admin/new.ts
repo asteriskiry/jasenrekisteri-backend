@@ -1,6 +1,6 @@
 import generator from 'generate-password'
 import moment from 'moment'
-import validator from 'validator'
+import { validatePersonFields } from '../../validators/common.js'
 
 import Member from '../../models/Member.js'
 import utils from '../../utils/index.js'
@@ -51,21 +51,15 @@ function save(request, response) {
 
   if (userRole === 'admin') {
     if (!firstName || !lastName || !email || !hometown || !role || !membershipStarts || !membershipEnds) {
-      return response.json(httpResponses.onAllFieldEmpty)
-    } else if (
-      !validator.matches(firstName, /[a-zA-Z\u00c0-\u017e- ]{2,20}$/g) ||
-      !validator.matches(lastName, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-      !validator.isEmail(email) ||
-      !validator.matches(hometown, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-      typeof normalizedTyyMember !== 'boolean' ||
-      typeof normalizedTiviaMember !== 'boolean' ||
-      typeof normalizedAccessRights !== 'boolean' ||
-      typeof normalizedAccepted !== 'boolean' ||
-      !validator.isIn(role, ['Admin', 'Board', 'Member', 'Functionary']) ||
-      !validator.isISO8601(normalizedMembershipStarts) ||
-      !validator.isISO8601(normalizedMembershipEnds)
-    ) {
-      return response.json(httpResponses.onValidationError)
+      return response.status(400).json(httpResponses.onAllFieldEmpty)
+    } else {
+      const errors = validatePersonFields(request.body, true)
+      if (Object.keys(errors).length > 0) {
+        return response.status(400).json({
+          ...httpResponses.onValidationError,
+          error: { ...httpResponses.onValidationError.error, details: errors },
+        })
+      }
     }
 
     const password = generator.generate({

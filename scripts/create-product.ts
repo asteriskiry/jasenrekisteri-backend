@@ -1,6 +1,6 @@
 // Script for creating products
 
-require('dotenv').config()
+import 'dotenv/config'
 
 import prompt from 'prompt'
 import mongoose from 'mongoose'

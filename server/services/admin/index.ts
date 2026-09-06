@@ -1,44 +1,14 @@
-// Admin responses
+import { failure, success } from '../../utils/responses.js'
 
 export default {
-  clientAdminFailed: {
-    success: false,
-    message: 'Client ei ole admin.',
-  },
-  onServerAdminFail: {
-    success: false,
-    message: 'Tämä alue on vain hallituslaisille.',
-  },
-  memberAddedSuccessfully: {
-    success: true,
-    message: 'Uusi jäsen lisätty onnistuneesti.',
-  },
-  onProfileUpdateSuccess: {
-    success: true,
-    message: 'Tiedot päivitetty onnistuneesti.',
-  },
-  onFieldEmpty: {
-    success: false,
-    message: 'Kaikki paitsi salasanakentät ovat pakollisia.',
-  },
-  onAllFieldEmpty: {
-    success: false,
-    message: 'Kaikki kentät ovat pakollisia.',
-  },
-  onNotSamePasswordError: {
-    success: false,
-    message: 'Salasanat ei täsmää.',
-  },
-  onTooShortPassword: {
-    success: false,
-    message: 'Salasanan minimipituus on 6 merkkiä.',
-  },
-  onMustBeUnique: {
-    success: false,
-    message: 'Sähköpostiosoitteen ja UTU-tunnuksen oltava uniikkeja.',
-  },
-  onValidationError: {
-    success: false,
-    message: 'Jossakin kentässä on vikaa.',
-  },
+  clientAdminFailed: failure('FORBIDDEN', 'Client ei ole admin.'),
+  onServerAdminFail: failure('FORBIDDEN', 'Tämä alue on vain hallituslaisille.'),
+  memberAddedSuccessfully: success('Uusi jäsen lisätty onnistuneesti.'),
+  onProfileUpdateSuccess: success('Tiedot päivitetty onnistuneesti.'),
+  onFieldEmpty: failure('VALIDATION_ERROR', 'Kaikki paitsi salasanakentät ovat pakollisia.'),
+  onAllFieldEmpty: failure('VALIDATION_ERROR', 'Kaikki kentät ovat pakollisia.'),
+  onNotSamePasswordError: failure('VALIDATION_ERROR', 'Salasanat ei täsmää.'),
+  onTooShortPassword: failure('VALIDATION_ERROR', 'Salasanan minimipituus on 6 merkkiä.'),
+  onMustBeUnique: failure('DUPLICATE_RESOURCE', 'Sähköpostiosoitteen ja UTU-tunnuksen oltava uniikkeja.'),
+  onValidationError: failure('VALIDATION_ERROR', 'Jossakin kentässä on vikaa.'),
 }
