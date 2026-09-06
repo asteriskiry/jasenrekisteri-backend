@@ -4,6 +4,7 @@ import utils from '../../utils/index.js'
 import httpResponses from './index.js'
 import * as mail from '../../../config/mail.js'
 import * as emails from '../../utils/emails.js'
+import { success } from '../../utils/responses.js'
 
 // Remove member
 
@@ -14,7 +15,7 @@ async function remove(request, response) {
     try {
       await utils.checkUserControl(request.user._id)
       await Member.deleteOne({ _id: request.body.memberID })
-      response.json({ success: true, message: 'Jäsen poistettu.' })
+      response.json(success('Jäsen poistettu.'))
 
       let email = emails.memberDeletedMail()
       let memberMailOptions = {

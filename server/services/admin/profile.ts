@@ -4,7 +4,7 @@ import utils from '../../utils/index.js'
 import httpResponses from './index.js'
 import * as mail from '../../../config/mail.js'
 import formatters from '../../utils/formatters.js'
-import validator from 'validator'
+import { validatePassword, validatePersonFields } from '../../validators/common.js'
 import * as emails from '../../utils/emails.js'
 
 // Get member details
@@ -37,28 +37,15 @@ async function get(request, response) {
 async function update(request, response) {
   const memberID = request.body.memberID
 
-  // Validations
-
-  if (!request.body.firstName || !request.body.lastName || !request.body.email || !request.body.hometown) {
-    return response.json(httpResponses.onFieldEmpty)
-  } else if (
-    !validator.matches(request.body.firstName, /[a-zA-Z\u00c0-\u017e- ]{2,20}$/g) ||
-    !validator.matches(request.body.lastName, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-    !validator.isEmail(request.body.email) ||
-    !validator.matches(request.body.hometown, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-    ((!typeof request.body.tyyMember) as any) === 'boolean' ||
-    ((!typeof request.body.tiviaMember) as any) === 'boolean' ||
-    ((!typeof request.body.accessRights) as any) === 'boolean' ||
-    ((!typeof request.body.accepted) as any) === 'boolean' ||
-    !validator.isIn(request.body.role, ['Admin', 'Board', 'Member', 'Functionary']) ||
-    !validator.isISO8601(request.body.membershipStarts) ||
-    !validator.isISO8601(request.body.membershipEnds)
-  ) {
-    return response.json(httpResponses.onValidationError)
+  const errors = {
+    ...validatePersonFields(request.body, true),
+    ...validatePassword(request.body),
   }
-
-  if (request.body.password !== request.body.passwordAgain) {
-    return response.json(httpResponses.onNotSamePasswordError)
+  if (Object.keys(errors).length > 0) {
+    return response.status(400).json({
+      ...httpResponses.onValidationError,
+      error: { ...httpResponses.onValidationError.error, details: errors },
+    })
   }
 
   // Updated member data
@@ -66,7 +53,7 @@ async function update(request, response) {
   const adminProfile = {
     firstName: formatters.capitalizeFirstLetter(request.body.firstName),
     lastName: formatters.capitalizeFirstLetter(request.body.lastName),
-    utuAccount: request.body.utuAccount.toLowerCase(),
+    utuAccount: request.body.utuAccount ? request.body.utuAccount.toLowerCase() : '',
     email: request.body.email.toLowerCase(),
     hometown: formatters.capitalizeFirstLetter(request.body.hometown),
     tyyMember: !!request.body.tyyMember,
@@ -87,7 +74,7 @@ async function update(request, response) {
     if (request.body.password === '' || request.body.password === null) {
       delete adminProfile.password
     } else if (request.body.password.length < 6) {
-      return response.json(httpResponses.onTooShortPassword)
+      return response.status(400).json(httpResponses.onTooShortPassword)
     }
 
     // Send mail to member if member is just accepted

@@ -1,68 +1,20 @@
-// All the authentication responses
+import { failure, success } from '../../utils/responses.js'
 
 export default {
-  onEmailEmpty: {
-    success: false,
-    message: 'Syötä sähköpostiosoite.',
-  },
-  onEmailOrPasswordEmpty: {
-    success: false,
-    message: 'Syötä sähköpostiosoite ja salasana.',
-  },
-  onPasswordUpdateSuccess: {
-    success: true,
-    message: 'Salasana päivitetty onnistuneesti.',
-  },
-  onUserNotFound: {
-    success: false,
-    message: 'Väärä sähköposti tai salasana.',
-  },
-  onAuthenticationFail: {
-    success: false,
-    message: 'Väärä sähköposti tai salasana.',
-  },
-  onEmptyError: {
-    success: false,
-    message: 'Kaikki kentät ovat pakollisia.',
-  },
-  onValidationError: {
-    success: false,
-    message: 'Jossakin kentässä on vikaa.',
-  },
-  onUserSaveError: {
-    success: false,
-    message: 'Sähköpostiosoitteen ja UTU-tunnuksen oltava uniikkeja.',
-  },
-  onNotSamePasswordError: {
-    success: false,
-    message: 'Salasanat eivät täsmää.',
-  },
-  onUserSaveSuccess: {
-    success: true,
-    message: 'Käyttäjätunnus luotu onnistuneesti.',
-  },
-  onResetFail: {
-    success: false,
-    message: 'Ongelma palautuksessa.',
-  },
-  onMailSent: {
-    success: true,
-    message: 'Salasanan palautuslinkki lähetetty jos sellainen sähköpostiosoite löytyi järjestelmästä.',
-  },
-  onMailFail: {
-    success: false,
-    message: 'Sähköpostin lähetys epäonnistui.',
-  },
-  onInvalidToken: {
-    success: false,
-    message: 'Linkki vanhentunut.',
-  },
-  onTooShortPassword: {
-    success: false,
-    message: 'Salasanan minimipituus on 6 merkkiä.',
-  },
-  onError: {
-    success: false,
-    message: 'Jotain meni vikaan.',
-  },
+  onEmailEmpty: failure('VALIDATION_ERROR', 'Syötä sähköpostiosoite.'),
+  onEmailOrPasswordEmpty: failure('VALIDATION_ERROR', 'Syötä sähköpostiosoite ja salasana.'),
+  onPasswordUpdateSuccess: success('Salasana päivitetty onnistuneesti.'),
+  onUserNotFound: failure('AUTHENTICATION_FAILED', 'Väärä sähköposti tai salasana.'),
+  onAuthenticationFail: failure('AUTHENTICATION_FAILED', 'Väärä sähköposti tai salasana.'),
+  onEmptyError: failure('VALIDATION_ERROR', 'Kaikki kentät ovat pakollisia.'),
+  onValidationError: failure('VALIDATION_ERROR', 'Jossakin kentässä on vikaa.'),
+  onUserSaveError: failure('DUPLICATE_RESOURCE', 'Sähköpostiosoitteen ja UTU-tunnuksen oltava uniikkeja.'),
+  onNotSamePasswordError: failure('VALIDATION_ERROR', 'Salasanat eivät täsmää.'),
+  onUserSaveSuccess: success('Käyttäjätunnus luotu onnistuneesti.'),
+  onResetFail: failure('RESET_FAILED', 'Ongelma palautuksessa.'),
+  onMailSent: success('Salasanan palautuslinkki lähetetty jos sellainen sähköpostiosoite löytyi järjestelmästä.'),
+  onMailFail: failure('MAIL_FAILED', 'Sähköpostin lähetys epäonnistui.'),
+  onInvalidToken: failure('INVALID_TOKEN', 'Linkki vanhentunut.'),
+  onTooShortPassword: failure('VALIDATION_ERROR', 'Salasanan minimipituus on 6 merkkiä.'),
+  onError: failure('INTERNAL_SERVER_ERROR', 'Jotain meni vikaan.'),
 }

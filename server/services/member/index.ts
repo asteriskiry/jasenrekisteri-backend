@@ -1,36 +1,12 @@
-// Member responses
+import { failure, success } from '../../utils/responses.js'
 
 export default {
-  onUpdateSuccess: {
-    success: true,
-    message: 'Tiedot päivitetty onnistuneesti.',
-  },
-  onFieldEmpty: {
-    success: false,
-    message: 'Kaikki paitsi salasanakentät ovat pakollisia.',
-  },
-  onPasswordNotMatch: {
-    success: false,
-    message: 'Salasanat eivät täsmää.',
-  },
-  onClientAdminFail: {
-    success: false,
-    message: 'Asiakas ei ole admin.',
-  },
-  onServerAdminFail: {
-    success: false,
-    message: 'Tämä alue vain vain hallituslaisille.',
-  },
-  onTooShortPassword: {
-    success: false,
-    message: 'Salasanan minimipituus on 6 merkkiä.',
-  },
-  onMustBeUnique: {
-    success: false,
-    message: 'Sähköpostiosoitteen ja UTU-tunnuksen oltava uniikkeja.',
-  },
-  onValidationError: {
-    success: false,
-    message: 'Jossakin kentässä on vikaa.',
-  },
+  onUpdateSuccess: success('Tiedot päivitetty onnistuneesti.'),
+  onFieldEmpty: failure('VALIDATION_ERROR', 'Kaikki paitsi salasanakentät ovat pakollisia.'),
+  onPasswordNotMatch: failure('VALIDATION_ERROR', 'Salasanat eivät täsmää.'),
+  onClientAdminFail: failure('FORBIDDEN', 'Asiakas ei ole admin.'),
+  onServerAdminFail: failure('FORBIDDEN', 'Tämä alue vain vain hallituslaisille.'),
+  onTooShortPassword: failure('VALIDATION_ERROR', 'Salasanan minimipituus on 6 merkkiä.'),
+  onMustBeUnique: failure('DUPLICATE_RESOURCE', 'Sähköpostiosoitteen ja UTU-tunnuksen oltava uniikkeja.'),
+  onValidationError: failure('VALIDATION_ERROR', 'Jossakin kentässä on vikaa.'),
 }

@@ -2,25 +2,16 @@ import Member from '../../models/Member.js'
 import ResetPassword from '../../models/ResetPassword.js'
 import httpResponses from './index.js'
 import bcrypt from 'bcrypt'
+import { validatePassword } from '../../validators/common.js'
 
 function resetPassword(request, response) {
   const userID = request.user._id
   const { token } = request.body
   const { password } = request.body
-  const { passwordAgain } = request.body
 
-  // Validations
-
-  if (!password || !passwordAgain) {
-    return response.json(httpResponses.onEmptyError)
-  }
-
-  if (password !== passwordAgain) {
-    return response.json(httpResponses.onNotSamePasswordError)
-  }
-
-  if (password.length < 6) {
-    return response.json(httpResponses.onTooShortPassword)
+  const passwordErrors = validatePassword(request.body, true)
+  if (Object.keys(passwordErrors).length > 0) {
+    return response.status(400).json({ ...httpResponses.onValidationError, error: { ...httpResponses.onValidationError.error, details: passwordErrors } })
   }
 
   // Check if link is valid and update member record

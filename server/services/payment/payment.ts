@@ -15,6 +15,7 @@ import TempMember from '../../models/TempMember.js'
 import Payment from '../../models/Payment.js'
 import Product from '../../models/Product.js'
 import { log } from '../../utils/logger.js'
+import { failure, success } from '../../utils/responses.js'
 
 function runQuery(query, callback) {
   query
@@ -192,14 +193,12 @@ async function getPaymentStatus(request, response) {
     }
 
     if (!payment.processed || payment.status !== 'Success') {
-      return response.json({ success: false, message: 'Maksua käsitellään.' })
+      return response.json(failure('PAYMENT_PENDING', 'Maksua käsitellään.'))
     }
 
     const member = await Member.findById(payment.memberId).exec()
     if (!member) return response.json(httpResponses.onPaymentError)
-    return response.json({
-      success: true,
-      message: 'Maksun käsittely onnistui.',
+    return response.json(success('Maksun käsittely onnistui.', {
       paymentData: {
         firstName: member.firstName,
         lastName: member.lastName,
@@ -209,7 +208,7 @@ async function getPaymentStatus(request, response) {
         timestamp: payment.timestamp,
         product: payment.productName,
       },
-    })
+    }))
   } catch (error) {
     log.error('Get Stripe payment status error: ' + error)
     return response.json(httpResponses.onPaymentError)

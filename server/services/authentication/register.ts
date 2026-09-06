@@ -4,57 +4,39 @@ import TempMember from '../../models/TempMember.js'
 import Member from '../../models/Member.js'
 import httpResponses from './index.js'
 import formatters from '../../utils/formatters.js'
-import validator from 'validator'
+import { validatePersonFields } from '../../validators/common.js'
+import { success } from '../../utils/responses.js'
 
 // Here we only make temporary member record. We create real one when the payment is made.
 
 async function registerUser(request, response) {
   let { firstName, lastName, utuAccount, email, hometown, tyyMember } = request.body
 
-  // Validations
-
-  if (!firstName || !lastName || !email || !hometown) {
-    response.json(httpResponses.onEmptyError)
-  } else if (
-    !validator.matches(request.body.firstName, /[a-zA-Z\u00c0-\u017e- ]{2,20}$/g) ||
-    !validator.matches(request.body.lastName, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-    !validator.isEmail(request.body.email) ||
-    !validator.matches(request.body.hometown, /[a-zA-Z\u00c0-\u017e- ]{2,25}$/g) ||
-    ((!typeof request.body.tyyMember) as any) === 'boolean'
-  ) {
-    response.json(httpResponses.onValidationError)
-  } else {
-    // Check that email is unique
-
-    try {
-      const member = await Member.findOne({ email: email })
-      if (member) {
-        return response.json(httpResponses.onUserSaveError)
-      } else {
-        // New temp member record
-
-        let newTempMember = new TempMember()
-        newTempMember.firstName = formatters.capitalizeFirstLetter(firstName)
-        newTempMember.lastName = formatters.capitalizeFirstLetter(lastName)
-        newTempMember.utuAccount = utuAccount ? utuAccount.toLowerCase() : ''
-        newTempMember.email = email.toLowerCase()
-        newTempMember.hometown = formatters.capitalizeFirstLetter(hometown)
-        newTempMember.tyyMember = !!tyyMember
-        newTempMember.tiviaMember = false
-
-        // Save new member
-
-        await newTempMember.save()
-        response.json({
-          success: true,
-          message: 'Käyttäjätunnus luotu onnistuneesti.',
-          memberId: newTempMember._id,
-        })
-      }
-    } catch {
-      return response.json(httpResponses.onError)
-    }
+  const errors = validatePersonFields(request.body)
+  if (Object.keys(errors).length > 0) {
+    return response.status(400).json({ ...httpResponses.onValidationError, error: { ...httpResponses.onValidationError.error, details: errors } })
   }
+
+  const member = await Member.findOne({ email: email })
+  if (member) {
+    return response.status(409).json(httpResponses.onUserSaveError)
+  }
+
+  const newTempMember = new TempMember()
+  newTempMember.firstName = formatters.capitalizeFirstLetter(firstName)
+  newTempMember.lastName = formatters.capitalizeFirstLetter(lastName)
+  newTempMember.utuAccount = utuAccount ? utuAccount.toLowerCase() : ''
+  newTempMember.email = email.toLowerCase()
+  newTempMember.hometown = formatters.capitalizeFirstLetter(hometown)
+  newTempMember.tyyMember = !!tyyMember
+  newTempMember.tiviaMember = false
+
+  await newTempMember.save()
+  return response.json(
+    success('Käyttäjätunnus luotu onnistuneesti.', {
+      memberId: newTempMember._id,
+    })
+  )
 }
 
 export default {

@@ -5,14 +5,16 @@ import crypto from 'node:crypto'
 import bcrypt from 'bcrypt'
 import * as mail from '../../../config/mail.js'
 import * as emails from '../../utils/emails.js'
+import { validateEmail } from '../../validators/common.js'
 
 function forgotPassword(request, response) {
   const { email } = request.body
 
-  // Validations
-
   if (!email) {
-    return response.json(httpResponses.onEmailEmpty)
+    return response.status(400).json(httpResponses.onEmailEmpty)
+  }
+  if (Object.keys(validateEmail(request.body)).length > 0) {
+    return response.status(400).json(httpResponses.onValidationError)
   }
 
   // Find member by email
@@ -60,7 +62,9 @@ function forgotPassword(request, response) {
         })
       })
     })
-    .catch((error) => response.json({ success: false, message: error }))
+    .catch((error) => {
+      throw error
+    })
 }
 
 export default {
