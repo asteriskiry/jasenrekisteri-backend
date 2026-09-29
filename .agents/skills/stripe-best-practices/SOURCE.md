@@ -1,0 +1,1 @@
+Vendored from [Stripe's official skill](https://github.com/stripe/ai/tree/main/skills/stripe-best-practices) on 2026-09-29 using the Codex skill installer. The upstream skill and references are unchanged. See LICENSE for Stripe's MIT license.
