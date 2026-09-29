@@ -63,11 +63,11 @@
     "validator": "^13.15.35"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.5",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.10.1",
     "@types/swagger-ui-express": "^4.1.8",
     "debug": "^4.4.3",
-    "eslint": "^9.39.5",
+    "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-n": "^18.3.0",
     "globals": "^16.5.0",
