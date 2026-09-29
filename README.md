@@ -2,6 +2,10 @@
 
 Asteriski ry's membership register. Requires Node **24.16.0**, npm **11.13.0**, and MongoDB 8. Payment fulfillment requires a replica set.
 
+Author: [Maks Turtiainen](https://github.com/mjturt)
+
+React frontend: <https://github.com/asteriskiry/jasenrekisteri-frontend>.
+
 ## Run both applications
 
 Keep `jasenrekisteri-backend` and `jasenrekisteri-frontend` in the same parent directory. From this repository:
@@ -65,6 +69,42 @@ npm test
 
 Set `MONGOURL`, `CLIENTURL`, `SECRET` and SMTP settings in `.env` for a non-container process. `npm test` downloads an isolated MongoDB binary on its first run; it never uses the configured application database or real Stripe account. `npm run build` typechecks and compiles the backend. After the demo stack is running, `node scripts/smoke-compose.mjs` checks routing, authentication and Mailpit delivery.
 
-Use `docker compose exec -it backend node dist/scripts/create-user.js` and `node dist/scripts/create-product.js` to provision real records. Other utilities: `npm run import -- <csv-path> <token> <id>` and `npm run mass-mailer -- -s <subject> -e <body-file>`. The hourly access export is written to `CSVFILEPATH` (`/app/data/kulkuoikeudet_asteriski.csv` in Compose).
+Use `docker compose exec -it backend node dist/scripts/create-user.js` and `node dist/scripts/create-product.js` to provision real records. The hourly access export is written to `CSVFILEPATH` (`/app/data/kulkuoikeudet_asteriski.csv` in Compose).
+
+## Importing data
+
+With the backend running at `http://localhost:3001`, import a CSV file using an administrator's login token and ID:
+
+```sh
+npm run import -- "<full-path-to-csv>" "<jasenrekisteri-token>" "<id>"
+```
+
+For example, using placeholder credentials:
+
+```sh
+npm run import -- "/path/to/members.csv" "JWT <token>" "<admin-id>"
+```
+
+You can find `id` and `jasenrekisteri-token` by logging in with an admin account and inspecting the application's cookies in browser developer tools (Application/Storage → Cookies). The token argument includes the `JWT ` prefix.
+
+CSV columns must appear in this order, separated by semicolons:
+
+```text
+firstname;lastname;utu_mail;membership_approved;membership_ends;hometown;tyy_member;tivia_member;board;
+```
+
+This line describes the column order; do **not** include a header row in the file. The importer reads every row as member data. It interprets `membership_approved` as the membership start date and `membership_ends` as the end date, both in `DD.MM.YYYY` format. Use `kyllä` for true in the last three flag columns. The legacy `board` column sets access rights; imported users receive the `Member` role and are marked accepted.
+
+## Mail sending
+
+Send mail to all members with:
+
+```sh
+npm run mass-mailer -- -s <subject> -e <path-to-email-body-file>
+```
 
 See [API contracts](API.md), the [modernization review](docs/modernization-review.md), and [CI/CD setup](docs/ci-cd.md).
+
+---
+
+© Maks Turtiainen, Asteriski ry
