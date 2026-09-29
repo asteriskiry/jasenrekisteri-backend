@@ -26,12 +26,12 @@ Reviewed the workspace's `jasenrekisteri_modernisointi_plaani.md` against backen
 | TypeScript                        | Backend migrated, but `strict` is false and handlers still have implicit/explicit `any`. Frontend remains JavaScript.                                                                                                                                                                  |
 | Automated tests                   | Payment regression coverage added: actual MongoDB transactions and HTTP routes, Stripe SDK signature verification with a fake Stripe API, plus frontend payment-state tests. Broad admin/update/browser coverage remains incomplete.                                                   |
 | Swagger/OpenAPI                   | Generation and development Swagger UI work. Generated routes do not fully describe every validation rule and response contract.                                                                                                                                                        |
-| CI/CD                             | Last separate stage; deployment host, trigger and secret decisions still need user input. The old frontend workflow uses checkout v1 and deploys the obsolete `build/` path.                                                                                                           |
+| CI/CD                             | CI is prepared in both repositories with pinned Actions, Node, locked installs, lint, tests and Docker builds. The obsolete frontend rsync workflow is removed. Deployment configuration remains pending user input; no hosted workflow or deployment has been run.                    |
 
 ## Verified locally
 
 - Clean locked installs; backend TypeScript build and lint; frontend Vite build and lint.
-- Eleven backend integration tests and four frontend tests, including duplicate deliveries, transaction rollback, delayed payments, receipt retry, scoped registration and the Finnish membership-year boundary.
+- Fourteen backend integration tests and four frontend tests, including duplicate deliveries, transaction rollback, delayed payments, receipt retry, scoped registration and the Finnish membership-year boundary.
 - Both Docker images built and all four Compose services became healthy.
 - Browser smoke test: login, member profile and the merged member table render successfully. Database/backend restart preserves the demo records and recovers readiness.
 - Compose smoke checks: readiness, direct SPA routes, assets, security headers, login, protected APIs and SMTP delivery into Mailpit. Repeating the explicit demo seed preserves records.

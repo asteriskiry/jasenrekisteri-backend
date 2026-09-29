@@ -65,4 +65,4 @@ Set `MONGOURL`, `CLIENTURL`, `SECRET` and SMTP settings in `.env` for a non-cont
 
 Use `docker compose exec -it backend node dist/scripts/create-user.js` and `node dist/scripts/create-product.js` to provision real records. Other utilities: `npm run import -- <csv-path> <token> <id>` and `npm run mass-mailer -- -s <subject> -e <body-file>`. The hourly access export is written to `CSVFILEPATH` (`/app/data/kulkuoikeudet_asteriski.csv` in Compose).
 
-See [API contracts](API.md) and the [modernization review](docs/modernization-review.md).
+See [API contracts](API.md), the [modernization review](docs/modernization-review.md), and [CI/CD setup](docs/ci-cd.md).
