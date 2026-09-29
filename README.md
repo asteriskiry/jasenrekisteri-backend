@@ -60,6 +60,14 @@ Before live use, configure the same four events on an HTTPS `/api/pay/webhook` e
 
 The [official Stripe skill](.agents/skills/stripe-best-practices/SKILL.md) is vendored with its license and source information.
 
+## Login sessions
+
+Login uses an HttpOnly, SameSite=Lax cookie with an absolute eight-hour expiry. HTTPS deployments use Secure; production uses the host-only `__Host-jasenrekisteri-session` cookie. The signed token contains only member/session identifiers, scope and timing claims. No token or password hash is returned in login JSON. `GET /api/session` returns the current member ID, database role and expiry; the frontend keeps that metadata in memory.
+
+MongoDB stores revocable login sessions in `loginsessions`, with a TTL index for cleanup. Every authenticated request enforces expiry and checks the current member and password fingerprint. Logout revokes the current session; password changes/reset invalidate all prior sessions. Existing 180-day tokens and Authorization-header login credentials are rejected, so deploy the frontend and backend together and expect everyone to sign in again. No member-data migration is required for this change.
+
+All browser API writes, including login/logout, require `X-Requested-With: XMLHttpRequest`. A supplied Origin or Referer must match the configured `CLIENTURL` origin. The shared frontend client sends credentials and the header automatically. Stripe's signature-verified webhook is exempt. Serve the production UI and `/api` under the same HTTPS origin; local development may use different ports on the same hostname. Session and API responses are not cached. The CSRF approach follows [OWASP's custom-header guidance](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#employing-custom-request-headers-for-ajaxapi).
+
 ## Local development and checks
 
 ```sh
@@ -82,19 +90,13 @@ Both commands run inside the backend container using its configured database con
 
 ## Importing data
 
-With the backend running at `http://localhost:3001`, import a CSV file using an administrator's login token and ID:
+With the backend running at `http://localhost:3001`, import a CSV file:
 
 ```sh
-npm run import -- "<full-path-to-csv>" "<jasenrekisteri-token>" "<id>"
+npm run import -- "<full-path-to-csv>"
 ```
 
-For example, using placeholder credentials:
-
-```sh
-npm run import -- "/path/to/members.csv" "JWT <token>" "<admin-id>"
-```
-
-You can find `id` and `jasenrekisteri-token` by logging in with an admin account and inspecting the application's cookies in browser developer tools (Application/Storage → Cookies). The token argument includes the `JWT ` prefix.
+The command prompts for an administrator's email and masked password, obtains its own short-lived session, imports rows sequentially and logs out afterward. Credentials and cookies are not command-line arguments. Set `IMPORT_API_URL` to use another API base URL, including `/api`; remote URLs must use HTTPS. A failed row stops the import; already saved rows remain saved.
 
 CSV columns must appear in this order, separated by semicolons:
 

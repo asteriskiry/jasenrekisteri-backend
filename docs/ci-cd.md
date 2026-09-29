@@ -14,3 +14,5 @@ The proposed final stage is one manually triggered Compose deployment for both r
 - A rollback policy using the previous paired images while retaining database volumes.
 
 Keep credentials in GitHub environment secrets or the server's secret store. Do not add them to either repository. No production connection, registry push or deployment has been attempted.
+
+The login-session release must deploy both repositories together: Authorization-header login tokens are no longer accepted. All users must sign in again. Keep `ENV=production` and route the frontend and `/api` through the same HTTPS origin matching `CLIENTURL`. The backend automatically creates the login-session collection and expiry index. Validate login, reload, logout and password recovery after deployment. Rolling back to the old backend restores its legacy token acceptance, so rotate `SECRET` before any such rollback to avoid reviving previously exposed long-lived tokens.

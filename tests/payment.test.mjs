@@ -20,6 +20,7 @@ const { createPaymentService, computeMembershipEndDate } = await import('../dist
 const { authenticatePayment } = await import('../dist/server/services/payment/auth.js')
 const { default: register } = await import('../dist/server/services/authentication/register.js')
 const { default: configurePassport } = await import('../dist/config/passport.js')
+const { createSession, SESSION_COOKIE } = await import('../dist/server/services/authentication/session.js')
 const { errorHandler } = await import('../dist/server/utils/errors.js')
 const sessions = new Map()
 const emails = []
@@ -107,13 +108,13 @@ beforeEach(async () => {
 async function post(path, body, token) {
   return fetch(base + path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'JWT ' + token } : {}) },
+    headers: { 'Content-Type': 'application/json', ...(token ? { Cookie: `${SESSION_COOKIE}=${token}` } : {}) },
     body: JSON.stringify(body),
   })
 }
 async function checkout(member = null, extra = {}) {
   member ||= await Member.create(person)
-  const token = jwt.sign({ _id: member._id }, process.env.SECRET)
+  const token = (await createSession(member)).token
   const response = await post('/api/pay', { productId: '1111', checkoutId: randomUUID(), ...extra }, token)
   assert.equal(response.status, 200)
   const body = await response.json()
@@ -180,7 +181,11 @@ test('checkout issues a scoped HttpOnly receipt cookie, including Secure behind 
   assert.doesNotMatch(result.cookie, /; Domain=/i)
   const response = await fetch(base + '/api/pay', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'JWT ' + result.token, 'X-Forwarded-Proto': 'https' },
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: `${SESSION_COOKIE}=${result.token}`,
+      'X-Forwarded-Proto': 'https',
+    },
     body: JSON.stringify({ productId: '1111', checkoutId: randomUUID() }),
   })
   assert.equal(response.status, 200)
@@ -278,7 +283,7 @@ test('checkout retries retain the original receipt deadline and cannot revive ex
     assert.match(retry.cookie, /; Max-Age=60(?:;|$)/)
     assert.equal((await Payment.findOne()).receiptExpiresAt.getTime(), expiresAt)
     mock.timers.setTime(expiresAt)
-    const expired = await post('/api/pay', { productId: '1111', checkoutId }, result.token)
+    const expired = await post('/api/pay', { productId: '1111', checkoutId }, retry.token)
     assert.equal(expired.status, 409)
     assert.equal(expired.headers.get('set-cookie'), null)
     assert.equal((await Payment.findOne()).receiptExpiresAt.getTime(), expiresAt)

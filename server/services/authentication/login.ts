@@ -1,7 +1,13 @@
 'use strict'
 
-import jwt from 'jsonwebtoken'
-import config from '../../../config/config.js'
+import {
+  createSession,
+  revokeSession,
+  sessionData,
+  sessionCookieOptions,
+  clearLegacyCookies,
+  SESSION_COOKIE,
+} from './session.js'
 
 import Member from '../../models/Member.js'
 import httpResponses from './index.js'
@@ -26,14 +32,15 @@ async function loginUser(request, response, next) {
     const isMatch = await user.comparePassword(password)
     if (!isMatch) return response.status(401).json(httpResponses.onAuthenticationFail)
 
-    const token = jwt.sign(user.toJSON(), config.secret, { expiresIn: '180d' })
-    return response.json(
-      success('Kirjautuminen onnistui.', {
-        role: user.role,
-        id: user._id,
-        token: 'JWT ' + token,
-      })
-    )
+    await revokeSession(request)
+    const session = await createSession(user)
+    response.cookie(SESSION_COOKIE, session.token, {
+      ...sessionCookieOptions(),
+      expires: session.expiresAt,
+      maxAge: session.expiresAt.getTime() - Date.now(),
+    })
+    clearLegacyCookies(response)
+    return response.json(success('Kirjautuminen onnistui.', sessionData(user, session.expiresAt)))
   } catch (error) {
     return next(error)
   }

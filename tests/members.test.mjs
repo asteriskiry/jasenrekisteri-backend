@@ -7,7 +7,7 @@ import { join, dirname } from 'node:path'
 import express from 'express'
 import mongoose from 'mongoose'
 import passport from 'passport'
-import jwt from 'jsonwebtoken'
+import cookieParser from 'cookie-parser'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 
 const logDirectory = await mkdtemp(join(tmpdir(), 'rekkari-member-tests-'))
@@ -20,6 +20,7 @@ const { default: Member } = await import('../dist/server/models/Member.js')
 const { default: adminRouter } = await import('../dist/server/controllers/apis/admin.js')
 const { default: memberRouter } = await import('../dist/server/controllers/apis/member.js')
 const { default: configurePassport } = await import('../dist/config/passport.js')
+const { createSession, SESSION_COOKIE } = await import('../dist/server/services/authentication/session.js')
 const { errorHandler } = await import('../dist/server/utils/errors.js')
 const mail = await import('../dist/config/mail.js')
 const sent = []
@@ -49,7 +50,7 @@ before(async () => {
     callback(null, { messageId: 'isolated-test' })
   })
   const app = express()
-  app.use(express.json(), passport.initialize())
+  app.use(express.json(), cookieParser(), passport.initialize())
   app.use('/api/admin', adminRouter)
   app.use('/api/member', memberRouter)
   app.use(errorHandler)
@@ -79,10 +80,10 @@ beforeEach(async () => {
 })
 
 async function request(method, path, body, actor = admin) {
-  const token = actor && jwt.sign({ _id: actor._id }, process.env.SECRET)
+  const token = actor && (await createSession(actor)).token
   return fetch(base + path, {
     method,
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'JWT ' + token } : {}) },
+    headers: { 'Content-Type': 'application/json', ...(token ? { Cookie: `${SESSION_COOKIE}=${token}` } : {}) },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   })
 }
