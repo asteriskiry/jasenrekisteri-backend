@@ -42,7 +42,7 @@ The backend creates hosted Checkout Sessions from local Product prices and snaps
 3. Set `STRIPE_SECRET_KEY`, the listener's `STRIPE_WEBHOOK_SECRET`, and `VITE_USE_PAYMENT=true` in the backend `.env`. Both secrets must be set together. Keep the listener running.
 4. Rebuild with `docker compose --profile local up --build -d --wait` and pay through the application. Use Stripe's test card `4242 4242 4242 4242`, a future expiry and any three-digit CVC. Inspect the receipt in Mailpit.
 
-Only signed paid events grant membership. The return page reads local status; closing the browser does not interrupt fulfillment. New members set their password through `/forgot` after payment. They still require board approval.
+Membership is granted only after server-side verification of a paid Stripe Checkout Session, through a signature-verified webhook or the explicit reconciliation command. The return page reads local status; closing the browser does not interrupt fulfillment. New members set their password through `/forgot` after payment. They still require board approval.
 
 Receipt details require the checkout's HttpOnly cookie. Access expires after 24 hours on both the server and browser; checkout retries do not extend it. Tokens are not returned in JSON or accepted from URLs. Pre-upgrade receipt tokens are rejected; resuming an open checkout issues a fresh cookie. Expiry does not affect payment processing or emailed receipts.
 
@@ -51,6 +51,8 @@ Database failures return HTTP 500 for Stripe retries. Payment completion and mem
 ```sh
 docker compose exec backend node dist/scripts/reconcile-payment.js cs_...
 ```
+
+Reconciliation is an operator recovery action for a missed webhook or failed processing attempt. It retrieves the Checkout Session directly from Stripe using the configured backend API credentials and runs the same payment validation and membership update logic as the webhook. It verifies the paid status and matches the session against the local payment record; an already processed payment cannot extend membership again. Run the command from the backend directory with the stack running, replacing `cs_...` with the affected Checkout Session ID.
 
 Legacy records already marked `processed` are not automatically granted again; reconcile their membership history manually. Never clear that flag without checking whether the membership was previously extended.
 
@@ -69,7 +71,14 @@ npm test
 
 Set `MONGOURL`, `CLIENTURL`, `SECRET` and SMTP settings in `.env` for a non-container process. `npm test` downloads an isolated MongoDB binary on its first run; it never uses the configured application database or real Stripe account. `npm run build` typechecks and compiles the backend. After the demo stack is running, `node scripts/smoke-compose.mjs` checks routing, authentication and Mailpit delivery.
 
-Use `docker compose exec -it backend node dist/scripts/create-user.js` and `node dist/scripts/create-product.js` to provision real records. The hourly access export is written to `CSVFILEPATH` (`/app/data/kulkuoikeudet_asteriski.csv` in Compose).
+With the stack running, execute these interactive provisioning commands from the backend directory:
+
+```sh
+docker compose exec -it backend node dist/scripts/create-user.js
+docker compose exec -it backend node dist/scripts/create-product.js
+```
+
+Both commands run inside the backend container using its configured database connection. The product command creates a local Product record; it does not provision a saved Stripe catalog product. The hourly access export is written to `CSVFILEPATH` (`/app/data/kulkuoikeudet_asteriski.csv` in Compose).
 
 ## Importing data
 
