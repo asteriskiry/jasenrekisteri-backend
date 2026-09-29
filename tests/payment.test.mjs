@@ -161,6 +161,12 @@ test('signature verification and paid status gate membership fulfillment', async
   assert.equal((await Payment.findOne()).processed, true)
 })
 
+test('paid events belonging to another integration are acknowledged without side effects', async () => {
+  assert.equal((await webhook({ id: 'cs_unrelated', payment_status: 'paid', metadata: {} })).status, 200)
+  assert.equal(await Payment.countDocuments(), 0)
+  assert.equal(emails.length, 0)
+})
+
 test('duplicate and concurrent webhook deliveries extend membership exactly once', async () => {
   const result = await checkout()
   const paid = { ...result.session, payment_status: 'paid' }
@@ -186,6 +192,32 @@ test('database failure rolls back membership and payment, then webhook retry suc
   mock.restoreAll()
   assert.equal((await webhook(paid)).status, 200)
   assert.equal((await Payment.findOne()).processed, true)
+})
+
+test('separate concurrent payments both extend membership without losing an update', async () => {
+  const member = await Member.create(person)
+  const first = await checkout(member)
+  const second = await checkout(member)
+  const paid = [first, second].map((result) => ({ ...result.session, payment_status: 'paid' }))
+  const responses = await Promise.all(paid.map((session) => webhook(session)))
+  assert.ok(responses.every((response) => response.status === 200))
+  assert.equal(
+    (await Member.findById(member.id)).membershipEnds.toISOString(),
+    computeMembershipEndDate(2).toISOString()
+  )
+  assert.equal(await Payment.countDocuments({ processed: true }), 2)
+})
+
+test('product edits do not change the price or membership duration already purchased', async () => {
+  const result = await checkout()
+  await Product.updateOne({ productId: '1111' }, { priceSnt: 2000, membershipDuration: 5 })
+  assert.equal((await webhook({ ...result.session, payment_status: 'paid' })).status, 200)
+  const payment = await Payment.findOne()
+  assert.equal(payment.amountSnt, 500)
+  assert.equal(
+    (await Member.findById(result.member.id)).membershipEnds.toISOString(),
+    computeMembershipEndDate(1).toISOString()
+  )
 })
 
 test('receipt failure is retried without granting a second membership period', async () => {

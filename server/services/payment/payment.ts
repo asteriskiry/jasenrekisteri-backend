@@ -105,6 +105,7 @@ export function createPaymentService({ stripeClient = stripe, sendMail = mail.se
               },
             ],
             mode: 'payment',
+            adaptive_pricing: { enabled: false },
             customer_email: payment.email,
             success_url: config.clientUrl.replace(/\/$/, '') + '/member/pay/return?session_id={CHECKOUT_SESSION_ID}',
             cancel_url: config.clientUrl.replace(/\/$/, '') + '/member/pay/return?canceled=true',
@@ -131,6 +132,7 @@ export function createPaymentService({ stripeClient = stripe, sendMail = mail.se
   async function fulfillSession(checkout: Stripe.Checkout.Session) {
     if (checkout.payment_status !== 'paid') return
     const paymentId = checkout.metadata?.paymentId
+    if (!paymentId) return
     if (!mongoose.isValidObjectId(paymentId)) throw new Error('Missing payment reference')
     await mongoose.connection.transaction(async (session) => {
       const payment = await Payment.findById(paymentId).session(session)
