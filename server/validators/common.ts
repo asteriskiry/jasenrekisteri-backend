@@ -2,6 +2,10 @@ import validator from 'validator'
 
 export type ValidationErrors = Record<string, string>
 
+export function isValidUtuAccount(value: unknown): boolean {
+  return value == null || value === '' || (typeof value === 'string' && /^[a-zA-Z\u00c0-\u017e0-9.]{2,30}$/.test(value))
+}
+
 export function validatePersonFields(body: Record<string, unknown>, includeMembership = false): ValidationErrors {
   const errors: ValidationErrors = {}
   const firstName = body.firstName
@@ -18,6 +22,9 @@ export function validatePersonFields(body: Record<string, unknown>, includeMembe
   if (typeof email !== 'string' || !validator.isEmail(email)) errors.email = 'Email address is invalid.'
   if (typeof hometown !== 'string' || !validator.matches(hometown, /^[a-zA-Z\u00c0-\u017e- ]{2,25}$/)) {
     errors.hometown = 'Hometown must contain 2-25 letters.'
+  }
+  if (!isValidUtuAccount(body.utuAccount)) {
+    errors.utuAccount = 'UTU account must be empty or contain 2-30 letters, numbers or dots.'
   }
 
   if (includeMembership) {
@@ -46,17 +53,17 @@ export function validatePassword(body: Record<string, unknown>, required = false
   const password = body.password
   const passwordAgain = body.passwordAgain
 
-  if ((required && typeof password !== 'string') || (required && typeof passwordAgain !== 'string')) {
-    errors.password = 'Password is required.'
-  } else if (password !== undefined && password !== null && password !== '' && typeof password === 'string' && password.length < 6) {
+  if (!required && (password == null || password === '')) {
+    if (passwordAgain != null && passwordAgain !== '') errors.passwordAgain = 'Passwords do not match.'
+    return errors
+  }
+  if (typeof password !== 'string' || password.length < 6) {
     errors.password = 'Password must be at least 6 characters.'
   }
-  if (password !== undefined && password !== passwordAgain) errors.passwordAgain = 'Passwords do not match.'
+  if (typeof passwordAgain !== 'string' || password !== passwordAgain) errors.passwordAgain = 'Passwords do not match.'
   return errors
 }
 
 export function validateEmail(body: Record<string, unknown>): ValidationErrors {
-  return typeof body.email === 'string' && validator.isEmail(body.email)
-    ? {}
-    : { email: 'Email address is invalid.' }
+  return typeof body.email === 'string' && validator.isEmail(body.email) ? {} : { email: 'Email address is invalid.' }
 }

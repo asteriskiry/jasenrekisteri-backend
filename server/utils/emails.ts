@@ -248,7 +248,7 @@ function forgotMail(userId, token) {
     subject: 'Jäsenrekisterin salasanan palautus',
     text:
       'Sinun sähköpostiosoitteellasi on pyydetty salasanan palautusta Asteriski ry:n jäsenrekisterissä.\n\n' +
-      'Voit nollata jäsenrekisterin salasanan seuraavasta linkistä (voimassa 2 tuntia):\n' +
+      'Voit nollata jäsenrekisterin salasanan seuraavasta linkistä (voimassa tunnin):\n' +
       config.clientUrl +
       '/reset/' +
       userId +

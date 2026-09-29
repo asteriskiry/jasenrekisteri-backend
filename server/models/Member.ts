@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import bcrypt from 'bcrypt'
+import { isValidUtuAccount, validatePassword } from '../validators/common.js'
 
 export interface Member {
   firstName: string
@@ -39,6 +40,7 @@ const MemberSchema = new mongoose.Schema<Member>({
   utuAccount: {
     type: String,
     trim: true,
+    validate: { validator: isValidUtuAccount, message: 'UTU account is invalid.' },
   },
   email: {
     type: String,
@@ -97,19 +99,30 @@ const MemberSchema = new mongoose.Schema<Member>({
   },
 })
 
-// Hash passwords
+async function hashPassword(password: unknown) {
+  if (Object.keys(validatePassword({ password, passwordAgain: password }, true)).length) {
+    const error = new mongoose.Error.ValidationError()
+    error.addError(
+      'password',
+      new mongoose.Error.ValidatorError({ path: 'password', message: 'Password must be at least 6 characters.' })
+    )
+    throw error
+  }
+  return bcrypt.hash(password, 10)
+}
+
+// Validate plaintext before hashing: database length validation sees the hash on updates.
 MemberSchema.pre('save', async function () {
   if (this.isModified('password') || this.isNew) {
-    this.password = await bcrypt.hash(this.password, 10)
+    this.password = await hashPassword(this.password)
   }
 })
 
-// Update password and hash it if it is not empty
 MemberSchema.pre('findOneAndUpdate', async function () {
   const update = this.getUpdate() as mongoose.UpdateQuery<Member>
-  if (update.password !== '' && update.password !== undefined) {
-    update.password = await bcrypt.hash(update.password, 10)
-  }
+  if (Object.hasOwn(update, 'password')) update.password = await hashPassword(update.password)
+  if (update.$set && Object.hasOwn(update.$set, 'password'))
+    update.$set.password = await hashPassword(update.$set.password)
 })
 
 // Password comparing

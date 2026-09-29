@@ -14,11 +14,15 @@ import httpResponses from './index.js'
 
 import { validateEmail } from '../../validators/common.js'
 import { success } from '../../utils/responses.js'
+import bcrypt from 'bcrypt'
+import { normalizedEmail } from '../../utils/authLimits.js'
+
+const dummyHash = bcrypt.hashSync('invalid-login-placeholder', 10)
 
 async function loginUser(request, response, next) {
   let { email, password } = request.body
 
-  if (!email || !password) {
+  if (!email || typeof password !== 'string' || !password) {
     return response.status(400).json(httpResponses.onEmailOrPasswordEmpty)
   } else if (Object.keys(validateEmail(request.body)).length > 0) {
     return response.status(400).json(httpResponses.onValidationError)
@@ -27,10 +31,9 @@ async function loginUser(request, response, next) {
   // Find member
 
   try {
-    const user = await Member.findOne({ email: email })
-    if (!user) return response.status(401).json(httpResponses.onUserNotFound)
-    const isMatch = await user.comparePassword(password)
-    if (!isMatch) return response.status(401).json(httpResponses.onAuthenticationFail)
+    const user = await Member.findOne({ email: normalizedEmail(email) })
+    const isMatch = await bcrypt.compare(password, user?.password || dummyHash)
+    if (!user || !isMatch) return response.status(401).json(httpResponses.onAuthenticationFail)
 
     await revokeSession(request)
     const session = await createSession(user)

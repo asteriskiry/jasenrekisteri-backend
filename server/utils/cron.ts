@@ -9,6 +9,7 @@ import config from '../../config/config.js'
 import * as mail from '../../config/mail.js'
 import * as emails from './emails.js'
 import { log } from './logger.js'
+import { isValidUtuAccount } from '../validators/common.js'
 
 function startCronJobs() {
   // Check every day for ended memberships and send email
@@ -55,6 +56,10 @@ function startCronJobs() {
       fs.writeFileSync(filePath, 'PersonId;Company;Role;RoleValidity;ValidityStart;ValidityEnd;SpecialCondition\n')
       const members = await Member.find({})
       members.map((user) => {
+        if (!isValidUtuAccount(user.utuAccount)) {
+          log.warn('CSV export skipped invalid UTU account for member ' + user.id)
+          return
+        }
         if (user.accepted && user.membershipStarts && user.membershipEnds) {
           if (user.accessRights) {
             fs.appendFileSync(

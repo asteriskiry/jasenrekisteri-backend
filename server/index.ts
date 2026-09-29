@@ -50,11 +50,11 @@ export default function () {
     server.use(cookieParser())
     server.use(passport.initialize())
     await mongoose.connect(config.mongoUrl, { serverSelectionTimeoutMS: 10000 })
-    if (process.env.STRIPE_SECRET_KEY) {
-      const hello = await mongoose.connection.db.admin().command({ hello: 1 })
-      if (!hello.setName && hello.msg !== 'isdbgrid')
-        throw new Error('Stripe fulfillment requires a MongoDB replica set or sharded cluster.')
-    }
+    const hello = await mongoose.connection.db.admin().command({ hello: 1 })
+    if (!hello.setName && hello.msg !== 'isdbgrid')
+      throw new Error(
+        'Administrative audit logging and payment fulfillment require a MongoDB replica set or sharded cluster.'
+      )
     await Promise.all(Object.values(mongoose.models).map((model) => model.init()))
     cronJobs.startCronJobs()
     configurePassport(passport)

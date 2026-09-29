@@ -8,7 +8,7 @@ import express from 'express'
 import mongoose from 'mongoose'
 import passport from 'passport'
 import cookieParser from 'cookie-parser'
-import { MongoMemoryServer } from 'mongodb-memory-server'
+import { MongoMemoryReplSet } from 'mongodb-memory-server'
 
 const logDirectory = await mkdtemp(join(tmpdir(), 'rekkari-member-tests-'))
 process.env.SECRET = 'isolated-member-test-secret-at-least-32-characters'
@@ -17,6 +17,7 @@ process.env.IMPORT_MODE = '0'
 process.env.BOARDMAILADDRESS = 'board@example.test'
 process.env.MAILSENDER = 'register@example.test'
 const { default: Member } = await import('../dist/server/models/Member.js')
+const { default: AdminAuditLog } = await import('../dist/server/models/AdminAuditLog.js')
 const { default: adminRouter } = await import('../dist/server/controllers/apis/admin.js')
 const { default: memberRouter } = await import('../dist/server/controllers/apis/member.js')
 const { default: configurePassport } = await import('../dist/config/passport.js')
@@ -41,9 +42,9 @@ const fields = {
 let database, listener, base, admin, member
 
 before(async () => {
-  database = await MongoMemoryServer.create({ binary: { version: '8.0.16' } })
+  database = await MongoMemoryReplSet.create({ replSet: { count: 1 }, binary: { version: '8.0.16' } })
   await mongoose.connect(database.getUri())
-  await Member.init()
+  await Promise.all(Object.values(mongoose.models).map((model) => model.init()))
   configurePassport(passport)
   mock.method(mail.transporter, 'sendMail', (options, callback) => {
     sent.push(options)
@@ -74,8 +75,10 @@ async function createMember(extra = {}) {
 
 beforeEach(async () => {
   await Member.deleteMany({})
+  // Direct collection access is only for resetting the isolated test database.
+  await AdminAuditLog.collection.deleteMany({})
   sent.length = 0
-  admin = await createMember({ role: 'Admin', email: 'admin@example.test' })
+  admin = await createMember({ firstName: 'Anna', lastName: 'Virtanen', role: 'Admin', email: 'admin@example.test' })
   member = await createMember()
 })
 
@@ -235,6 +238,7 @@ test('failed duplicate-email update returns an error and leaves member details i
     {
       ...fields,
       email: admin.email,
+      currentPassword: 'original-password',
       hometown: 'Helsinki',
       password: '',
       passwordAgain: '',
@@ -246,4 +250,381 @@ test('failed duplicate-email update returns an error and leaves member details i
   const saved = await Member.findById(member.id)
   assert.equal(saved.email, fields.email)
   assert.equal(saved.hometown, fields.hometown)
+})
+
+test('member and admin writes reject unsafe UTU accounts without saving or auditing them', async () => {
+  for (const utuAccount of [
+    '=1+1',
+    '+SUM(A1)',
+    '@test',
+    'test;other',
+    'test\nrow',
+    'test\rrow',
+    'test\trow',
+    '＝1+1',
+    'a'.repeat(31),
+    123,
+    {},
+  ]) {
+    const payload = { ...fields, utuAccount }
+    for (const [method, path, actor, body] of [
+      ['PUT', '/member/details', member, payload],
+      ['PUT', '/admin/update', admin, { ...payload, memberID: member.id }],
+      ['POST', '/admin/new', admin, { ...payload, email: 'new@example.test' }],
+    ]) {
+      const response = await request(method, path, body, actor)
+      assert.equal(response.status, 400)
+      assert.ok((await response.json()).error.details.utuAccount)
+    }
+  }
+  assert.equal((await Member.findById(member.id)).utuAccount, '')
+  assert.equal(await Member.countDocuments(), 2)
+  assert.equal(await AdminAuditLog.countDocuments(), 0)
+  const accepted = await request('PUT', '/member/details', { ...fields, utuAccount: 'Test.User12' }, member)
+  assert.equal(accepted.status, 200)
+  assert.equal((await Member.findById(member.id)).utuAccount, 'test.user12')
+})
+
+test('administrative creation records the authenticated actor and controlled persisted values', async () => {
+  const response = await request('POST', '/admin/new', {
+    ...fields,
+    email: 'new@example.test',
+    actorId: member.id,
+    actorName: 'must-not-log',
+    targetName: 'must-not-log',
+    actorRole: 'Board',
+    timestamp: '2000-01-01',
+    password: 'must-not-log',
+    token: 'must-not-log',
+    secret: 'must-not-log',
+    before: { injected: 'must-not-log' },
+  })
+  assert.equal(response.status, 200)
+  const saved = await Member.findOne({ email: 'new@example.test' })
+  const entry = await AdminAuditLog.findOne().lean()
+  assert.equal(entry.actorId.toString(), admin.id)
+  assert.equal(entry.actorName, 'Anna Virtanen')
+  assert.equal(entry.actorRole, 'Admin')
+  assert.equal(entry.targetId.toString(), saved.id)
+  assert.equal(entry.targetName, 'Test Member')
+  assert.equal(entry.action, 'member.created')
+  assert.ok(Math.abs(Date.now() - entry.timestamp.getTime()) < 10000)
+  assert.equal(entry.before, null)
+  assert.equal(entry.after.email, saved.email)
+  assert.equal(entry.after.membershipEnds, saved.membershipEnds.toISOString())
+  assert.equal(entry.after.role, 'Member')
+  assert.equal(entry.after.password, undefined)
+  assert.ok(!JSON.stringify(entry).includes(saved.password))
+  assert.ok(!JSON.stringify(entry).includes('must-not-log'))
+})
+
+test('admin updates audit role, access, approval, dates and password changes without credential values', async () => {
+  const changes = {
+    ...fields,
+    memberID: member.id,
+    role: 'Board',
+    accessRights: true,
+    accepted: true,
+    membershipEnds: '2029-07-31T20:59:59.999Z',
+    password: 'new-secret-password',
+    passwordAgain: 'new-secret-password',
+  }
+  assert.equal((await request('PUT', '/admin/update', changes)).status, 200)
+  const entry = await AdminAuditLog.findOne().lean()
+  assert.equal(entry.action, 'member.updated')
+  assert.equal(entry.before.role, 'Member')
+  assert.equal(entry.after.role, 'Board')
+  assert.equal(entry.before.accessRights, false)
+  assert.equal(entry.after.accessRights, true)
+  assert.equal(entry.before.accepted, false)
+  assert.equal(entry.after.accepted, true)
+  assert.equal(entry.before.membershipEnds, fields.membershipEnds)
+  assert.equal(entry.after.membershipEnds, changes.membershipEnds)
+  assert.deepEqual(entry.changedFields.sort(), ['accepted', 'accessRights', 'membershipEnds', 'role'])
+  assert.equal(entry.passwordChanged, true)
+  assert.equal(entry.before.email, undefined)
+  assert.ok(!JSON.stringify(entry).includes('new-secret-password'))
+  const saved = await Member.findById(member.id)
+  assert.equal(await saved.comparePassword(changes.password), true)
+  assert.ok(!JSON.stringify(entry).includes(saved.password))
+  assert.ok(!JSON.stringify(entry).includes(member.password))
+  assert.equal(sent.length, 1)
+})
+
+test('password-only admin updates are audited and no-op updates create no extra entries', async () => {
+  assert.equal((await request('PUT', '/admin/update', { ...fields, memberID: member.id })).status, 200)
+  assert.equal(await AdminAuditLog.countDocuments(), 0)
+  assert.equal(
+    (
+      await request('PUT', '/admin/update', {
+        ...fields,
+        memberID: member.id,
+        password: 'changed-password',
+        passwordAgain: 'changed-password',
+      })
+    ).status,
+    200
+  )
+  const entry = await AdminAuditLog.findOne().lean()
+  assert.equal(entry.passwordChanged, true)
+  assert.equal(entry.actorName, 'Anna Virtanen')
+  assert.equal(entry.targetName, 'Test Member')
+  assert.deepEqual(entry.changedFields, [])
+  assert.deepEqual(entry.before, {})
+  assert.deepEqual(entry.after, {})
+})
+
+test('board removal retains an audit snapshot and sends mail to the stored member address', async () => {
+  const board = await createMember({
+    firstName: 'Pekka',
+    lastName: 'Laine',
+    role: 'Board',
+    email: 'board@example.test',
+  })
+  const response = await request('POST', '/admin/remove', { memberID: member.id, email: 'spoofed@example.test' }, board)
+  assert.equal(response.status, 200)
+  assert.equal(await Member.findById(member.id), null)
+  const entry = await AdminAuditLog.findOne().lean()
+  assert.equal(entry.action, 'member.deleted')
+  assert.equal(entry.actorId.toString(), board.id)
+  assert.equal(entry.actorName, 'Pekka Laine')
+  assert.equal(entry.actorRole, 'Board')
+  assert.equal(entry.targetId.toString(), member.id)
+  assert.equal(entry.targetName, 'Test Member')
+  assert.equal(entry.before.email, member.email)
+  assert.equal(entry.after, null)
+  assert.equal(entry.before.password, undefined)
+  assert.equal(sent.length, 1)
+  assert.equal(sent[0].to, member.email)
+  assert.equal((await request('POST', '/admin/remove', { memberID: member.id }, board)).status, 404)
+  assert.equal(await AdminAuditLog.countDocuments(), 1)
+  assert.equal(sent.length, 1)
+})
+
+test('audit names retain their historical values after renames and deletion of both accounts', async () => {
+  const reviewer = await createMember({ role: 'Admin', email: 'reviewer@example.test' })
+  assert.equal(
+    (await request('PUT', '/admin/update', { ...fields, memberID: member.id, firstName: 'Matti' })).status,
+    200
+  )
+  const original = await AdminAuditLog.findOne().lean()
+  assert.equal(original.actorName, 'Anna Virtanen')
+  assert.equal(original.targetName, 'Test Member')
+  assert.equal(original.before.firstName, 'Test')
+  assert.equal(original.after.firstName, 'Matti')
+  assert.equal(original.before.lastName, undefined)
+
+  // The actor's own rename must also retain the name from before the change.
+  assert.equal(
+    (
+      await request('PUT', '/admin/update', {
+        ...fields,
+        memberID: admin.id,
+        email: admin.email,
+        role: 'Admin',
+        firstName: 'Anni',
+        lastName: 'Virtanen',
+      })
+    ).status,
+    200
+  )
+  const selfRename = await AdminAuditLog.findOne({ targetId: admin.id }).lean()
+  assert.equal(selfRename.actorName, 'Anna Virtanen')
+  assert.equal(selfRename.targetName, 'Anna Virtanen')
+  assert.equal(selfRename.after.firstName, 'Anni')
+
+  assert.equal((await request('POST', '/admin/remove', { memberID: member.id })).status, 200)
+  assert.equal((await request('POST', '/admin/remove', { memberID: admin.id }, reviewer)).status, 200)
+  const result = await (await request('GET', '/admin/audit', undefined, reviewer)).json()
+  const historical = result.data.entries.find((entry) => entry._id === original._id.toString())
+  assert.equal(historical.actorId, admin.id)
+  assert.equal(historical.targetId, member.id)
+  assert.equal(historical.actorName, 'Anna Virtanen')
+  assert.equal(historical.targetName, 'Test Member')
+  assert.equal(historical.actorNameSource, 'snapshot')
+  assert.equal(historical.targetNameSource, 'snapshot')
+  const deletion = result.data.entries.find(
+    (entry) => entry.action === 'member.deleted' && entry.targetId === member.id
+  )
+  assert.equal(deletion.actorName, 'Anni Virtanen')
+  assert.equal(deletion.targetName, 'Matti Member')
+})
+
+test('legacy audit names distinguish snapshots, current accounts and ID fallbacks without rewriting history', async () => {
+  const missingActor = new mongoose.Types.ObjectId()
+  const missingTarget = new mongoose.Types.ObjectId()
+  const legacy = [
+    {
+      _id: new mongoose.Types.ObjectId(),
+      actorId: admin._id,
+      targetId: member._id,
+      action: 'member.updated',
+      before: { hometown: 'Turku' },
+      after: { hometown: 'Helsinki' },
+    },
+    {
+      _id: new mongoose.Types.ObjectId(),
+      actorId: missingActor,
+      targetId: missingTarget,
+      action: 'member.deleted',
+      before: { firstName: 'Former', lastName: 'Member' },
+      after: null,
+    },
+    {
+      _id: new mongoose.Types.ObjectId(),
+      actorId: missingActor,
+      targetId: missingTarget,
+      action: 'member.updated',
+      before: { firstName: 'Former' },
+      after: { firstName: 'Later' },
+    },
+  ].map((entry) => ({ ...entry, actorRole: 'Admin', timestamp: new Date(), changedFields: [], passwordChanged: false }))
+  // Raw insertion reproduces records written before name snapshots were introduced.
+  await AdminAuditLog.collection.insertMany(legacy)
+  await Member.updateOne({ _id: member.id }, { firstName: 'Current' })
+  const result = await (await request('GET', '/admin/audit')).json()
+  const byId = new Map(result.data.entries.map((entry) => [entry._id, entry]))
+  const current = byId.get(legacy[0]._id.toString())
+  assert.equal(current.actorName, 'Anna Virtanen')
+  assert.equal(current.targetName, 'Current Member')
+  assert.equal(current.actorNameSource, 'current')
+  assert.equal(current.targetNameSource, 'current')
+  assert.equal(current.password, undefined)
+  assert.equal(current.email, undefined)
+  const deleted = byId.get(legacy[1]._id.toString())
+  assert.equal(deleted.actorName, missingActor.toString())
+  assert.equal(deleted.actorNameSource, 'id')
+  assert.equal(deleted.targetName, 'Former Member')
+  assert.equal(deleted.targetNameSource, 'snapshot')
+  const partial = byId.get(legacy[2]._id.toString())
+  assert.equal(partial.targetName, missingTarget.toString())
+  assert.equal(partial.targetNameSource, 'id')
+  for (const original of legacy) {
+    assert.deepEqual(await AdminAuditLog.collection.findOne({ _id: original._id }), original)
+  }
+})
+
+test('audit failure rolls back creation, update and deletion and sends no notification', async () => {
+  const injected = mock.method(AdminAuditLog.collection, 'insertOne', async () => {
+    throw new Error('Injected audit storage failure')
+  })
+  try {
+    const responses = []
+    responses.push(await request('POST', '/admin/new', { ...fields, email: 'new@example.test' }))
+    responses.push(
+      await request('PUT', '/admin/update', { ...fields, memberID: member.id, accepted: true, role: 'Admin' })
+    )
+    responses.push(await request('POST', '/admin/remove', { memberID: member.id }))
+    assert.ok(responses.every((response) => response.status === 500))
+    assert.equal(injected.mock.callCount(), 3)
+    assert.equal(await Member.countDocuments(), 2)
+    const saved = await Member.findById(member.id)
+    assert.equal(saved.accepted, false)
+    assert.equal(saved.role, 'Member')
+    assert.equal(await AdminAuditLog.countDocuments(), 0)
+    assert.equal(sent.length, 0)
+  } finally {
+    injected.mock.restore()
+  }
+})
+
+test('a transient audit write retries the transaction without duplicate members, entries or mail', async () => {
+  const original = AdminAuditLog.collection.insertOne
+  let attempts = 0
+  const injected = mock.method(AdminAuditLog.collection, 'insertOne', async function (...args) {
+    attempts += 1
+    if (attempts === 1)
+      throw new mongoose.mongo.MongoServerError({
+        message: 'Injected transient audit failure',
+        code: 112,
+        errorLabels: ['TransientTransactionError'],
+      })
+    return original.apply(this, args)
+  })
+  try {
+    const response = await request('POST', '/admin/new', { ...fields, email: 'retry@example.test' })
+    assert.equal(response.status, 200)
+    assert.equal(attempts, 2)
+    assert.equal(await Member.countDocuments({ email: 'retry@example.test' }), 1)
+    assert.equal(await AdminAuditLog.countDocuments(), 1)
+    assert.equal(sent.length, 2)
+  } finally {
+    injected.mock.restore()
+  }
+})
+
+test('failed and unauthorized writes never produce successful audit entries', async () => {
+  assert.equal((await request('POST', '/admin/new', { ...fields, email: admin.email })).status, 409)
+  assert.equal(
+    (await request('PUT', '/admin/update', { ...fields, memberID: member.id, email: admin.email })).status,
+    409
+  )
+  assert.equal((await request('POST', '/admin/remove', { memberID: { $ne: null } })).status, 400)
+  assert.equal((await request('POST', '/admin/new', { ...fields, email: 'new@example.test' }, member)).status, 403)
+  assert.equal((await request('POST', '/admin/remove', { memberID: admin.id }, member)).status, 403)
+  assert.equal(await AdminAuditLog.countDocuments(), 0)
+  assert.equal(await Member.countDocuments(), 2)
+  assert.equal(sent.length, 0)
+})
+
+test('audit log is admin-only, paginated, filterable and rejects malformed filters', async () => {
+  for (const hometown of ['Helsinki', 'Tampere', 'Turku']) {
+    assert.equal((await request('PUT', '/admin/update', { ...fields, memberID: member.id, hometown })).status, 200)
+  }
+  const board = await createMember({ role: 'Board', email: 'board@example.test' })
+  for (const [actor, expected] of [
+    [member, 403],
+    [board, 403],
+    [null, 401],
+  ]) {
+    assert.equal((await request('GET', '/admin/audit', undefined, actor)).status, expected)
+  }
+  const firstResponse = await request('GET', `/admin/audit?limit=2&targetId=${member.id}&actorId=${admin.id}`)
+  assert.equal(firstResponse.headers.get('cache-control'), 'no-store')
+  const first = (await firstResponse.json()).data
+  assert.equal(first.entries.length, 2)
+  assert.ok(first.entries.every((entry) => entry.actorName === 'Anna Virtanen' && entry.targetName === 'Test Member'))
+  assert.ok(first.nextCursor)
+  const second = (await (await request('GET', `/admin/audit?limit=2&before=${first.nextCursor}`)).json()).data
+  assert.equal(second.entries.length, 1)
+  assert.equal(second.nextCursor, null)
+  assert.equal(new Set([...first.entries, ...second.entries].map((entry) => entry._id)).size, 3)
+  assert.equal((await (await request('GET', `/admin/audit?targetId=${admin.id}`)).json()).data.entries.length, 0)
+  for (const query of [
+    'limit=0',
+    'limit=101',
+    'limit=1.5',
+    'limit[]=2',
+    'before=bad',
+    'targetId=bad',
+    'actorId[$ne]=x',
+  ]) {
+    assert.equal((await request('GET', '/admin/audit?' + query)).status, 400)
+  }
+})
+
+test('audit entries reject model/document modifications and deletion', async () => {
+  await request('PUT', '/admin/update', { ...fields, memberID: member.id, hometown: 'Helsinki' })
+  const entry = await AdminAuditLog.findOne()
+  const filter = { _id: entry._id }
+  const mutation = { $set: { actorRole: 'Board' } }
+  for (const change of [
+    () => AdminAuditLog.updateOne(filter, mutation),
+    () => AdminAuditLog.updateMany(filter, mutation),
+    () => AdminAuditLog.findOneAndUpdate(filter, mutation),
+    () => AdminAuditLog.replaceOne(filter, entry.toObject()),
+    () => AdminAuditLog.findOneAndReplace(filter, entry.toObject()),
+    () => AdminAuditLog.deleteOne(filter),
+    () => AdminAuditLog.deleteMany(filter),
+    () => AdminAuditLog.findOneAndDelete(filter),
+    () => AdminAuditLog.bulkWrite([{ deleteOne: { filter } }]),
+    () => entry.deleteOne(),
+    () => {
+      entry.actorRole = 'Board'
+      return entry.save()
+    },
+  ])
+    await assert.rejects(async () => change(), /append-only/)
+  assert.equal(await AdminAuditLog.countDocuments(), 1)
+  assert.equal((await AdminAuditLog.findById(entry.id)).actorRole, 'Admin')
 })

@@ -63,6 +63,18 @@ export function createPaymentService({ stripeClient = stripe, sendMail = mail.se
           $setOnInsert: {
             checkoutKey,
             memberId: member._id,
+            registration:
+              member instanceof TempMember
+                ? {
+                    firstName: member.firstName,
+                    lastName: member.lastName,
+                    email: member.email,
+                    hometown: member.hometown,
+                    utuAccount: member.utuAccount,
+                    tyyMember: member.tyyMember,
+                    tiviaMember: member.tiviaMember,
+                  }
+                : undefined,
             firstName: member.firstName,
             lastName: member.lastName,
             email: member.email,
@@ -175,14 +187,16 @@ export function createPaymentService({ stripeClient = stripe, sendMail = mail.se
       let member = await Member.findById(payment.memberId).session(session)
       if (!member) {
         const temp = await TempMember.findById(payment.memberId).session(session)
-        if (!temp || !payment.membershipDuration) {
+        const registration = payment.toObject().registration || temp?.toObject()
+        if (!registration || !payment.membershipDuration) {
           payment.needsManualReview = true
           payment.reviewReason = 'Member or membership duration missing.'
           await payment.save({ session })
           return
         }
         member = new Member({
-          ...temp.toObject(),
+          ...registration,
+          _id: payment.memberId,
           role: 'Member',
           accessRights: false,
           accepted: false,

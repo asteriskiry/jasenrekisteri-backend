@@ -1,38 +1,43 @@
+import mongoose from 'mongoose'
 import Member from '../../models/Member.js'
 
 import utils from '../../utils/index.js'
 import httpResponses from './index.js'
 import * as mail from '../../../config/mail.js'
 import * as emails from '../../utils/emails.js'
-import { success } from '../../utils/responses.js'
+import { failure, success } from '../../utils/responses.js'
+import { ApiError } from '../../utils/errors.js'
+import { appendMemberAudit, memberAuditValues } from './audit.js'
 
 // Remove member
 
 async function remove(request, response) {
-  const accessTo = request.user.role.toLowerCase()
-
-  if (accessTo === 'admin' || accessTo === 'board') {
-    try {
-      await utils.checkUserControl(request.user._id)
-      await Member.deleteOne({ _id: request.body.memberID })
-      response.json(success('Jäsen poistettu.'))
-
-      let email = emails.memberDeletedMail()
-      let memberMailOptions = {
-        from: mail.mailSender,
-        to: request.body.email,
-        subject: email.subject,
-        text: email.text,
-      }
-
-      mail.transporter.sendMail(memberMailOptions, mail.callback)
-      mail.logMessage(memberMailOptions)
-    } catch (error) {
-      return response.json(error)
-    }
-  } else {
-    return response.json(httpResponses.clientAdminFailed)
+  if (!['admin', 'board'].includes(request.user.role.toLowerCase())) {
+    return response.status(403).json(httpResponses.clientAdminFailed)
   }
+  await utils.checkUserControl(request.user._id)
+  const memberID = request.body.memberID
+  if (typeof memberID !== 'string' || !mongoose.isObjectIdOrHexString(memberID)) {
+    return response.status(400).json(failure('INVALID_MEMBER', 'Virheellinen jäsentunniste.'))
+  }
+  const recipient = await mongoose.connection.transaction(async (session) => {
+    const member = await Member.findOneAndDelete({ _id: memberID }, { session })
+    if (!member) throw new ApiError(404, 'MEMBER_NOT_FOUND', 'Jäsentä ei löytynyt.')
+    await appendMemberAudit({
+      actor: request.user,
+      targetId: member._id,
+      action: 'member.deleted',
+      before: memberAuditValues(member),
+      session,
+    })
+    return member.email
+  })
+
+  const email = emails.memberDeletedMail()
+  const mailOptions = { from: mail.mailSender, to: recipient, subject: email.subject, text: email.text }
+  mail.sendMailWithLogging(mailOptions, 'member-deleted').catch(() => {})
+  mail.logMessage(mailOptions)
+  return response.json(success('Jäsen poistettu.'))
 }
 
 export default {

@@ -27,9 +27,34 @@ export interface Payment {
   livemode?: boolean
   stripeCheckoutSessionId?: string
   stripePaymentIntentId?: string
+  registration?: {
+    firstName: string
+    lastName: string
+    email: string
+    hometown: string
+    utuAccount?: string
+    tyyMember: boolean
+    tiviaMember: boolean
+  }
 }
 
 const PaymentSchema = new mongoose.Schema<Payment>({
+  // Preserve a paid registration even after the pending-registration TTL expires.
+  registration: {
+    type: new mongoose.Schema(
+      {
+        firstName: String,
+        lastName: String,
+        email: String,
+        hometown: String,
+        utuAccount: String,
+        tyyMember: Boolean,
+        tiviaMember: Boolean,
+      },
+      { _id: false }
+    ),
+    default: undefined,
+  },
   memberId: {
     type: String,
     required: true,

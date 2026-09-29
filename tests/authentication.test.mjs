@@ -10,7 +10,7 @@ import passport from 'passport'
 import mongoose from 'mongoose'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-import { MongoMemoryServer } from 'mongodb-memory-server'
+import { MongoMemoryReplSet } from 'mongodb-memory-server'
 
 const logDirectory = await mkdtemp(join(tmpdir(), 'rekkari-auth-tests-'))
 process.env.SECRET = 'isolated-auth-test-secret-at-least-32-characters'
@@ -20,6 +20,7 @@ process.env.LOGPATH = logDirectory
 const { default: Member } = await import('../dist/server/models/Member.js')
 const { default: LoginSession } = await import('../dist/server/models/LoginSession.js')
 const { default: ResetPassword } = await import('../dist/server/models/ResetPassword.js')
+const { default: AbuseBucket } = await import('../dist/server/models/AbuseBucket.js')
 const { default: router } = await import('../dist/server/routes/apis/index.js')
 const { default: configurePassport } = await import('../dist/config/passport.js')
 const { errorHandler } = await import('../dist/server/utils/errors.js')
@@ -40,9 +41,9 @@ const person = {
 let database, listener, base, member
 
 before(async () => {
-  database = await MongoMemoryServer.create({ binary: { version: '8.0.16' } })
+  database = await MongoMemoryReplSet.create({ replSet: { count: 1 }, binary: { version: '8.0.16' } })
   await mongoose.connect(database.getUri())
-  await Promise.all([Member.init(), LoginSession.init(), ResetPassword.init()])
+  await Promise.all(Object.values(mongoose.models).map((model) => model.init()))
   configurePassport(passport)
   const app = express()
   app.use('/api/pay/webhook', express.raw({ type: 'application/json' }))
@@ -54,7 +55,12 @@ before(async () => {
   base = `http://127.0.0.1:${listener.address().port}/api`
 })
 beforeEach(async () => {
-  await Promise.all([Member.deleteMany({}), LoginSession.deleteMany({}), ResetPassword.deleteMany({})])
+  await Promise.all([
+    Member.deleteMany({}),
+    LoginSession.deleteMany({}),
+    ResetPassword.deleteMany({}),
+    AbuseBucket.deleteMany({}),
+  ])
   member = await Member.create(person)
 })
 after(async () => {
@@ -221,7 +227,7 @@ test('password changes invalidate every existing session', async () => {
   const response = await request(
     'PUT',
     '/member/details',
-    { ...person, password: 'changed-password', passwordAgain: 'changed-password' },
+    { ...person, password: 'changed-password', passwordAgain: 'changed-password', currentPassword: person.password },
     first.cookie
   )
   assert.equal(response.status, 200)
@@ -256,4 +262,80 @@ test('incorrect credentials do not create sessions or return authentication cook
   assert.equal(response.status, 401)
   assert.equal(response.headers.get('set-cookie'), null)
   assert.equal(await LoginSession.countDocuments(), 0)
+})
+
+test('invalid recovery passwords preserve the hash, reset token and existing session', async () => {
+  const { cookie } = await login()
+  const token = 'reset-validation-test'
+  const record = await ResetPassword.create({
+    userID: member.id,
+    resetPasswordToken: await bcrypt.hash(token, 5),
+    expire: Date.now() + 60000,
+  })
+  for (const password of ['', 'short', null, undefined, 123456, [], {}]) {
+    const response = await request('POST', '/reset', {
+      userID: member.id,
+      resetToken: token,
+      password,
+      passwordAgain: password,
+    })
+    assert.equal(response.status, 400)
+    assert.ok((await response.json()).error.details.password)
+    assert.equal((await Member.findById(member.id)).password, member.password)
+    assert.ok(await ResetPassword.findById(record.id))
+  }
+  assert.equal((await request('GET', '/session', undefined, cookie)).status, 200)
+  const recovered = await request('POST', '/reset', {
+    userID: member.id,
+    resetToken: token,
+    password: 'valid-password',
+    passwordAgain: 'valid-password',
+  })
+  assert.equal(recovered.status, 200)
+  assert.equal(await ResetPassword.findById(record.id), null)
+  const saved = await Member.findById(member.id)
+  assert.match(saved.password, /^\$2[aby]\$/)
+  assert.equal(await saved.comparePassword('valid-password'), true)
+  assert.equal((await request('GET', '/session', undefined, cookie)).status, 401)
+})
+
+test('password changes reject a missing or mismatched confirmation', async () => {
+  for (const passwordAgain of [undefined, '', 'different-password']) {
+    const response = await request('POST', '/reset', {
+      userID: member.id,
+      resetToken: 'unused',
+      password: 'valid-password',
+      passwordAgain,
+    })
+    assert.equal(response.status, 400)
+    assert.ok((await response.json()).error.details.passwordAgain)
+    assert.equal((await Member.findById(member.id)).password, member.password)
+  }
+})
+
+test('model updates cannot bypass plaintext password validation or store an unhashed $set password', async () => {
+  for (const password of ['', 'short', null, 123456]) {
+    for (const update of [{ password }, { $set: { password } }]) {
+      await assert.rejects(
+        Member.findOneAndUpdate({ _id: member.id }, update).exec(),
+        /Password must be at least 6 characters/
+      )
+      assert.equal((await Member.findById(member.id)).password, member.password)
+    }
+  }
+  await Member.findOneAndUpdate({ _id: member.id }, { $set: { password: 'valid-password' } }, { runValidators: true })
+  const saved = await Member.findById(member.id)
+  assert.match(saved.password, /^\$2[aby]\$/)
+  assert.equal(await saved.comparePassword('valid-password'), true)
+})
+
+test('public registration rejects unsafe UTU accounts before creating a temporary member', async () => {
+  const TempMember = mongoose.model('TempMember')
+  const count = await TempMember.countDocuments()
+  for (const utuAccount of ['=1+1', 'test;row', 'test\nrow', 'test\rrow', 123, {}]) {
+    const response = await request('POST', '/register', { ...person, email: 'new@example.test', utuAccount })
+    assert.equal(response.status, 400)
+    assert.ok((await response.json()).error.details.utuAccount)
+  }
+  assert.equal(await TempMember.countDocuments(), count)
 })

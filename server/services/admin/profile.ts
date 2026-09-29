@@ -1,5 +1,7 @@
 import mongoose from 'mongoose'
 import Member from '../../models/Member.js'
+import ResetPassword from '../../models/ResetPassword.js'
+import EmailChange from '../../models/EmailChange.js'
 import utils from '../../utils/index.js'
 import httpResponses from './index.js'
 import * as mail from '../../../config/mail.js'
@@ -7,6 +9,8 @@ import formatters from '../../utils/formatters.js'
 import { validatePassword, validatePersonFields } from '../../validators/common.js'
 import { failure } from '../../utils/responses.js'
 import * as emails from '../../utils/emails.js'
+import { ApiError } from '../../utils/errors.js'
+import { appendMemberAudit, memberAuditValues } from './audit.js'
 
 async function get(request, response) {
   response.set('Cache-Control', 'no-store')
@@ -57,13 +61,29 @@ async function update(request, response) {
     accepted: request.body.accepted,
     ...(request.body.password ? { password: request.body.password } : {}),
   }
-  const previous = await Member.findOneAndUpdate({ _id: memberID }, adminProfile, {
-    runValidators: true,
-    returnDocument: 'before',
-  }).exec()
-  if (!previous) return response.status(404).json(failure('MEMBER_NOT_FOUND', 'Jäsentä ei löytynyt.'))
+  const approved = await mongoose.connection.transaction(async (session) => {
+    const member = await Member.findById(memberID).session(session)
+    if (!member) throw new ApiError(404, 'MEMBER_NOT_FOUND', 'Jäsentä ei löytynyt.')
+    const before = memberAuditValues(member)
+    member.set(adminProfile)
+    await member.save({ session })
+    if (adminProfile.password || before.email !== member.email) {
+      await ResetPassword.deleteMany({ userID: member.id }).session(session)
+      await EmailChange.deleteOne({ _id: member._id }).session(session)
+    }
+    await appendMemberAudit({
+      actor: request.user,
+      targetId: member._id,
+      action: 'member.updated',
+      before,
+      after: memberAuditValues(member),
+      passwordChanged: !!adminProfile.password,
+      session,
+    })
+    return !before.accepted && member.accepted
+  })
 
-  if (!previous.accepted && adminProfile.accepted) {
+  if (approved) {
     const email = emails.membershipApprovedMail()
     const mailOptions = {
       from: mail.mailSender,

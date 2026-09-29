@@ -12,6 +12,7 @@ import { MongoMemoryReplSet } from 'mongodb-memory-server'
 
 process.env.SECRET = 'isolated-test-secret-with-at-least-32-characters'
 process.env.STRIPE_WEBHOOK_SECRET = 'whsec_isolated_tests_only'
+process.env.LOGPATH = './logs/payment-tests'
 const { default: Member } = await import('../dist/server/models/Member.js')
 const { default: TempMember } = await import('../dist/server/models/TempMember.js')
 const { default: Payment } = await import('../dist/server/models/Payment.js')
@@ -19,6 +20,7 @@ const { default: Product } = await import('../dist/server/models/Product.js')
 const { createPaymentService, computeMembershipEndDate } = await import('../dist/server/services/payment/payment.js')
 const { authenticatePayment } = await import('../dist/server/services/payment/auth.js')
 const { default: register } = await import('../dist/server/services/authentication/register.js')
+const mail = await import('../dist/config/mail.js')
 const { default: configurePassport } = await import('../dist/config/passport.js')
 const { createSession, SESSION_COOKIE } = await import('../dist/server/services/authentication/session.js')
 const { errorHandler } = await import('../dist/server/utils/errors.js')
@@ -92,6 +94,7 @@ after(async () => {
 })
 beforeEach(async () => {
   mock.restoreAll()
+  mock.method(mail.transporter, 'sendMail', (options, callback) => callback(null, { messageId: 'isolated-test' }))
   for (const model of [Member, TempMember, Payment, Product]) await model.deleteMany({})
   sessions.clear()
   emails.length = 0
@@ -433,10 +436,13 @@ test('status is read-only with receipt cookies; delayed failures and expiry are 
   assert.equal(completed.data.paymentData.amount, 500)
 })
 
-test('new registration receives a checkout-only token and becomes a member after payment', async () => {
-  const registered = await (await post('/register', person)).json()
+test('new registration goes directly to checkout and becomes a member after payment', async () => {
+  const registration = await post('/register', person)
+  assert.equal(registration.status, 200)
+  const registered = await registration.json()
   const { paymentToken, memberId } = registered.data
   assert.ok(paymentToken)
+  assert.equal(mail.transporter.sendMail.mock.calls.length, 0)
   const response = await post('/api/pay', { productId: '1111', checkoutId: randomUUID(), paymentToken })
   assert.equal(response.status, 200)
   const { sessionId } = (await response.json()).data
@@ -461,6 +467,72 @@ test('expired registration tokens cannot create checkout sessions', async () => 
   })
   assert.equal((await post('/api/pay', { productId: '1111', checkoutId: randomUUID(), paymentToken })).status, 401)
   assert.equal(await Payment.countDocuments(), 0)
+})
+
+test('pending registration expiry cannot discard a delayed paid checkout', async () => {
+  const temp = await TempMember.create({ ...person, expiresAt: new Date(Date.now() + 60_000) })
+  const paymentToken = jwt.sign({ sub: temp.id, purpose: 'registration-payment' }, process.env.SECRET, {
+    audience: 'checkout',
+    expiresIn: '1h',
+  })
+  const response = await post('/api/pay', { productId: '1111', checkoutId: randomUUID(), paymentToken })
+  assert.equal(response.status, 200)
+  const { sessionId } = (await response.json()).data
+  await TempMember.deleteOne({ _id: temp.id }) // Simulate TTL cleanup before an async payment settles.
+  assert.equal((await webhook({ ...sessions.get(sessionId), payment_status: 'paid' })).status, 200)
+  const saved = await Member.findById(temp.id)
+  assert.equal(saved.email, person.email)
+  assert.equal(saved.firstName, person.firstName)
+  assert.equal(saved.accepted, false)
+  assert.equal(saved.accessRights, false)
+  assert.equal(saved.role, 'Member')
+  assert.equal((await Payment.findOne({ stripeCheckoutSessionId: sessionId })).processed, true)
+})
+
+test('checkout rejects expired pending registrations even with a valid scoped token', async () => {
+  const temp = await TempMember.create({ ...person, expiresAt: new Date(0) })
+  const paymentToken = jwt.sign({ sub: temp.id, purpose: 'registration-payment' }, process.env.SECRET, {
+    audience: 'checkout',
+    expiresIn: '1h',
+  })
+  assert.equal((await post('/api/pay', { productId: '1111', checkoutId: randomUUID(), paymentToken })).status, 401)
+  assert.equal(await Payment.countDocuments(), 0)
+})
+
+test('registration proceeds directly to the selected five-year membership', async () => {
+  await Product.create({
+    productId: '1555',
+    name: 'Jäsenyys 5 vuotta',
+    category: 'Membership',
+    priceSnt: 2000,
+    membershipDuration: 5,
+  })
+  const registered = await (await post('/register', person)).json()
+  const response = await post('/api/pay', {
+    productId: '1555',
+    checkoutId: randomUUID(),
+    paymentToken: registered.data.paymentToken,
+  })
+  assert.equal(response.status, 200)
+  const { sessionId } = (await response.json()).data
+  const payment = await Payment.findOne({ stripeCheckoutSessionId: sessionId })
+  assert.equal(payment.productId, '1555')
+  assert.equal(payment.amountSnt, 2000)
+  assert.equal(payment.membershipDuration, 5)
+  assert.equal((await webhook({ ...sessions.get(sessionId), payment_status: 'paid' })).status, 200)
+  assert.equal(
+    (await Member.findById(registered.data.memberId)).membershipEnds.toISOString(),
+    computeMembershipEndDate(5).toISOString()
+  )
+})
+
+test('legacy pending registration tokens still start checkout without a new confirmation step', async () => {
+  const temp = await TempMember.create(person)
+  const paymentToken = jwt.sign({ sub: temp.id, purpose: 'registration-payment' }, process.env.SECRET, {
+    audience: 'checkout',
+    expiresIn: '1h',
+  })
+  assert.equal((await post('/api/pay', { productId: '1111', checkoutId: randomUUID(), paymentToken })).status, 200)
 })
 
 test('membership renewal handles the Finnish August boundary and active membership', () => {

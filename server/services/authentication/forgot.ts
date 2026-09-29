@@ -3,11 +3,14 @@ import ResetPassword from '../../models/ResetPassword.js'
 import httpResponses from './index.js'
 import crypto from 'node:crypto'
 import bcrypt from 'bcrypt'
-import * as mail from '../../../config/mail.js'
 import * as emails from '../../utils/emails.js'
 import { validateEmail } from '../../validators/common.js'
+import { recoveryAccepted, normalizedEmail, privateKey } from '../../utils/authLimits.js'
+import { afterResponse, sendSecurityMail } from '../../utils/securityMail.js'
+import { credentialDigest } from './session.js'
+import mongoose from 'mongoose'
 
-async function forgotPassword(request, response, next) {
+async function forgotPassword(request, response) {
   const { email } = request.body
 
   if (!email) {
@@ -17,46 +20,41 @@ async function forgotPassword(request, response, next) {
     return response.status(400).json(httpResponses.onValidationError)
   }
 
-  // Find member by email
-
-  try {
-    const user = await Member.findOne({ email: email }).lean()
-    if (!user) return response.json(httpResponses.onUserNotFound)
-
-    // If alredy asked for new password, delete last temporary record
-
-    await ResetPassword.findOneAndDelete({ userID: user._id })
-
-    // Generate token and expire date and save to temporary database
-
-    const token = crypto.randomBytes(32).toString('hex')
-    const hash = await bcrypt.hash(token, 5)
-    await ResetPassword.create({
-      userID: user._id,
-      resetPasswordToken: hash,
-      expire: Date.now() + 3600000,
+  afterResponse(response, async () => {
+    const user = await Member.findOne({ email: normalizedEmail(email) })
+    if (!user) return
+    const verificationNonce = crypto.randomBytes(32).toString('hex')
+    const tokenFor = (nonce) => privateKey('password-recovery', `${user.id}:${nonce}`)
+    const hash = await bcrypt.hash(tokenFor(verificationNonce), 5)
+    // Preserve the existing link even when different workers cross a limit window.
+    const record = await mongoose.connection.transaction(async (session) => {
+      const existing = await ResetPassword.findOne({
+        userID: user.id,
+        expire: { $gt: new Date() },
+        credentialDigest: credentialDigest(user.password),
+      }).session(session)
+      if (existing) return existing
+      await ResetPassword.findOneAndUpdate(
+        { _id: user._id },
+        {
+          userID: user.id,
+          resetPasswordToken: hash,
+          expire: Date.now() + 3600000,
+          credentialDigest: credentialDigest(user.password),
+          verificationNonce,
+        },
+        { upsert: true, session }
+      )
+      // Legacy randomly keyed records must not shadow the newly issued token.
+      await ResetPassword.deleteMany({ userID: user.id, _id: { $ne: user._id } }).session(session)
+      return { verificationNonce }
     })
+    if (!record.verificationNonce) return
 
-    const forgotMail = emails.forgotMail(user._id, token)
-    const mailOptions = {
-      from: mail.mailSender,
-      to: user.email,
-      subject: forgotMail.subject,
-      text: forgotMail.text,
-    }
-
-    try {
-      await mail.sendMailWithLogging(mailOptions, 'forgot-password-mail')
-      mail.logMessage(mailOptions)
-      return response.json(httpResponses.onMailSent)
-    } catch (error) {
-      console.error('[FORGOT_PASSWORD_MAIL_ERROR]', error && error.message)
-      mail.logMessage(mailOptions)
-      return response.status(503).json(httpResponses.onMailFail)
-    }
-  } catch (error) {
-    return next(error)
-  }
+    const forgotMail = emails.forgotMail(user._id, tokenFor(record.verificationNonce))
+    await sendSecurityMail(user.email, forgotMail.subject, forgotMail.text)
+  })
+  return response.status(202).json(recoveryAccepted)
 }
 
 export default {

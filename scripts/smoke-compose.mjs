@@ -32,9 +32,13 @@ const forgot = await fetch(base + '/api/forgot', {
   headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
   body: JSON.stringify({ email: 'admin@example.com' }),
 })
-assert.equal(forgot.status, 200)
+assert.equal(forgot.status, 202)
 assert.equal((await forgot.json()).success, true)
-const after = await (await fetch('http://localhost:8025/api/v1/messages')).json()
+let after = before
+for (let attempt = 0; attempt < 50 && after.total <= before.total; attempt++) {
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  after = await (await fetch('http://localhost:8025/api/v1/messages')).json()
+}
 assert.equal(after.total, before.total + 1)
 const logout = await fetch(base + '/api/logout', {
   method: 'POST',
