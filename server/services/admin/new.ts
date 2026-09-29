@@ -12,8 +12,6 @@ import * as emails from '../../utils/emails.js'
 
 const roleSwitchCase = formatters.roleSwitchCase
 
-// Add new member
-
 function save(request, response) {
   const {
     firstName,
@@ -47,13 +45,22 @@ function save(request, response) {
   const normalizedAccessRights = accessRights ?? false
   const normalizedAccepted = accepted ?? false
 
-  // Client side access check and validations
-
   if (userRole === 'admin') {
     if (!firstName || !lastName || !email || !hometown || !role || !membershipStarts || !membershipEnds) {
       return response.status(400).json(httpResponses.onAllFieldEmpty)
     } else {
-      const errors = validatePersonFields(request.body, true)
+      const errors = validatePersonFields(
+        {
+          ...request.body,
+          membershipStarts: normalizedMembershipStarts,
+          membershipEnds: normalizedMembershipEnds,
+          tyyMember: normalizedTyyMember,
+          tiviaMember: normalizedTiviaMember,
+          accessRights: normalizedAccessRights,
+          accepted: normalizedAccepted,
+        },
+        true
+      )
       if (Object.keys(errors).length > 0) {
         return response.status(400).json({
           ...httpResponses.onValidationError,
@@ -67,15 +74,13 @@ function save(request, response) {
       numbers: true,
     })
 
-    // Server side access check and save new member
-
     utils
       .checkAdminControl(request.user._id)
-      .then(user => {
+      .then((user) => {
         let newMember = new Member()
         newMember.firstName = formatters.capitalizeFirstLetter(firstName)
         newMember.lastName = formatters.capitalizeFirstLetter(lastName)
-        newMember.utuAccount = utuAccount.toLowerCase()
+        newMember.utuAccount = utuAccount ? utuAccount.toLowerCase() : ''
         newMember.email = email.toLowerCase()
         newMember.hometown = formatters.capitalizeFirstLetter(hometown)
         newMember.tyyMember = normalizedTyyMember
@@ -91,8 +96,6 @@ function save(request, response) {
         newMember
           .save()
           .then(() => {
-            // Send mail to board and member
-
             let memberAddedBoardMail = emails.memberAddedBoardMail(
               firstName,
               lastName,

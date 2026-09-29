@@ -3,8 +3,6 @@ import httpResponses from './index.js'
 import formatters from '../../utils/formatters.js'
 import { validatePassword, validatePersonFields } from '../../validators/common.js'
 
-// Get member details
-
 async function fetchDetails(request, response) {
   const memberID = request.user._id
 
@@ -21,9 +19,7 @@ async function fetchDetails(request, response) {
   }
 }
 
-// Update member details
-
-function updateDetails(request, response) {
+async function updateDetails(request, response) {
   let query = {
     _id: request.user._id,
   }
@@ -31,6 +27,9 @@ function updateDetails(request, response) {
   const errors = {
     ...validatePersonFields(request.body),
     ...validatePassword(request.body),
+  }
+  if (request.body.tiviaMember !== undefined && typeof request.body.tiviaMember !== 'boolean') {
+    errors.tiviaMember = 'Tivia membership must be a boolean.'
   }
   if (Object.keys(errors).length > 0) {
     return response.status(400).json({
@@ -46,22 +45,18 @@ function updateDetails(request, response) {
     email: request.body.email.toLowerCase(),
     hometown: formatters.capitalizeFirstLetter(request.body.hometown),
     tyyMember: request.body.tyyMember,
+    ...(request.body.tiviaMember === undefined ? {} : { tiviaMember: request.body.tiviaMember }),
     password: request.body.password,
   }
 
-  if (request.body.password === '' || request.body.password === null) {
+  if (request.body.password === '' || request.body.password == null) {
     delete record.password
   } else if (request.body.password.length < 6) {
     return response.json(httpResponses.onTooShortPassword)
   }
 
-  // Update member details
-
-  Member.findOneAndUpdate(query, record, { new: true })
-    .then(() => response.json(httpResponses.onUpdateSuccess))
-    .catch((error) => {
-      throw error
-    })
+  await Member.findOneAndUpdate(query, record, { runValidators: true }).exec()
+  return response.json(httpResponses.onUpdateSuccess)
 }
 
 export default {

@@ -1,42 +1,37 @@
+import mongoose from 'mongoose'
 import Member from '../../models/Member.js'
-
 import utils from '../../utils/index.js'
 import httpResponses from './index.js'
 import * as mail from '../../../config/mail.js'
 import formatters from '../../utils/formatters.js'
 import { validatePassword, validatePersonFields } from '../../validators/common.js'
+import { failure } from '../../utils/responses.js'
 import * as emails from '../../utils/emails.js'
 
-// Get member details
-
 async function get(request, response) {
+  response.set('Cache-Control', 'no-store')
+  if (!['admin', 'board'].includes(request.user.role.toLowerCase())) {
+    return response.status(403).json(httpResponses.clientAdminFailed)
+  }
   const memberID = request.query.memberID
-
-  const userRole = request.user.role.toLowerCase()
-
-  // Check access and return member details
-
-  if (userRole !== 'admin' && userRole !== 'board') {
-    return response.json(httpResponses.clientAdminFailed)
+  if (typeof memberID !== 'string' || !mongoose.isObjectIdOrHexString(memberID)) {
+    return response.status(400).json(failure('INVALID_MEMBER', 'Virheellinen jäsentunniste.'))
   }
-
-  try {
-    await utils.checkUserControl(memberID)
-    const doc = await Member.findOne({ _id: memberID }).lean().exec()
-    if (!doc) return response.json({ memberNotFound: true })
-    delete doc.password
-    return response.json(doc)
-  } catch (error) {
-    console.log(error)
-    return response.json(httpResponses.onServerAdminFail)
-  }
+  await utils.checkUserControl(request.user._id)
+  const member = await Member.findById(memberID).select('-password').lean().exec()
+  if (!member) return response.status(404).json(failure('MEMBER_NOT_FOUND', 'Jäsentä ei löytynyt.'))
+  return response.json(member)
 }
 
-// Update member details
-
 async function update(request, response) {
+  if (request.user.role.toLowerCase() !== 'admin') {
+    return response.status(403).json(httpResponses.clientAdminFailed)
+  }
+  await utils.checkAdminControl(request.user._id)
   const memberID = request.body.memberID
-
+  if (typeof memberID !== 'string' || !mongoose.isObjectIdOrHexString(memberID)) {
+    return response.status(400).json(failure('INVALID_MEMBER', 'Virheellinen jäsentunniste.'))
+  }
   const errors = {
     ...validatePersonFields(request.body, true),
     ...validatePassword(request.body),
@@ -47,72 +42,39 @@ async function update(request, response) {
       error: { ...httpResponses.onValidationError.error, details: errors },
     })
   }
-
-  // Updated member data
-
   const adminProfile = {
     firstName: formatters.capitalizeFirstLetter(request.body.firstName),
     lastName: formatters.capitalizeFirstLetter(request.body.lastName),
     utuAccount: request.body.utuAccount ? request.body.utuAccount.toLowerCase() : '',
     email: request.body.email.toLowerCase(),
     hometown: formatters.capitalizeFirstLetter(request.body.hometown),
-    tyyMember: !!request.body.tyyMember,
-    tiviaMember: !!request.body.tiviaMember,
+    tyyMember: request.body.tyyMember,
+    tiviaMember: request.body.tiviaMember,
     role: request.body.role,
-    accessRights: !!request.body.accessRights,
+    accessRights: request.body.accessRights,
     membershipStarts: request.body.membershipStarts,
     membershipEnds: request.body.membershipEnds,
-    accepted: !!request.body.accepted,
-    password: request.body.password,
+    accepted: request.body.accepted,
+    ...(request.body.password ? { password: request.body.password } : {}),
   }
+  const previous = await Member.findOneAndUpdate({ _id: memberID }, adminProfile, {
+    runValidators: true,
+    returnDocument: 'before',
+  }).exec()
+  if (!previous) return response.status(404).json(failure('MEMBER_NOT_FOUND', 'Jäsentä ei löytynyt.'))
 
-  // Check client side access
-
-  const accessTo = request.user.role.toLowerCase()
-
-  if (accessTo === 'admin') {
-    if (request.body.password === '' || request.body.password === null) {
-      delete adminProfile.password
-    } else if (request.body.password.length < 6) {
-      return response.status(400).json(httpResponses.onTooShortPassword)
+  if (!previous.accepted && adminProfile.accepted) {
+    const email = emails.membershipApprovedMail()
+    const mailOptions = {
+      from: mail.mailSender,
+      to: adminProfile.email,
+      subject: email.subject,
+      text: email.text,
     }
-
-    // Send mail to member if member is just accepted
-
-    try {
-      await utils.checkAdminControl(request.user._id)
-      const existingMember = await Member.findOne({ _id: memberID }).lean().exec()
-      if (existingMember && !existingMember.accepted && adminProfile.accepted) {
-        let email = emails.membershipApprovedMail()
-        let mailOptions = {
-          from: mail.mailSender,
-          to: adminProfile.email,
-          subject: email.subject,
-          text: email.text,
-        }
-        mail.transporter.sendMail(mailOptions, mail.callback)
-        mail.logMessage(mailOptions)
-      }
-    } catch (error) {
-      console.log(error)
-      return response.json(httpResponses.onServerAdminFail)
-    }
-
-    // Save member details
-    try {
-      await utils.checkUserControl(request.user._id)
-      await Member.findOneAndUpdate({ _id: memberID }, adminProfile).exec()
-      return response.json(httpResponses.onProfileUpdateSuccess)
-    } catch (error) {
-      console.log(error)
-      return response.json(httpResponses.onMustBeUnique)
-    }
-  } else {
-    return response.json(httpResponses.clientAdminFailed)
+    mail.sendMailWithLogging(mailOptions, 'membership-approved').catch(() => {})
+    mail.logMessage(mailOptions)
   }
+  return response.json(httpResponses.onProfileUpdateSuccess)
 }
 
-export default {
-  get: get,
-  update: update,
-}
+export default { get, update }
