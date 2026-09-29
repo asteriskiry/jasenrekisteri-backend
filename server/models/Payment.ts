@@ -11,6 +11,7 @@ export interface Payment {
   productName: string
   amountSnt: number
   stamp: string
+  receiptExpiresAt?: Date
   status: 'Canceled' | 'Pending' | 'Success' | 'Failed' | 'Expired'
   reference?: string
   processed: boolean
@@ -70,6 +71,7 @@ const PaymentSchema = new mongoose.Schema<Payment>({
     unique: true,
     required: true,
   },
+  receiptExpiresAt: Date,
   status: {
     type: String,
     enum: ['Canceled', 'Pending', 'Success', 'Failed', 'Expired'],

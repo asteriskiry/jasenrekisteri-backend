@@ -120,17 +120,28 @@ export function createPaymentService({ stripeClient = stripe, sendMail = mail.se
       if (session.status !== 'open' || !session.url) {
         return response.status(409).json(failure('CHECKOUT_CLOSED', 'Maksu on jo käsitelty tai vanhentunut.'))
       }
+      if (!payment.receiptExpiresAt) {
+        // Rotate legacy stamps previously exposed to JavaScript; concurrent retries share one cookie.
+        payment =
+          (await Payment.findOneAndUpdate(
+            { _id: payment._id, receiptExpiresAt: { $exists: false } },
+            { stamp: randomBytes(32).toString('hex'), receiptExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+            { returnDocument: 'after' }
+          )) || (await Payment.findById(payment._id))
+      }
+      const receiptLifetime = payment.receiptExpiresAt.getTime() - Date.now()
+      if (receiptLifetime <= 0) {
+        return response.status(409).json(failure('CHECKOUT_CLOSED', 'Maksu on jo käsitelty tai vanhentunut.'))
+      }
       response.cookie(`payment_${session.id}`, payment.stamp, {
         httpOnly: true,
         secure: config.env === 'production' || request.secure,
         sameSite: 'lax',
         path: '/api/pay/session-status',
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: receiptLifetime,
       })
       response.set('Cache-Control', 'no-store')
-      return response.json(
-        success('Siirrytään maksamaan.', { url: session.url, stamp: payment.stamp, sessionId: session.id })
-      )
+      return response.json(success('Siirrytään maksamaan.', { url: session.url, sessionId: session.id }))
     } catch (error) {
       log.error('Stripe Checkout request failed: ' + (error.type || 'unknown'))
       return response.status(502).json(failure('CHECKOUT_UNAVAILABLE', 'Maksun aloitus epäonnistui. Yritä uudelleen.'))
@@ -296,11 +307,15 @@ export function createPaymentService({ stripeClient = stripe, sendMail = mail.se
     if (typeof sessionId !== 'string' || !/^cs_[a-zA-Z0-9_-]{1,200}$/.test(sessionId)) {
       return response.status(400).json(failure('INVALID_PAYMENT', 'Maksun tunniste puuttuu.'))
     }
-    const stamp = request.query.stamp ?? request.cookies?.[`payment_${sessionId}`]
-    if (typeof stamp !== 'string' || stamp.length < 30) {
+    const stamp = request.cookies?.[`payment_${sessionId}`]
+    if (typeof stamp !== 'string' || !/^[a-f0-9]{64}$/.test(stamp)) {
       return response.status(400).json(failure('INVALID_PAYMENT', 'Maksun tunniste puuttuu.'))
     }
-    const payment = await Payment.findOne({ stripeCheckoutSessionId: sessionId, stamp })
+    const payment = await Payment.findOne({
+      stripeCheckoutSessionId: sessionId,
+      stamp,
+      receiptExpiresAt: { $gt: new Date() },
+    })
     if (!payment) return response.status(404).json(failure('PAYMENT_NOT_FOUND', 'Maksua ei löytynyt.'))
     if (payment.needsManualReview) {
       return response.json(success('Maksu vastaanotettu. Hallitus tarkistaa jäsenyyden.', { state: 'review' }))

@@ -31,7 +31,7 @@ Reviewed the workspace's `jasenrekisteri_modernisointi_plaani.md` against backen
 ## Verified locally
 
 - Clean locked installs; backend TypeScript build and lint; frontend Vite build and lint.
-- Twenty-seven backend integration tests and seven frontend tests, covering payment fulfillment/recovery and member creation, profile permissions, persisted edits, password preservation and rejected duplicate updates.
+- Thirty-one backend integration tests and seven frontend tests cover payment fulfillment/recovery, cookie-only receipt access with server-enforced expiry, and member creation, permissions and persisted edits.
 - Both Docker images built and all four Compose services became healthy.
 - Browser smoke test: login, member profile and the merged member table render successfully. Manual member creation with unchecked boxes and admin edits to hometown, TIVIA and membership dates were verified after reloading the details page. Database/backend restart preserves the demo records and recovers readiness.
 - Compose smoke checks: readiness, direct SPA routes, assets, security headers, login, protected APIs and SMTP delivery into Mailpit. Repeating the explicit demo seed preserves records.

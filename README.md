@@ -40,6 +40,8 @@ The backend creates hosted Checkout Sessions from local Product prices and snaps
 
 Only signed paid events grant membership. The return page reads local status; closing the browser does not interrupt fulfillment. New members set their password through `/forgot` after payment. They still require board approval.
 
+Receipt details require the checkout's HttpOnly cookie. Access expires after 24 hours on both the server and browser; checkout retries do not extend it. Tokens are not returned in JSON or accepted from URLs. Pre-upgrade receipt tokens are rejected; resuming an open checkout issues a fresh cookie. Expiry does not affect payment processing or emailed receipts.
+
 Database failures return HTTP 500 for Stripe retries. Payment completion and membership changes commit together. Email retries cannot extend membership again, but a crash after SMTP acceptance can cause a duplicate email. Inspect `needsManualReview`, `reviewReason`, and `notificationError` on Payment records. Reconcile a session after correcting the underlying problem:
 
 ```sh

@@ -117,12 +117,18 @@ async function checkout(member = null, extra = {}) {
   const response = await post('/api/pay', { productId: '1111', checkoutId: randomUUID(), ...extra }, token)
   assert.equal(response.status, 200)
   const body = await response.json()
+  assert.deepEqual(Object.keys(body.data).sort(), ['sessionId', 'url'])
+  const cookie = response.headers.get('set-cookie')
+  assert.ok(cookie)
+  const stamp = cookie.split(';')[0].split('=')[1]
+  assert.ok(!JSON.stringify(body).includes(stamp))
   return {
     member,
     token,
     ...body.data,
     session: sessions.get(body.data.sessionId),
-    cookie: response.headers.get('set-cookie'),
+    cookie,
+    stamp,
   }
 }
 async function webhook(session, type = 'checkout.session.completed', signature = true) {
@@ -158,13 +164,18 @@ test('concurrent checkout retries reuse the local payment and Stripe idempotency
   const results = await Promise.all([checkout(member, { checkoutId }), checkout(member, { checkoutId })])
   assert.equal(await Payment.countDocuments(), 1)
   assert.equal(results[0].sessionId, results[1].sessionId)
+  assert.equal(results[0].stamp, results[1].stamp)
 })
 
 test('checkout issues a scoped HttpOnly receipt cookie, including Secure behind HTTPS', async () => {
   const result = await checkout()
   assert.match(result.cookie, /; HttpOnly/i)
   assert.match(result.cookie, /; SameSite=Lax/i)
-  assert.match(result.cookie, /; Max-Age=86400/i)
+  const maxAge = Number(result.cookie.match(/; Max-Age=(\d+)/i)[1])
+  assert.ok(maxAge > 86390 && maxAge <= 86400)
+  const payment = await Payment.findOne()
+  assert.ok(payment.receiptExpiresAt > new Date())
+  assert.ok(payment.receiptExpiresAt.getTime() <= Date.now() + 86400000)
   assert.match(result.cookie, /; Path=\/api\/pay\/session-status(?:;|$)/i)
   assert.doesNotMatch(result.cookie, /; Domain=/i)
   const response = await fetch(base + '/api/pay', {
@@ -206,12 +217,89 @@ test('receipt cookies cannot authorize another payment and simultaneous checkout
   assert.equal((await status(first.sessionId)).status, 400)
   assert.equal((await status(first.sessionId, undefined, secondCookie)).status, 400)
   assert.equal((await status(first.sessionId, undefined, `payment_${first.sessionId}=${second.stamp}`)).status, 404)
-  assert.equal((await status(first.sessionId, 'wrong-stamp-that-is-long-enough-to-validate', firstCookie)).status, 404)
+  assert.equal((await status(first.sessionId, 'wrong-stamp-that-is-long-enough-to-validate', firstCookie)).status, 200)
   assert.equal((await status('invalid/session', undefined, firstCookie)).status, 400)
   await webhook({ ...first.session, payment_status: 'paid' })
   const bothCookies = `${firstCookie}; ${secondCookie}`
   assert.equal((await (await status(first.sessionId, undefined, bothCookies)).json()).data.state, 'complete')
   assert.equal((await (await status(second.sessionId, undefined, bothCookies)).json()).data.state, 'pending')
+})
+
+test('receipt tokens in query parameters or authorization headers cannot replace the cookie', async () => {
+  const result = await checkout()
+  assert.equal((await status(result.sessionId, result.stamp)).status, 400)
+  const response = await fetch(base + '/api/pay/session-status?session_id=' + result.sessionId, {
+    headers: { Authorization: 'Bearer ' + result.stamp },
+  })
+  assert.equal(response.status, 400)
+  assert.equal(
+    (await status(result.sessionId, result.stamp, `payment_${result.sessionId}=${'0'.repeat(64)}`)).status,
+    404
+  )
+})
+
+test('server rejects a copied cookie at its expiry and still fulfills delayed payments exactly once', async () => {
+  const result = await checkout()
+  const cookie = result.cookie.split(';')[0]
+  const expiresAt = (await Payment.findOne()).receiptExpiresAt.getTime()
+  mock.timers.enable({ apis: ['Date'], now: expiresAt - 1 })
+  try {
+    assert.equal((await status(result.sessionId, undefined, cookie)).status, 200)
+    mock.timers.setTime(expiresAt)
+    const expired = await status(result.sessionId, undefined, cookie)
+    assert.equal(expired.status, 404)
+    assert.equal(expired.headers.get('cache-control'), 'no-store')
+    assert.equal((await expired.json()).data, undefined)
+    mock.timers.setTime(expiresAt + 1000)
+    assert.equal((await status(result.sessionId, result.stamp, cookie)).status, 404)
+    assert.equal(await Payment.countDocuments(), 1)
+    assert.equal((await Payment.findOne()).processed, false)
+    const paid = { ...result.session, payment_status: 'paid' }
+    assert.equal((await webhook(paid, 'checkout.session.async_payment_succeeded')).status, 200)
+    const end = (await Member.findById(result.member.id)).membershipEnds.toISOString()
+    assert.equal((await webhook(paid)).status, 200)
+    assert.equal((await Member.findById(result.member.id)).membershipEnds.toISOString(), end)
+    assert.equal((await Payment.findOne()).processed, true)
+    assert.equal(emails.length, 1)
+    assert.equal((await status(result.sessionId, undefined, cookie)).status, 404)
+  } finally {
+    mock.timers.reset()
+  }
+})
+
+test('checkout retries retain the original receipt deadline and cannot revive expired access', async () => {
+  const checkoutId = randomUUID()
+  const result = await checkout(null, { checkoutId })
+  const expiresAt = (await Payment.findOne()).receiptExpiresAt.getTime()
+  mock.timers.enable({ apis: ['Date'], now: expiresAt - 60000 })
+  try {
+    const retry = await checkout(result.member, { checkoutId })
+    assert.equal(retry.stamp, result.stamp)
+    assert.match(retry.cookie, /; Max-Age=60(?:;|$)/)
+    assert.equal((await Payment.findOne()).receiptExpiresAt.getTime(), expiresAt)
+    mock.timers.setTime(expiresAt)
+    const expired = await post('/api/pay', { productId: '1111', checkoutId }, result.token)
+    assert.equal(expired.status, 409)
+    assert.equal(expired.headers.get('set-cookie'), null)
+    assert.equal((await Payment.findOne()).receiptExpiresAt.getTime(), expiresAt)
+    assert.equal(await Payment.countDocuments(), 1)
+  } finally {
+    mock.timers.reset()
+  }
+})
+
+test('legacy tokens fail closed and authenticated checkout retries rotate them once', async () => {
+  const checkoutId = randomUUID()
+  const result = await checkout(null, { checkoutId })
+  await Payment.updateOne({ stripeCheckoutSessionId: result.sessionId }, { $unset: { receiptExpiresAt: 1 } })
+  const oldCookie = result.cookie.split(';')[0]
+  assert.equal((await status(result.sessionId, undefined, oldCookie)).status, 404)
+  const retries = await Promise.all([checkout(result.member, { checkoutId }), checkout(result.member, { checkoutId })])
+  assert.equal(retries[0].stamp, retries[1].stamp)
+  assert.notEqual(retries[0].stamp, result.stamp)
+  assert.equal((await status(result.sessionId, undefined, oldCookie)).status, 404)
+  assert.equal((await status(result.sessionId, undefined, retries[0].cookie.split(';')[0])).status, 200)
+  assert.equal(await Payment.countDocuments(), 1)
 })
 
 test('signature verification and paid status gate membership fulfillment', async () => {
@@ -313,28 +401,29 @@ test('wrong amount, currency, mode, environment or session never grants membersh
     assert.equal((await webhook({ ...result.session, payment_status: 'paid', ...changed })).status, 200)
     assert.equal((await Member.findById(result.member.id)).membershipEnds, undefined)
     assert.equal((await Payment.findOne({ stripeCheckoutSessionId: result.sessionId })).needsManualReview, true)
-    const response = await status(result.sessionId, result.stamp)
+    const response = await status(result.sessionId, undefined, result.cookie.split(';')[0])
     assert.equal((await response.json()).data.state, 'review')
   }
 })
 
-test('status is read-only and accepts the private stamp; delayed failures and expiry are visible', async () => {
+test('status is read-only with receipt cookies; delayed failures and expiry are visible', async () => {
   const result = await checkout()
+  const cookie = result.cookie.split(';')[0]
   result.session.payment_status = 'paid'
-  const pending = await (await status(result.sessionId, result.stamp)).json()
+  const pending = await (await status(result.sessionId, undefined, cookie)).json()
   assert.equal(pending.data.state, 'pending')
   assert.equal((await Payment.findOne()).processed, false)
-  assert.equal((await status(result.sessionId, 'wrong-stamp-that-is-long-enough-to-validate')).status, 404)
+  assert.equal((await status(result.sessionId, undefined, `payment_${result.sessionId}=${'0'.repeat(64)}`)).status, 404)
   for (const [event, state] of [
     ['checkout.session.async_payment_failed', 'failed'],
     ['checkout.session.expired', 'expired'],
   ]) {
     assert.equal((await webhook(result.session, event)).status, 200)
-    assert.equal((await (await status(result.sessionId, result.stamp)).json()).data.state, state)
+    assert.equal((await (await status(result.sessionId, undefined, cookie)).json()).data.state, state)
   }
   await webhook(result.session)
   await webhook(result.session, 'checkout.session.expired')
-  const completed = await (await status(result.sessionId, result.stamp)).json()
+  const completed = await (await status(result.sessionId, undefined, cookie)).json()
   assert.equal(completed.data.state, 'complete')
   assert.equal(completed.data.paymentData.amount, 500)
 })
