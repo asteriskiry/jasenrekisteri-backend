@@ -1,14 +1,9 @@
-// Script for creating products
-
 import 'dotenv/config'
 
 import prompt from 'prompt'
 import mongoose from 'mongoose'
-import Stripe from 'stripe'
 import Product from '../server/models/Product.js'
 import config from '../config/config.js'
-
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null
 
 var schema = {
   properties: {
@@ -67,31 +62,11 @@ prompt.get(schema, async function (err, result) {
       newProduct.membershipDuration = Number(result.membershipDuration)
     }
 
-    if (stripe) {
-      try {
-        var stripeProduct = await stripe.products.create({
-          name: newProduct.name,
-          default_price_data: {
-            currency: 'eur',
-            unit_amount: newProduct.priceSnt,
-          },
-        })
-        newProduct.stripeProductId = stripeProduct.id
-        newProduct.stripePriceId =
-          typeof stripeProduct.default_price === 'string' ? stripeProduct.default_price : stripeProduct.default_price?.id
-        console.log('Stripe-tuote luotu (id: ' + stripeProduct.id + ').')
-      } catch (stripeErr) {
-        console.warn(
-          'Stripe-tuotteen luonti epäonnistui, tuote tallennetaan silti ilman Stripe-liitosta: ' + stripeErr.message
-        )
-      }
-    } else {
-      console.warn('STRIPE_SECRET_KEY ei ole asetettu - tuote tallennetaan ilman Stripe-liitosta.')
+    try {
+      await newProduct.save()
+      console.log('Tuote tallennettu.')
+    } finally {
+      await mongoose.disconnect()
     }
-
-    newProduct
-      .save()
-      .then(() => console.log('Tallennus tietokantaan onnistui. Voit sulkea yhteyden (Ctrl-c).'))
-      .catch((err) => console.error(err))
   })
 })

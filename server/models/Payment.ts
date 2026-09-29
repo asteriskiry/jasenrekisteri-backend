@@ -11,14 +11,19 @@ export interface Payment {
   productName: string
   amountSnt: number
   stamp: string
-  status: 'Canceled' | 'Pending' | 'Success'
+  status: 'Canceled' | 'Pending' | 'Success' | 'Failed' | 'Expired'
   reference?: string
   processed: boolean
-  // Snapshot of Product.membershipDuration at payment time. Absent for
-  // non-membership ('Other' category) products.
   membershipDuration?: number
-  // Money was collected but membership couldn't be resolved automatically.
   needsManualReview?: boolean
+  reviewReason?: string
+  checkoutKey?: string
+  membershipEnds?: Date
+  newMember?: boolean
+  notifiedAt?: Date
+  notificationError?: string
+  notificationLease?: Date
+  livemode?: boolean
   stripeCheckoutSessionId?: string
   stripePaymentIntentId?: string
 }
@@ -67,7 +72,7 @@ const PaymentSchema = new mongoose.Schema<Payment>({
   },
   status: {
     type: String,
-    enum: ['Canceled', 'Pending', 'Success'],
+    enum: ['Canceled', 'Pending', 'Success', 'Failed', 'Expired'],
     default: 'Pending',
     required: true,
   },
@@ -79,12 +84,9 @@ const PaymentSchema = new mongoose.Schema<Payment>({
     required: true,
     default: false,
   },
-  // Snapshot of Product.membershipDuration at payment time. Absent for
-  // non-membership ('Other' category) products.
   membershipDuration: {
     type: Number,
   },
-  // Money was collected but membership couldn't be resolved automatically.
   needsManualReview: {
     type: Boolean,
     default: false,
@@ -97,6 +99,14 @@ const PaymentSchema = new mongoose.Schema<Payment>({
   stripePaymentIntentId: {
     type: String,
   },
+  reviewReason: String,
+  checkoutKey: { type: String, unique: true, sparse: true },
+  membershipEnds: Date,
+  newMember: Boolean,
+  notifiedAt: Date,
+  notificationError: String,
+  notificationLease: Date,
+  livemode: Boolean,
 })
 
 export default mongoose.model<Payment>('Payment', PaymentSchema)

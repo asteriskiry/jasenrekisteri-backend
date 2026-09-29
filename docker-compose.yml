@@ -1,39 +1,72 @@
-version: '3.2'
-
+name: jasenrekisteri
 services:
   mongo:
-    image: mongo
-    command: --quiet
-    restart: always
-    networks:
-      - jasenrekisteri
+    image: mongo:8.0.16@sha256:4b58ebcb1dc7a7b4e84cd8ce9098d48764ae4478876898ff9551acf2ac4a6a6d
+    command: ['mongod', '--replSet', 'rs0', '--bind_ip_all', '--quiet']
+    restart: unless-stopped
     volumes:
       - db-data:/data/db
-    ports:
-      - 27017:27017
-  node:
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - "try { rs.status() } catch { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]}) }; quit(db.hello().isWritablePrimary ? 0 : 1)"
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
     build:
       context: .
-      dockerfile: ./docker/Dockerfile
-    volumes:
-      - .:/app
-      - /app/node_modules
-    command: bash -c "/usr/local/wait-for-it.sh mongo:27017 && npm run create-defaults && npm start && npm run log"
-    ports:
-      - 3001:3001
-    networks:
-      - jasenrekisteri
+      dockerfile: docker/Dockerfile
+    init: true
+    restart: unless-stopped
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:${API_PORT:-3001}:3001'
     environment:
-      - MONGOURL=mongodb://mongo:27017/jasenrekisteri
-      - HOST=0.0.0.0
-      - SECRET=development-secret
-      - CLIENTURL=${CLIENTURL:-http://localhost:5173}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      ENV: ${ENV:-development}
+      TRUST_PROXY: '1'
+      MONGOURL: mongodb://mongo:27017/jasenrekisteri?replicaSet=rs0
+      SECRET: ${SECRET:?Set SECRET in .env to a random string of at least 32 characters}
+      CLIENTURL: ${CLIENTURL:-http://localhost:8080}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAILSENDER: ${MAILSENDER:-jasenrekisteri@localhost}
+      BOARDMAILADDRESS: ${BOARDMAILADDRESS:-board@localhost}
+      CSVFILEPATH: /app/data/kulkuoikeudet_asteriski.csv
+    volumes:
+      - exports:/app/data
+      - logs:/app/logs
+
+  frontend:
+    build:
+      context: ../jasenrekisteri-frontend
+      dockerfile: docker/Dockerfile
+      args:
+        VITE_USE_PAYMENT: ${VITE_USE_PAYMENT:-false}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:${WEB_PORT:-8080}:8080'
+
+  mailpit:
+    image: axllent/mailpit:v1.27.8@sha256:6abc8e633df15eaf785cfcf38bae48e66f64beecdc03121e249d0f9ec15f0707
+    profiles: [local]
+    ports:
+      - '127.0.0.1:8025:8025'
 
 volumes:
   db-data:
-networks:
-  jasenrekisteri:
+  exports:
+  logs:

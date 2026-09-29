@@ -8,6 +8,7 @@ docker-compose.override.yml
 dist/
 swagger.json
 data/
+logs/
 .pm2
 
 # vim stuff

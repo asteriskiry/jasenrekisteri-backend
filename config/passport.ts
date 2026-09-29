@@ -10,6 +10,7 @@ function setPassortConfigs(passport) {
   passport.use(
     new JwtStrategy(opts, async (jwt_payload, done) => {
       try {
+        if (jwt_payload.purpose) return done(null, false)
         const user = await Member.findOne({ _id: jwt_payload._id })
         return done(null, user || false)
       } catch (error) {

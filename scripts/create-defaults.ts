@@ -1,20 +1,14 @@
-// Script for creating default database entries
-
 import mongoose from 'mongoose'
 import moment from 'moment'
 import Product from '../server/models/Product.js'
 import Member from '../server/models/Member.js'
 import config from '../config/config.js'
 
-console.log('\x1b[36m%s\x1b[0m', 'Skripti luo 4 tietokantamerkintää: 1 käyttäjätunnus ja 3 jäsenyystuotetta.')
-console.log('\x1b[36m%s\x1b[0m', 'Kun skripti on valmis voit sulkea yhteyden Ctrl-c:llä.')
-console.log('')
-console.log(
-  '\x1b[33m%s\x1b[0m',
-  'Tuotannossa: Poista luotu käyttätunnus kun saat tehtyä oikean käyttäjätunnuksen tilalle.'
-)
-console.log('')
+if (config.env === 'production')
+  throw new Error('Demo data cannot be created in production. Use create-user and create-product.')
 
+console.log('Luodaan paikallinen testikäyttäjä ja kaksi jäsenyystuotetta.')
+console.log('')
 mongoose.connect(config.mongoUrl)
 let db = mongoose.connection
 
@@ -49,24 +43,27 @@ db.once('open', async function () {
   membership5.priceSnt = 2000
   membership5.membershipDuration = 5
 
-  await adminUser
-    .save()
-    .then(() =>
-      console.log('\x1b[32m%s\x1b[0m', '    admin@example.com -käyttäjän tallennus onnistui (salasana: password).')
-    )
-    .catch((err) => console.warn(err.message))
-  await membership1
-    .save()
-    .then(() =>
-      console.log('\x1b[32m%s\x1b[0m', '    1 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1111).')
-    )
-    .catch((err) => console.warn(err.message))
-  await membership5
-    .save()
-    .then(() =>
-      console.log('\x1b[32m%s\x1b[0m', '    5 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1555).')
-    )
-    .catch((err) => console.warn(err.message))
+  if (!(await Member.exists({ email: adminUser.email })))
+    await adminUser
+      .save()
+      .then(() =>
+        console.log('\x1b[32m%s\x1b[0m', '    admin@example.com -käyttäjän tallennus onnistui (salasana: password).')
+      )
+      .catch((err) => console.warn(err.message))
+  if (!(await Product.exists({ productId: membership1.productId })))
+    await membership1
+      .save()
+      .then(() =>
+        console.log('\x1b[32m%s\x1b[0m', '    1 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1111).')
+      )
+      .catch((err) => console.warn(err.message))
+  if (!(await Product.exists({ productId: membership5.productId })))
+    await membership5
+      .save()
+      .then(() =>
+        console.log('\x1b[32m%s\x1b[0m', '    5 vuoden jäsenyys -tuotteen tallennus onnistui (tuotekoodi: 1555).')
+      )
+      .catch((err) => console.warn(err.message))
   await db.close()
   console.log('\x1b[32m%s\x1b[0m', '    Skripti valmistui!')
 })

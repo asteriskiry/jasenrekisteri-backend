@@ -1,16 +1,16 @@
 'use strict'
 
-import passport from 'passport'
 import express from 'express'
 import paymentService from '../../services/payment/payment.js'
 import rateLimiter from '../../utils/rateLimiter.js'
+import { authenticatePayment } from '../../services/payment/auth.js'
 
 let router = express.Router()
 
-// Unauthenticated and proxies to the Stripe API, so rate-limit it.
 const sessionStatusLimiter = rateLimiter({ windowMs: 60 * 1000, max: 20 })
+const checkoutLimiter = rateLimiter({ windowMs: 60 * 1000, max: 10 })
 
-router.post('/', passport.authenticate('jwt', { session: false }), paymentService.createPayment)
+router.post('/', checkoutLimiter, authenticatePayment, paymentService.createPayment)
 router.post('/webhook', paymentService.stripeWebhook)
 router.get('/session-status', sessionStatusLimiter, paymentService.getPaymentStatus)
 

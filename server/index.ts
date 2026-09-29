@@ -14,29 +14,49 @@ import logger from './utils/logger.js'
 import routes from './routes/index.js'
 import configurePassport from '../config/passport.js'
 import { errorHandler } from './utils/errors.js'
+import { validateConfig } from '../config/config.js'
 
 export default function () {
   let server = express()
   let create
   let start
 
-  create = function (config) {
-    cronJobs.startCronJobs()
+  create = async function (config) {
+    validateConfig()
     logger.loggerInit()
 
     server.set('env', config.env)
     server.set('port', config.port)
     server.set('hostname', config.host)
+    server.set('trust proxy', config.trustProxy)
 
-    server.use(log4js.connectLogger(logger.logAccess, { level: 'auto' }))
+    server.use(
+      log4js.connectLogger(logger.logAccess, {
+        level: 'auto',
+        // Route patterns exclude payment stamps and password-reset tokens.
+        format: (request, response) => `${request.method} ${request.route?.path || 'unmatched'} ${response.statusCode}`,
+      })
+    )
 
-    server.use(cors())
+    server.use(cors({ origin: config.clientUrl }))
+    server.get('/health', (request, response) => {
+      response
+        .status(mongoose.connection.readyState === 1 ? 200 : 503)
+        .json({ ready: mongoose.connection.readyState === 1 })
+    })
     server.use('/api/pay/webhook', express.raw({ type: 'application/json' }))
     server.use(express.json())
     server.use(express.urlencoded({ extended: false }))
     server.use(cookieParser())
     server.use(passport.initialize())
-    mongoose.connect(config.mongoUrl)
+    await mongoose.connect(config.mongoUrl, { serverSelectionTimeoutMS: 10000 })
+    if (process.env.STRIPE_SECRET_KEY) {
+      const hello = await mongoose.connection.db.admin().command({ hello: 1 })
+      if (!hello.setName && hello.msg !== 'isdbgrid')
+        throw new Error('Stripe fulfillment requires a MongoDB replica set or sharded cluster.')
+    }
+    await Promise.all(Object.values(mongoose.models).map((model) => model.init()))
+    cronJobs.startCronJobs()
     configurePassport(passport)
 
     if (config.env === 'local' || config.env === 'development') {
@@ -52,7 +72,7 @@ export default function () {
     let hostname = server.get('hostname')
     let port = server.get('port')
 
-    server.listen(port, function (err) {
+    return server.listen(port, hostname, function (err) {
       if (err) console.log('Error in server setup')
       console.log('Jäsenrekisteri backend listening on http://' + hostname + ':' + port)
     })

@@ -32,11 +32,12 @@ const ProductSchema = new mongoose.Schema<Product>({
     type: Number,
     required: true,
     min: 0,
+    validate: Number.isSafeInteger,
   },
   membershipDuration: {
     type: Number,
     min: 1,
-    // Required so payment completion can compute a membershipEnds date.
+    validate: Number.isSafeInteger,
     required: function () {
       return this.category === 'Membership'
     },

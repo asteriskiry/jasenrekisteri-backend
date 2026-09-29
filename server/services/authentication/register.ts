@@ -6,15 +6,20 @@ import httpResponses from './index.js'
 import formatters from '../../utils/formatters.js'
 import { validatePersonFields } from '../../validators/common.js'
 import { success } from '../../utils/responses.js'
-
-// Here we only make temporary member record. We create real one when the payment is made.
+import jwt from 'jsonwebtoken'
+import config from '../../../config/config.js'
 
 async function registerUser(request, response) {
   let { firstName, lastName, utuAccount, email, hometown, tyyMember } = request.body
 
   const errors = validatePersonFields(request.body)
   if (Object.keys(errors).length > 0) {
-    return response.status(400).json({ ...httpResponses.onValidationError, error: { ...httpResponses.onValidationError.error, details: errors } })
+    return response
+      .status(400)
+      .json({
+        ...httpResponses.onValidationError,
+        error: { ...httpResponses.onValidationError.error, details: errors },
+      })
   }
 
   const member = await Member.findOne({ email: email })
@@ -35,6 +40,10 @@ async function registerUser(request, response) {
   return response.json(
     success('Käyttäjätunnus luotu onnistuneesti.', {
       memberId: newTempMember._id,
+      paymentToken: jwt.sign({ sub: newTempMember._id.toString(), purpose: 'registration-payment' }, config.secret, {
+        expiresIn: '1h',
+        audience: 'checkout',
+      }),
     })
   )
 }

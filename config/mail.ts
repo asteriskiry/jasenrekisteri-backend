@@ -7,49 +7,26 @@ import path from 'node:path'
 
 const boardMailAddress = config.boardMailAddress
 const mailSender = config.mailSender
-// const useGmail = config.useGmail
 const emailLogPath = path.join(config.logPath, 'emails.log')
 const messagesLogPath = path.join(config.logPath, 'emails-messages.log')
-
-// Keep the SendGrid transport as a rollback option while moving to SMTP/Brevo.
-import sgTransport from 'nodemailer-sendgrid-transport'
-
-/*
-const gmailTransporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: config.gmailUser,
-    pass: config.gmailPassword,
-  },
-})
-
-const sendmailTransporter = nodemailer.createTransport({
-  host: config.smtpUrl,
-  port: config.smtpPort,
-})
-  */
 
 const smtpHost = process.env.SMTP_HOST
 const smtpPort = Number(process.env.SMTP_PORT || 587)
 const smtpUser = process.env.SMTP_USER
 const smtpPass = process.env.SMTP_PASS
 
-// Rollback-friendly legacy config
-// let options = {
-//   auth: {
-//     api_key: config.sendgridApiKey,
-//   },
-// }
-// const sendgridTransporter = nodemailer.createTransport(sgTransport(options))
-
 const smtpTransporter = nodemailer.createTransport({
   host: smtpHost,
   port: smtpPort,
   secure: smtpPort === 465,
-  auth: {
-    user: smtpUser,
-    pass: smtpPass,
-  },
+  connectionTimeout: 10000,
+  socketTimeout: 30000,
+  auth: smtpUser
+    ? {
+        user: smtpUser,
+        pass: smtpPass,
+      }
+    : undefined,
 })
 
 const transporter = smtpTransporter
@@ -61,12 +38,20 @@ function callback(error, info) {
   } else {
     logEntry = 'Success: Date: ' + new Date() + ', ' + 'Info: ' + JSON.stringify(info) + '\n'
   }
-  fs.appendFileSync(emailLogPath, logEntry)
+  appendLog(emailLogPath, logEntry)
 }
 
 function logMessage(data) {
-  let logEntry = 'Tried send message at ' + new Date() + ' with data: ' + JSON.stringify(data) + '\n'
-  fs.appendFileSync(messagesLogPath, logEntry)
+  appendLog(messagesLogPath, JSON.stringify({ time: new Date(), to: data.to, subject: data.subject }) + '\n')
+}
+
+function appendLog(file, entry) {
+  try {
+    fs.mkdirSync(config.logPath, { recursive: true })
+    fs.appendFileSync(file, entry)
+  } catch {
+    console.error('Could not write mail delivery log.')
+  }
 }
 
 function sendMailWithLogging(options, label = 'mail') {

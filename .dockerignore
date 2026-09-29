@@ -1,1 +1,11 @@
 node_modules/
+.git/
+.agents/
+.env*
+dist/
+logs/
+data/
+coverage/
+tests/
+ecosystem.config.cjs
+*.log

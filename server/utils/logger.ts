@@ -9,7 +9,7 @@ const accessLog = path.join(logPath, 'access.log')
 
 function loggerInit() {
   try {
-    fs.mkdirSync(logPath)
+    fs.mkdirSync(logPath, { recursive: true })
   } catch (e) {
     if (e.code != 'EEXIST') {
       console.error('Could not set up log directory, error was: ', e)
