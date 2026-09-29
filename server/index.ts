@@ -38,7 +38,7 @@ export default function () {
       })
     )
 
-    server.use(cors({ origin: config.clientUrl }))
+    server.use(cors({ origin: config.clientUrl, credentials: true }))
     server.get('/health', (request, response) => {
       response
         .status(mongoose.connection.readyState === 1 ? 200 : 503)

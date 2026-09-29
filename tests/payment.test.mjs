@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { once } from 'node:events'
 import express from 'express'
+import cookieParser from 'cookie-parser'
 import mongoose from 'mongoose'
 import passport from 'passport'
 import jwt from 'jsonwebtoken'
@@ -71,11 +72,12 @@ before(async () => {
   await Promise.all([Member.init(), TempMember.init(), Payment.init(), Product.init()])
   configurePassport(passport)
   const app = express()
+  app.set('trust proxy', 1)
   app.post('/pay/webhook', express.raw({ type: 'application/json' }), service.stripeWebhook)
-  app.use(express.json(), passport.initialize())
+  app.use(express.json(), cookieParser(), passport.initialize())
   app.post('/register', register.registerUser)
-  app.post('/pay', authenticatePayment, service.createPayment)
-  app.get('/pay/session-status', service.getPaymentStatus)
+  app.post('/api/pay', authenticatePayment, service.createPayment)
+  app.get('/api/pay/session-status', service.getPaymentStatus)
   app.get('/private', passport.authenticate('jwt', { session: false }), (req, res) => res.json({ id: req.user.id }))
   app.use(errorHandler)
   listener = app.listen(0, '127.0.0.1')
@@ -112,10 +114,16 @@ async function post(path, body, token) {
 async function checkout(member = null, extra = {}) {
   member ||= await Member.create(person)
   const token = jwt.sign({ _id: member._id }, process.env.SECRET)
-  const response = await post('/pay', { productId: '1111', checkoutId: randomUUID(), ...extra }, token)
+  const response = await post('/api/pay', { productId: '1111', checkoutId: randomUUID(), ...extra }, token)
   assert.equal(response.status, 200)
   const body = await response.json()
-  return { member, token, ...body.data, session: sessions.get(body.data.sessionId) }
+  return {
+    member,
+    token,
+    ...body.data,
+    session: sessions.get(body.data.sessionId),
+    cookie: response.headers.get('set-cookie'),
+  }
 }
 async function webhook(session, type = 'checkout.session.completed', signature = true) {
   const payload = JSON.stringify({ id: `evt_${randomUUID()}`, type, data: { object: session } })
@@ -126,12 +134,17 @@ async function webhook(session, type = 'checkout.session.completed', signature =
     body: payload,
   })
 }
-async function status(sessionId, stamp) {
-  return fetch(base + '/pay/session-status?' + new URLSearchParams({ session_id: sessionId, stamp }))
+async function status(sessionId, stamp, cookie) {
+  return fetch(
+    base + '/api/pay/session-status?' + new URLSearchParams({ session_id: sessionId, ...(stamp ? { stamp } : {}) }),
+    {
+      headers: cookie ? { Cookie: cookie } : {},
+    }
+  )
 }
 
 test('checkout requires authentication and uses server pricing and authenticated identity', async () => {
-  assert.equal((await post('/pay', { productId: '1111', checkoutId: randomUUID() })).status, 401)
+  assert.equal((await post('/api/pay', { productId: '1111', checkoutId: randomUUID() })).status, 401)
   const result = await checkout(null, { memberId: new mongoose.Types.ObjectId(), amountSnt: 1 })
   const payment = await Payment.findOne()
   assert.equal(payment.memberId, result.member.id)
@@ -145,6 +158,60 @@ test('concurrent checkout retries reuse the local payment and Stripe idempotency
   const results = await Promise.all([checkout(member, { checkoutId }), checkout(member, { checkoutId })])
   assert.equal(await Payment.countDocuments(), 1)
   assert.equal(results[0].sessionId, results[1].sessionId)
+})
+
+test('checkout issues a scoped HttpOnly receipt cookie, including Secure behind HTTPS', async () => {
+  const result = await checkout()
+  assert.match(result.cookie, /; HttpOnly/i)
+  assert.match(result.cookie, /; SameSite=Lax/i)
+  assert.match(result.cookie, /; Max-Age=86400/i)
+  assert.match(result.cookie, /; Path=\/api\/pay\/session-status(?:;|$)/i)
+  assert.doesNotMatch(result.cookie, /; Domain=/i)
+  const response = await fetch(base + '/api/pay', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'JWT ' + result.token, 'X-Forwarded-Proto': 'https' },
+    body: JSON.stringify({ productId: '1111', checkoutId: randomUUID() }),
+  })
+  assert.equal(response.status, 200)
+  assert.match(response.headers.get('set-cookie'), /; Secure/i)
+  assert.equal(response.headers.get('cache-control'), 'no-store')
+})
+
+test('receipt cookie recovers pending and completed payments without a tab storage stamp', async () => {
+  const result = await checkout()
+  const cookie = result.cookie.split(';')[0]
+  result.session.payment_status = 'paid'
+  const pending = await status(result.sessionId, undefined, cookie)
+  assert.equal(pending.status, 200)
+  assert.equal((await pending.json()).data.state, 'pending')
+  assert.equal((await Payment.findOne()).processed, false)
+  assert.equal((await webhook(result.session)).status, 200)
+  const membershipEnds = (await Member.findById(result.member.id)).membershipEnds.toISOString()
+  for (let visit = 0; visit < 2; visit++) {
+    const completed = await status(result.sessionId, undefined, cookie)
+    assert.equal(completed.status, 200)
+    assert.equal(completed.headers.get('cache-control'), 'no-store')
+    assert.equal((await completed.json()).data.state, 'complete')
+  }
+  assert.equal((await Member.findById(result.member.id)).membershipEnds.toISOString(), membershipEnds)
+  assert.equal(emails.length, 1)
+})
+
+test('receipt cookies cannot authorize another payment and simultaneous checkouts stay separate', async () => {
+  const first = await checkout()
+  const second = await checkout(await Member.create({ ...person, email: 'second@example.test' }))
+  const firstCookie = first.cookie.split(';')[0]
+  const secondCookie = second.cookie.split(';')[0]
+  assert.notEqual(firstCookie.split('=')[0], secondCookie.split('=')[0])
+  assert.equal((await status(first.sessionId)).status, 400)
+  assert.equal((await status(first.sessionId, undefined, secondCookie)).status, 400)
+  assert.equal((await status(first.sessionId, undefined, `payment_${first.sessionId}=${second.stamp}`)).status, 404)
+  assert.equal((await status(first.sessionId, 'wrong-stamp-that-is-long-enough-to-validate', firstCookie)).status, 404)
+  assert.equal((await status('invalid/session', undefined, firstCookie)).status, 400)
+  await webhook({ ...first.session, payment_status: 'paid' })
+  const bothCookies = `${firstCookie}; ${secondCookie}`
+  assert.equal((await (await status(first.sessionId, undefined, bothCookies)).json()).data.state, 'complete')
+  assert.equal((await (await status(second.sessionId, undefined, bothCookies)).json()).data.state, 'pending')
 })
 
 test('signature verification and paid status gate membership fulfillment', async () => {
@@ -251,7 +318,7 @@ test('wrong amount, currency, mode, environment or session never grants membersh
   }
 })
 
-test('status is read-only and requires the private stamp; delayed failures and expiry are visible', async () => {
+test('status is read-only and accepts the private stamp; delayed failures and expiry are visible', async () => {
   const result = await checkout()
   result.session.payment_status = 'paid'
   const pending = await (await status(result.sessionId, result.stamp)).json()
@@ -276,7 +343,7 @@ test('new registration receives a checkout-only token and becomes a member after
   const registered = await (await post('/register', person)).json()
   const { paymentToken, memberId } = registered.data
   assert.ok(paymentToken)
-  const response = await post('/pay', { productId: '1111', checkoutId: randomUUID(), paymentToken })
+  const response = await post('/api/pay', { productId: '1111', checkoutId: randomUUID(), paymentToken })
   assert.equal(response.status, 200)
   const { sessionId } = (await response.json()).data
   assert.equal((await webhook({ ...sessions.get(sessionId), payment_status: 'paid' })).status, 200)
@@ -287,6 +354,8 @@ test('new registration receives a checkout-only token and becomes a member after
   assert.equal(member.accessRights, false)
   assert.equal(emails.length, 2)
   assert.ok(emails.some((email) => email.text.includes('/forgot')))
+  const cookieStatus = await status(sessionId, undefined, response.headers.get('set-cookie').split(';')[0])
+  assert.equal((await cookieStatus.json()).data.state, 'complete')
   assert.equal((await fetch(base + '/private', { headers: { Authorization: 'JWT ' + paymentToken } })).status, 401)
 })
 
@@ -296,7 +365,7 @@ test('expired registration tokens cannot create checkout sessions', async () => 
     audience: 'checkout',
     expiresIn: -1,
   })
-  assert.equal((await post('/pay', { productId: '1111', checkoutId: randomUUID(), paymentToken })).status, 401)
+  assert.equal((await post('/api/pay', { productId: '1111', checkoutId: randomUUID(), paymentToken })).status, 401)
   assert.equal(await Payment.countDocuments(), 0)
 })
 
