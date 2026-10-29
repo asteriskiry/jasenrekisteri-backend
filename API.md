@@ -29,6 +29,16 @@ Payment errors use 400/401/404/409/502/503 as appropriate; invalid webhook signa
 
 Development Swagger UI is available at `/api-docs`; `npm run swagger` regenerates its specification.
 
+## Delete expired users
+
+`GET /api/admin/expired` requires **Admin** and returns `data.count` and `data.previewToken` for the confirmation dialog. Expired means a stored `membershipEnds` date at or before the preview time, matching the member list's expiry indicator. The signed-in administrator and accounts with missing/null expiry dates are excluded; all other roles are included. The selection ignores frontend search filters.
+
+`POST /api/admin/remove-expired` requires **Admin** and body `{ previewToken, confirmation: "DELETE" }`. The signed preview is bound to that administrator and expires after ten minutes. Missing or invalid confirmation/preview returns 400. If the selected IDs or expiry dates have changed, the entire operation returns 409 and requires a fresh preview, even if the count is unchanged. Accounts expiring after the preview are not added to that selection.
+
+The body also accepts optional boolean `sendEmail` (default `true`). The confirmation dialog exposes this as a checked-by-default checkbox. Set it to `false` to skip deletion emails to all selected users; non-boolean values return 400 before any deletion. Reopening the dialog resets the checkbox to enabled.
+
+Successful deletion returns `data.count` and `data.deletedIds`. All deletions and per-user `member.deleted` audit snapshots commit in one transaction. Failure rolls everything back; when enabled, normal deletion notifications are sent only after commit. Canceling the dialog sends no deletion request. This removes member accounts using the existing deletion semantics; audit history and historical payment records remain.
+
 ## Administrative audit
 
 `GET /api/admin/audit` requires an authenticated **Admin** role and returns `{ success: true, message, data: { entries, nextCursor } }`. Results are ordered by descending entry ID. Optional query parameters are `actorId`, `targetId`, `limit` (1–100, default 50) and `before` (the previous page's `nextCursor`, retaining any actor/target filters). Invalid or unknown filters return 400, unauthorized roles return 403, and responses are not cached.

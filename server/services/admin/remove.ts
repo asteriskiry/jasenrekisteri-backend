@@ -33,11 +33,15 @@ async function remove(request, response) {
     return member.email
   })
 
+  notifyMemberDeleted(recipient)
+  return response.json(success('Jäsen poistettu.'))
+}
+
+export function notifyMemberDeleted(recipient: string) {
   const email = emails.memberDeletedMail()
   const mailOptions = { from: mail.mailSender, to: recipient, subject: email.subject, text: email.text }
   mail.sendMailWithLogging(mailOptions, 'member-deleted').catch(() => {})
   mail.logMessage(mailOptions)
-  return response.json(success('Jäsen poistettu.'))
 }
 
 export default {

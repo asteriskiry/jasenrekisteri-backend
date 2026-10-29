@@ -401,6 +401,166 @@ test('board removal retains an audit snapshot and sends mail to the stored membe
   assert.equal(sent.length, 1)
 })
 
+async function expiredPreview(actor = admin) {
+  const response = await request('GET', '/admin/expired', undefined, actor)
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('cache-control'), 'no-store')
+  return (await response.json()).data
+}
+
+test('expired cleanup deletes exactly the previewed users, audits and notifies each, and preserves active, undated and own accounts', async () => {
+  await Member.updateOne({ _id: admin.id }, { membershipEnds: new Date(0) })
+  await Member.updateOne({ _id: member.id }, { membershipEnds: new Date(0) })
+  const expired = await createMember({ email: 'expired@example.test', role: 'Board', membershipEnds: new Date(1) })
+  const active = await createMember({ email: 'active@example.test', membershipEnds: new Date(Date.now() + 86400000) })
+  const undated = await createMember({ email: 'undated@example.test', membershipEnds: undefined })
+  const nullDate = await createMember({ email: 'null-date@example.test', membershipEnds: null })
+  const preview = await expiredPreview()
+  assert.equal(preview.count, 2)
+  const response = await request('POST', '/admin/remove-expired', {
+    previewToken: preview.previewToken,
+    confirmation: 'DELETE',
+  })
+  assert.equal(response.status, 200)
+  const result = (await response.json()).data
+  assert.equal(result.count, 2)
+  assert.deepEqual(result.deletedIds.sort(), [member.id, expired.id].sort())
+  for (const retained of [admin, active, undated, nullDate]) assert.ok(await Member.findById(retained.id))
+  assert.equal(await Member.countDocuments(), 4)
+  const entries = await AdminAuditLog.find().lean()
+  assert.equal(entries.length, 2)
+  for (const entry of entries) {
+    assert.equal(entry.action, 'member.deleted')
+    assert.equal(entry.actorId.toString(), admin.id)
+    assert.equal(entry.actorName, 'Anna Virtanen')
+    assert.equal(entry.targetName, 'Test Member')
+    assert.equal(entry.before.password, undefined)
+  }
+  assert.deepEqual(sent.map((mail) => mail.to).sort(), [member.email, expired.email].sort())
+  assert.equal(
+    (await request('POST', '/admin/remove-expired', { previewToken: preview.previewToken, confirmation: 'DELETE' }))
+      .status,
+    409
+  )
+  assert.equal(sent.length, 2)
+})
+
+for (const sendEmail of [true, false]) {
+  test(`expired cleanup respects sendEmail=${sendEmail} while retaining deletion and audit behavior`, async () => {
+    await Member.updateOne({ _id: member.id }, { membershipEnds: new Date(0) })
+    const preview = await expiredPreview()
+    const response = await request('POST', '/admin/remove-expired', {
+      previewToken: preview.previewToken,
+      confirmation: 'DELETE',
+      sendEmail,
+    })
+    assert.equal(response.status, 200)
+    assert.equal((await response.json()).data.count, 1)
+    assert.equal(await Member.findById(member.id), null)
+    const entry = await AdminAuditLog.findOne().lean()
+    assert.equal(entry.action, 'member.deleted')
+    assert.equal(entry.targetId.toString(), member.id)
+    assert.equal(sent.length, sendEmail ? 1 : 0)
+    if (sendEmail) assert.equal(sent[0].to, member.email)
+  })
+}
+
+test('expired cleanup rejects non-boolean email options before deleting or sending mail', async () => {
+  await Member.updateOne({ _id: member.id }, { membershipEnds: new Date(0) })
+  const preview = await expiredPreview()
+  for (const sendEmail of ['false', 'true', null, 0, 1, {}, []]) {
+    const response = await request('POST', '/admin/remove-expired', {
+      previewToken: preview.previewToken,
+      confirmation: 'DELETE',
+      sendEmail,
+    })
+    assert.equal(response.status, 400)
+    assert.equal((await response.json()).error.code, 'INVALID_EMAIL_OPTION')
+  }
+  assert.ok(await Member.findById(member.id))
+  assert.equal(await AdminAuditLog.countDocuments(), 0)
+  assert.equal(sent.length, 0)
+})
+
+test('expired cleanup requires Admin, exact DELETE and an untampered actor-bound preview', async () => {
+  await Member.updateOne({ _id: member.id }, { membershipEnds: new Date(0) })
+  const board = await createMember({ role: 'Board', email: 'board@example.test' })
+  const otherAdmin = await createMember({ role: 'Admin', email: 'other-admin@example.test' })
+  const preview = await expiredPreview()
+  const payload = { previewToken: preview.previewToken, confirmation: 'DELETE' }
+  for (const [actor, status] of [
+    [null, 401],
+    [member, 403],
+    [board, 403],
+  ]) {
+    assert.equal((await request('GET', '/admin/expired', undefined, actor)).status, status)
+    assert.equal((await request('POST', '/admin/remove-expired', payload, actor)).status, status)
+  }
+  for (const confirmation of [undefined, '', 'delete', ' DELETE', 'DELETE ', true]) {
+    assert.equal((await request('POST', '/admin/remove-expired', { ...payload, confirmation })).status, 400)
+  }
+  for (const previewToken of [undefined, 'invalid', preview.previewToken + 'tampered']) {
+    assert.equal((await request('POST', '/admin/remove-expired', { ...payload, previewToken })).status, 400)
+  }
+  assert.equal((await request('POST', '/admin/remove-expired', payload, otherAdmin)).status, 400)
+  assert.ok(await Member.findById(member.id))
+  assert.equal(await AdminAuditLog.countDocuments(), 0)
+  assert.equal(sent.length, 0)
+})
+
+test('renewal and same-count selection changes invalidate expired cleanup without deleting anyone', async () => {
+  await Member.updateOne({ _id: member.id }, { membershipEnds: new Date(0) })
+  const preview = await expiredPreview()
+  await Member.updateOne({ _id: member.id }, { membershipEnds: new Date(Date.now() + 86400000) })
+  const payload = { previewToken: preview.previewToken, confirmation: 'DELETE' }
+  assert.equal((await request('POST', '/admin/remove-expired', payload)).status, 409)
+  await createMember({ email: 'replacement@example.test', membershipEnds: new Date(0) })
+  assert.equal((await expiredPreview()).count, preview.count)
+  assert.equal((await request('POST', '/admin/remove-expired', payload)).status, 409)
+  assert.equal(await Member.countDocuments(), 3)
+  assert.equal(await AdminAuditLog.countDocuments(), 0)
+  assert.equal(sent.length, 0)
+})
+
+test('expired cleanup is all-or-nothing when a later audit write fails', async () => {
+  await Member.updateOne({ _id: member.id }, { membershipEnds: new Date(0) })
+  await createMember({ email: 'second@example.test', membershipEnds: new Date(0) })
+  const preview = await expiredPreview()
+  const original = AdminAuditLog.collection.insertOne
+  let writes = 0
+  const injected = mock.method(AdminAuditLog.collection, 'insertOne', async function (...args) {
+    if (++writes === 2) throw new Error('Injected second audit failure')
+    return original.apply(this, args)
+  })
+  try {
+    assert.equal(
+      (await request('POST', '/admin/remove-expired', { previewToken: preview.previewToken, confirmation: 'DELETE' }))
+        .status,
+      500
+    )
+    assert.equal(await Member.countDocuments(), 3)
+    assert.equal(await AdminAuditLog.countDocuments(), 0)
+    assert.equal(sent.length, 0)
+  } finally {
+    injected.mock.restore()
+  }
+})
+
+test('an empty expired cleanup preview is harmless', async () => {
+  await Member.updateMany({}, { membershipEnds: new Date(Date.now() + 86400000) })
+  const preview = await expiredPreview()
+  assert.equal(preview.count, 0)
+  const response = await request('POST', '/admin/remove-expired', {
+    previewToken: preview.previewToken,
+    confirmation: 'DELETE',
+  })
+  assert.equal(response.status, 200)
+  assert.deepEqual((await response.json()).data, { count: 0, deletedIds: [] })
+  assert.equal(await Member.countDocuments(), 2)
+  assert.equal(await AdminAuditLog.countDocuments(), 0)
+  assert.equal(sent.length, 0)
+})
+
 test('audit names retain their historical values after renames and deletion of both accounts', async () => {
   const reviewer = await createMember({ role: 'Admin', email: 'reviewer@example.test' })
   assert.equal(
