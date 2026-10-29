@@ -90,7 +90,7 @@ function importMail(
       'Rooli: ' +
       role +
       '\n' +
-      '24/7 kulkuoikeudet: ' +
+      'Varaston/roskisten kulkuoikeudet: ' +
       accessRights +
       '\n' +
       'Jäsenyys alknut: ' +
@@ -162,7 +162,7 @@ function memberAddedMemberMail(
       'Rooli: ' +
       role +
       '\n' +
-      '24/7 kulkuoikeudet: ' +
+      'Varaston/roskisten kulkuoikeudet: ' +
       accessRights +
       '\n' +
       'Jäsenyys alkaa: ' +
@@ -226,7 +226,7 @@ function memberAddedBoardMail(
       'Rooli: ' +
       role +
       '\n' +
-      '24/7 kulkuoikeudet: ' +
+      'Varaston/roskisten kulkuoikeudet: ' +
       accessRights +
       '\n' +
       'Jäsenyys alkaa: ' +
